@@ -4,6 +4,15 @@ import org.apache.commons.lang3.SystemUtils;
 import soot.Pack;
 import soot.PackManager;
 import soot.Transform;
+import soot.util.ArraySet;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
 
 public class Main {
 
@@ -79,7 +88,7 @@ public class Main {
 
 		//        String outputDir = SourceLocator.v().getOutputDir();
 
-		analysis.showResult();
+		// analysis.showResult();
 
 		long endTime   = System.currentTimeMillis();
 		String running_time_str = String.format("INFO: Total running time: %.2f sec", ((float)(endTime - startTime) / 1000));
@@ -90,9 +99,43 @@ public class Main {
 		performAnalysis(classpath, klass, RT_PATH, JCE_PATH);
 	}
 
+	public static void compile_programs() {
+		Process p = null;
+
+		try {
+			File res = new File(Constants.RESOURCE_SRC);
+			String[] files = res.list();
+			assert files != null;
+			for (String file : files) {
+
+				p = Runtime.getRuntime().exec(String.format(Constants.COMPILE_CMD, file));
+				logWriter.write_out(String.format("Compiling %s.", file));
+				BufferedReader stdError = new BufferedReader(new
+						InputStreamReader(p.getErrorStream()));
+				String s;
+				boolean errors_found = false;
+				while ((s = stdError.readLine()) != null) {
+					logWriter.write_err(s);
+					errors_found = true;
+
+				}
+				if(errors_found) {
+					logWriter.exit_with_error(String.format("Found errors while compiling '%s' exiting.", file));
+				} else {
+					logWriter.write_out(String.format("Finished Compiling %s", file));
+				}
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+
+	}
+
 	public static void main(String[] argv) {
 		Options options = new Options();
-
+		compile_programs();
 		Option r = Option.builder("r")
 				.hasArg()
 				.longOpt("rtpath")

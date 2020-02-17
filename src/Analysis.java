@@ -38,6 +38,7 @@ import soot.jimple.IfStmt;
 import soot.jimple.Stmt;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.annotation.logic.Loop;
+import soot.jimple.toolkits.annotation.logic.LoopFinder;
 import soot.shimple.ShimpleBody;
 import soot.shimple.toolkits.scalar.ShimpleLocalDefs;
 import soot.shimple.toolkits.scalar.ShimpleLocalUses;
@@ -49,7 +50,7 @@ import soot.toolkits.graph.LoopNestTree;
 import soot.toolkits.scalar.UnitValueBoxPair;
 
 public class Analysis extends BodyTransformer {
-
+	private static LogWriter logWriter = new LogWriter(Analysis.class.getName(), Constants.DEBUG);
 	private class LocalSerializer implements JsonSerializer<Local> {
 		public JsonElement serialize(Local src, Type typeOfSrc, JsonSerializationContext ctx) {
 			return new JsonPrimitive(src.toString());
@@ -192,52 +193,61 @@ public class Analysis extends BodyTransformer {
 	  */
 	@Override
 	protected void internalTransform(Body body, String phaseName, Map<String, String> options) {
-		try {
+
+		LoopFinder lf = new LoopFinder();
+		Set<Loop> loops = lf.getLoops(body);
+		for(Loop l : loops) {
+			List<Stmt> stmts = l.getLoopStatements();
+			for(Stmt s : stmts) {
+				logWriter.write_out(s.toString());
+			}
+		}
+		/*try {
 			SootMethod m = body.getMethod();
 			System.out.println("inside method: " + m.getSignature());
 			if (m.isMain()) {
 				
 				verifyAllNodesAreValid(body);
-				
-				// NOTE: this lookup used in serialization, the linear program (MATLAB) uses indices to uniquely 
+
+				// NOTE: this lookup used in serialization, the linear program (MATLAB) uses indices to uniquely
 				// identify the nodes, I thought indices were easier/less-error-prone than using string representation
 				// of "id" field.
 				buildNodesToIndexLookup(body);
-				
+
 				// printBodyInfo(body);
-				
+
 				Map<Stmt, DefUse> defUses = collectDefUses(body);
 				patchDefUsesForMUXNodes(body, defUses);
 				Map<Stmt, DefUse> arrayDefUses = collectArrayDefUses(body);
 				defUses = doCopyPropagation(defUses);
-				
+
 				// merge update def-use map
 				Map<Stmt, DefUse> defUsesWithFixedArrayDefUse = new HashMap<Stmt, DefUse>();
 				defUsesWithFixedArrayDefUse.putAll(defUses);
 				defUsesWithFixedArrayDefUse.putAll(arrayDefUses);
 				defUses = defUsesWithFixedArrayDefUse;
-				
+
 				defUses = updateUseOrder(body, defUses, nodeToIndex);
-				defUses = removeUsesThatOccurAfterRedefinition(body, defUses, 
+				defUses = removeUsesThatOccurAfterRedefinition(body, defUses,
 						nodeToIndex);
 				defUses = setDefUseConversionPoints(body, defUses);
 				defUses = assignLineNumbersToDefUses(body, defUses);
-				
+
 				Map<Loop, LoopInfo> loopInfo = gatherLoopParallelizationInfo(body, defUses);
-				defUses = updateWeightAndParallelParam(body, loopInfo, 
+				defUses = updateWeightAndParallelParam(body, loopInfo,
 						defUses);
-				
-				// Once we have done everything else, we get rid of def/uses corresponding to loops. 
+
+				// Once we have done everything else, we get rid of def/uses corresponding to loops.
 				// it is important that this is done last because previous steps may make use of those def/uses
 				defUses = removeDefUsesForLoopCountersVars((ShimpleBody)body, defUses);
 				defUses = finalizeOutput(defUses);
-				
+
 				methodDefUses.put(m, defUses);
 				methodLoopInfo.put(m, loopInfo);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-		}
+		}*/
 	}
 	
 	public void showResult() {
