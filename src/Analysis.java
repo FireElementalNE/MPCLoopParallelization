@@ -1,38 +1,7 @@
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-
 import com.google.common.reflect.TypeToken;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
-
-import soot.ArrayType;
-import soot.Body;
-import soot.BodyTransformer;
-import soot.Local;
-import soot.PatchingChain;
-import soot.SootMethod;
-import soot.Unit;
-import soot.BooleanType;
-import soot.jimple.ArrayRef;
+import com.google.gson.*;
+import org.pmw.tinylog.Logger;
+import soot.*;
 import soot.jimple.AssignStmt;
 import soot.jimple.IfStmt;
 import soot.jimple.Stmt;
@@ -42,15 +11,17 @@ import soot.jimple.toolkits.annotation.logic.LoopFinder;
 import soot.shimple.ShimpleBody;
 import soot.shimple.toolkits.scalar.ShimpleLocalDefs;
 import soot.shimple.toolkits.scalar.ShimpleLocalUses;
-import soot.toolkits.graph.Block;
-import soot.toolkits.graph.BlockGraph;
-import soot.toolkits.graph.BriefUnitGraph;
-import soot.toolkits.graph.ExceptionalBlockGraph;
-import soot.toolkits.graph.LoopNestTree;
+import soot.toolkits.graph.*;
 import soot.toolkits.scalar.UnitValueBoxPair;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
+import java.lang.reflect.Type;
+import java.util.*;
+
+@SuppressWarnings("ALL")
 public class Analysis extends BodyTransformer {
-	private static LogWriter logWriter = new LogWriter(Analysis.class.getName(), Constants.DEBUG);
 	private class LocalSerializer implements JsonSerializer<Local> {
 		public JsonElement serialize(Local src, Type typeOfSrc, JsonSerializationContext ctx) {
 			return new JsonPrimitive(src.toString());
@@ -151,7 +122,7 @@ public class Analysis extends BodyTransformer {
 		}
 	}
 	
-	public class UseComparator implements Comparator<Node> {
+	public static class UseComparator implements Comparator<Node> {
 		@Override
 		public int compare(Node o1, Node o2) {
 			return Integer.compare(o1.useOrder, o2.useOrder);
@@ -193,15 +164,48 @@ public class Analysis extends BodyTransformer {
 	  */
 	@Override
 	protected void internalTransform(Body body, String phaseName, Map<String, String> options) {
-
+		assert body instanceof ShimpleBody;
+		ShimpleBody sb = (ShimpleBody) body;
 		LoopFinder lf = new LoopFinder();
 		Set<Loop> loops = lf.getLoops(body);
+		Map <ValueBox, List<Stmt>> assignments = new HashMap<>();
 		for(Loop l : loops) {
+			Logger.debug("Found a loop with head: " + l.getHead().toString());
 			List<Stmt> stmts = l.getLoopStatements();
 			for(Stmt s : stmts) {
-				logWriter.write_out(s.toString());
+				if(s instanceof AssignStmt) {
+					AssignStmt as = (AssignStmt) s;
+					Logger.debug("\tStatement is an assignment");
+					if(as.containsArrayRef()) {
+						Logger.debug("\tStatement contains array ref assignment");
+						ValueBox left = as.getLeftOpBox();
+						ValueBox right = as.getRightOpBox();
+						Logger.debug("\t LEFT " + left.getValue());
+						Logger.debug("\t RIGHT " + right.getValue());
+						if (!assignments.containsKey(left)) {
+							assignments.put(left, new ArrayList<>());
+						}
+						assignments.get(left).add(s);
+						assignments.computeIfAbsent(left, k -> new ArrayList<>()).add(s);
+						List<ValueBox> def = as.getDefBoxes();
+						List<ValueBox> use = as.getUseBoxes();
+						Logger.debug("\tDef Boxes: ");
+						for(ValueBox vb : def) {
+							Logger.debug("\t\t" + vb.getValue().toString());
+						}
+						Logger.debug("\tUse Boxes: ");
+						for(ValueBox vb : use) {
+							Logger.debug("\t\t" + vb.getValue().toString());
+						}
+
+					}
+				}
 			}
 		}
+		for(Map.Entry<ValueBox, List<Stmt>> ie : assignments.entrySet()) {
+			Logger.debug(ie.getKey().toString() + " -> " + ie.getValue().size());
+		}
+
 		/*try {
 			SootMethod m = body.getMethod();
 			System.out.println("inside method: " + m.getSignature());
