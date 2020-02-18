@@ -117,6 +117,7 @@ public class Main {
 				}
 				if(errors_found) {
 					Logger.error(String.format("Found errors while compiling '%s' exiting.", file));
+					System.exit(0);
 				} else {
 					Logger.info(String.format("Finished Compiling %s", file));
 				}
@@ -135,7 +136,6 @@ public class Main {
 				.addWriter(new FileWriter("output.log"))
 				.level(Level.DEBUG)
 				.formatPattern("[{date}][{method}][{file}:{line}][{level}]: {message}")
-				.writingThread(true)
 				.activate();
 
 		Options options = new Options();
