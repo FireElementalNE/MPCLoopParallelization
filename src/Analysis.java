@@ -182,10 +182,10 @@ public class Analysis extends BodyTransformer {
 						ValueBox right = as.getRightOpBox();
 						Logger.debug("\t LEFT " + left.getValue());
 						Logger.debug("\t RIGHT " + right.getValue());
-						if (!assignments.containsKey(left)) {
-							assignments.put(left, new ArrayList<>());
-						}
-						assignments.get(left).add(s);
+//						if (!assignments.containsKey(left)) {
+//							assignments.put(left, new ArrayList<>());
+//						}
+//						assignments.get(left).add(s);
 						assignments.computeIfAbsent(left, k -> new ArrayList<>()).add(s);
 						List<ValueBox> def = as.getDefBoxes();
 						List<ValueBox> use = as.getUseBoxes();
