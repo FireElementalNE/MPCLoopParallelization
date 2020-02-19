@@ -1,15 +1,15 @@
 class Test0 {
     static int f1(int a) {
-        return a * -1;
+        return Math.abs(a);
     }
     static int f2(int a, int b) {
-        return a - b;
+        return Math.abs(a - b);
     }
     static int f3(int a, int b) {
-        return a * b;
+        return Math.abs(a * b);
     }
     static int f4(int a, int b) {
-        return a ^ b;
+        return Math.abs(a ^ b);
     }
     public static void main(String[] args) {
         int N = 5;

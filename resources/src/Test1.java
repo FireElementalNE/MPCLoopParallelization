@@ -1,11 +1,15 @@
+import java.util.Objects;
+
 class Test1 {
     public static void main(String[] args) {
         double[] a = new double[5];
+//        double[] a1 = new double[a.length];
         int i = 1;
-        int one = 1;
-        while(i < 6) {
-            double x = Math.pow(2.0, i);
-            a[i - one] = x;
+        while(i < 5) {
+//            Utils.phi(a, a1);
+//            a1 = (double[])Utils.arraycopy(a);
+//            assert !Objects.equals(a1, null);
+            a[i] = i;
             i++;
         }
     }

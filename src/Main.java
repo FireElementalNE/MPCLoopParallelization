@@ -7,11 +7,13 @@ import org.pmw.tinylog.writers.FileWriter;
 import soot.Pack;
 import soot.PackManager;
 import soot.Transform;
+import soot.options.SIOptions;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Objects;
 
 public class Main {
 
@@ -76,7 +78,6 @@ public class Main {
 		//        String phaseName = last.getPhaseName();
 		Analysis analysis = new Analysis(); 
 		Transform t = new Transform("stp.mixedprotocols", analysis);
-
 		//p.insertAfter(t, phaseName);
 		//p.insertAfter(t, "sop.cpf");
 		p.add(t);
@@ -96,38 +97,39 @@ public class Main {
 //		performAnalysis(classpath, klass, RT_PATH, JCE_PATH);
 //	}
 
-	public static void compile_programs() {
-		Process p;
+	public static void compile_program(String file) {
+		boolean errors_found = false;
 		try {
-			File res = new File(Constants.RESOURCE_SRC);
-			String[] files = res.list();
-			assert files != null;
-			for (String file : files) {
-
-				p = Runtime.getRuntime().exec(String.format(Constants.COMPILE_CMD, file));
-				Logger.info(String.format("Compiling %s.", file));
-				BufferedReader stdError = new BufferedReader(new
-						InputStreamReader(p.getErrorStream()));
-				String s;
-				boolean errors_found = false;
-				while ((s = stdError.readLine()) != null) {
-					Logger.error(s);
-					errors_found = true;
-
-				}
-				if(errors_found) {
-					Logger.error(String.format("Found errors while compiling '%s' exiting.", file));
-					System.exit(0);
-				} else {
-					Logger.info(String.format("Finished Compiling %s", file));
-				}
+			Process p = Runtime.getRuntime().exec(String.format(Constants.COMPILE_CMD, file));
+			BufferedReader stdError = new BufferedReader(new
+					InputStreamReader(p.getErrorStream()));
+			String s;
+			while ((s = stdError.readLine()) != null) {
+				Logger.error(s);
+				errors_found = true;
 			}
-
 		} catch (IOException e) {
-			e.printStackTrace();
+			Logger.error("Caught exception: " + e.getMessage());
+			errors_found = true;
 		}
+		if(errors_found) {
+			Logger.error(String.format("Found errors while compiling %s exiting.", file));
+			System.exit(0);
+		} else {
+			Logger.info(String.format("Finished Compiling %s", file));
+		}
+	}
 
-
+	public static void compile_programs() {
+		File res = new File(Constants.RESOURCE_SRC);
+		String[] files = res.list();
+		compile_program(Constants.UTILS_JAVA_FILE);
+		assert files != null;
+		for (String file : files) {
+			if(!Objects.equals(file, Constants.UTILS_JAVA_FILE)) {
+				compile_program(file);
+			}
+		}
 	}
 
 	public static void main(String[] argv) {

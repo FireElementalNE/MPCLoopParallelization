@@ -2,6 +2,7 @@ import com.google.common.reflect.TypeToken;
 import com.google.gson.*;
 import org.pmw.tinylog.Logger;
 import soot.*;
+import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
 import soot.jimple.IfStmt;
 import soot.jimple.Stmt;
@@ -169,43 +170,39 @@ public class Analysis extends BodyTransformer {
 		LoopFinder lf = new LoopFinder();
 		Set<Loop> loops = lf.getLoops(body);
 		Map <ValueBox, List<Stmt>> assignments = new HashMap<>();
+		Map <ValueBox, SSAPhi> final_phis = new HashMap<>();
 		for(Loop l : loops) {
 			Logger.debug("Found a loop with head: " + l.getHead().toString());
 			List<Stmt> stmts = l.getLoopStatements();
 			for(Stmt s : stmts) {
 				if(s instanceof AssignStmt) {
 					AssignStmt as = (AssignStmt) s;
-					Logger.debug("\tStatement is an assignment");
 					if(as.containsArrayRef()) {
-						Logger.debug("\tStatement contains array ref assignment");
 						ValueBox left = as.getLeftOpBox();
 						ValueBox right = as.getRightOpBox();
-						Logger.debug("\t LEFT " + left.getValue());
-						Logger.debug("\t RIGHT " + right.getValue());
-//						if (!assignments.containsKey(left)) {
-//							assignments.put(left, new ArrayList<>());
-//						}
-//						assignments.get(left).add(s);
-						assignments.computeIfAbsent(left, k -> new ArrayList<>()).add(s);
-						List<ValueBox> def = as.getDefBoxes();
-						List<ValueBox> use = as.getUseBoxes();
-						Logger.debug("\tDef Boxes: ");
-						for(ValueBox vb : def) {
-							Logger.debug("\t\t" + vb.getValue().toString());
+//						Logger.debug("\t LEFT " + left.getValue());
+//						Logger.debug("\t RIGHT " + right.getValue());
+						if(Objects.equals(as.getArrayRefBox(), left)) {
+							Logger.info("\tWe are writing to an array, the following transform should be made!");
+							ArrayRef array_ref = as.getArrayRef();
+							ValueBox base = array_ref.getBaseBox();
+							ValueBox index = array_ref.getIndexBox();
+							String new_name = final_phis.computeIfAbsent(base, k -> new SSAPhi(base)).add_copy();
+							Logger.info("\t Original: " + as.toString());
+							Logger.info("\t " + String.format(Constants.SSA_ARRAY_CPY, base.getValue().toString(), new_name));
+							Logger.info("\t " + String.format(Constants.SSA_ASSIGNMENT,
+									new_name, index.getValue().toString(), right.getValue().toString()));
+
 						}
-						Logger.debug("\tUse Boxes: ");
-						for(ValueBox vb : use) {
-							Logger.debug("\t\t" + vb.getValue().toString());
-						}
+
 
 					}
 				}
 			}
 		}
-		for(Map.Entry<ValueBox, List<Stmt>> ie : assignments.entrySet()) {
-			Logger.debug(ie.getKey().toString() + " -> " + ie.getValue().size());
+		for(Map.Entry<ValueBox, SSAPhi> ie : final_phis.entrySet()) {
+			Logger.info(ie.getValue().get_phi_str());
 		}
-
 		/*try {
 			SootMethod m = body.getMethod();
 			System.out.println("inside method: " + m.getSignature());
