@@ -170,37 +170,22 @@ public class Analysis extends BodyTransformer {
 		LoopFinder lf = new LoopFinder();
 		Set<Loop> loops = lf.getLoops(body);
 		Map <ValueBox, List<Stmt>> assignments = new HashMap<>();
-		Map <ValueBox, SSAPhi> final_phis = new HashMap<>();
+		Map <String, ArraySSAPhi> final_phis = new HashMap<>();
 		for(Loop l : loops) {
+			ArraySSAVisitor visitor = new ArraySSAVisitor(final_phis);
 			Logger.debug("Found a loop with head: " + l.getHead().toString());
 			List<Stmt> stmts = l.getLoopStatements();
 			for(Stmt s : stmts) {
+				s.apply(visitor);
+				final_phis = visitor.get_phis();
 				if(s instanceof AssignStmt) {
+
 					AssignStmt as = (AssignStmt) s;
-					if(as.containsArrayRef()) {
-						ValueBox left = as.getLeftOpBox();
-						ValueBox right = as.getRightOpBox();
-//						Logger.debug("\t LEFT " + left.getValue());
-//						Logger.debug("\t RIGHT " + right.getValue());
-						if(Objects.equals(as.getArrayRefBox(), left)) {
-							Logger.info("\tWe are writing to an array, the following transform should be made!");
-							ArrayRef array_ref = as.getArrayRef();
-							ValueBox base = array_ref.getBaseBox();
-							ValueBox index = array_ref.getIndexBox();
-							String new_name = final_phis.computeIfAbsent(base, k -> new SSAPhi(base)).add_copy();
-							Logger.info("\t Original: " + as.toString());
-							Logger.info("\t " + String.format(Constants.SSA_ARRAY_CPY, base.getValue().toString(), new_name));
-							Logger.info("\t " + String.format(Constants.SSA_ASSIGNMENT,
-									new_name, index.getValue().toString(), right.getValue().toString()));
 
-						}
-
-
-					}
 				}
 			}
 		}
-		for(Map.Entry<ValueBox, SSAPhi> ie : final_phis.entrySet()) {
+		for(Map.Entry<String, ArraySSAPhi> ie : final_phis.entrySet()) {
 			Logger.info(ie.getValue().get_phi_str());
 		}
 		/*try {

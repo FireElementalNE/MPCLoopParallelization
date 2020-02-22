@@ -15,6 +15,8 @@ public class Constants {
     static final String SSA_ARRAY_CPY = "arraycopy(%s, %s)";
     static final String SSA_ASSIGNMENT = "%s[%s] =  %s";
     static final String SSA_PHI = "phi(%s, %s)";
+    static final String SSA_NAME = "%s_%d";
+    static final String ARRAY_REF = "%s[%s]";
 }
 
 

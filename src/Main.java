@@ -13,7 +13,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Objects;
+import java.util.*;
 
 public class Main {
 
@@ -205,6 +205,9 @@ public class Main {
 		String classpath = cmd.getOptionValue("classpath");
 		String klass = cmd.getOptionValue("class");
 		Main m = new Main();
+
+
+
 		m.performAnalysis(classpath, klass, rtpath, jcepath);
 	}
 }
