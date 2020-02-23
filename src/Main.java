@@ -44,6 +44,7 @@ public class Main {
 	}
 
 	private static void compile_programs() {
+		// TODO: create out folder if it does not exist
 		File res = new File(Constants.RESOURCE_SRC);
 		String[] files = res.list();
 		compile_program(Constants.UTILS_JAVA_FILE);
