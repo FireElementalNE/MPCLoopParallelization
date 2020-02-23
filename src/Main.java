@@ -17,87 +17,10 @@ import java.util.*;
 
 public class Main {
 
-	private static String RT_PATH = Util.rt_path();
-	private static String JCE_PATH = Util.jce_path();
+	private static String RT_PATH = Utils.rt_path();
+	private static String JCE_PATH = Utils.jce_path();
 
-	public void performAnalysis(String classpath, String klass, 
-			String rtpath, String jcepath) {
-
-
-		if(SystemUtils.IS_OS_WINDOWS) {
-			Logger.info( "Running on Windows OS.");
-
-		} else if(SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_LINUX) {
-			Logger.info( "Running on unix-like OS.");
-		}
-		classpath = classpath + Util.get_sep() + rtpath + Util.get_sep() + jcepath;
-
-		Logger.debug(String.format("CLASSPATH: %s", classpath));
-		Logger.debug(String.format("CLASS: %s", klass));
-
-		String[] args = new String[18];
-		int largeValue = 1000000;
-		int i = 0;
-
-		args[i++] = "-w";
-		args[i++] = "-p";
-		args[i++] = "wjop";
-		args[i++] = "on";
-		args[i++] = "-p";
-		args[i++] = "wjop.si";
-		args[i++] = "expansion-factor:" + largeValue;
-		args[i++] = "-p";
-		args[i++] = "wjop.si";
-		args[i++] = "max-container-size:" + largeValue;
-		args[i++] = "-p";
-		args[i++] = "wjop.si";
-		args[i++] = "max-inlinee-size:" + largeValue;
-		// -f J causes Soot to write out .jimple files. The default output directory is sootOutput
-		// which is usually located in the same directory as src.
-		args[i++] = "-f";
-		args[i++] = "shimple"; //args[i++] = "J";
-
-		// -cp specifies the class path. Must include a path to the application classes, and the rt.jar
-		args[i++] = "-cp";
-		args[i++] = classpath;
-		// specifies the class that contains the "main" method
-		args[i] = klass;
-
-		long startTime = System.currentTimeMillis();
-
-		// Code hooks the Analysis then launches Soot, which traverses 
-		PackManager pm = PackManager.v();
-		Pack p = pm.getPack("stp");
-
-		//        Iterator<Transform> iterator = stp.iterator();
-		//        Transform last = null;
-		//        while(iterator.hasNext()) {
-		//          last = iterator.next();
-		//        }
-
-		//        String phaseName = last.getPhaseName();
-		Analysis analysis = new Analysis(); 
-		Transform t = new Transform("stp.mixedprotocols", analysis);
-		//p.insertAfter(t, phaseName);
-		//p.insertAfter(t, "sop.cpf");
-		p.add(t);
-
-		soot.Main.main(args);
-
-		//        String outputDir = SourceLocator.v().getOutputDir();
-
-		// analysis.showResult();
-
-		long endTime   = System.currentTimeMillis();
-		String running_time_str = String.format("INFO: Total running time: %.2f sec", ((float)(endTime - startTime) / 1000));
-		Logger.info(running_time_str);
-	}
-
-//	public void performAnalysis(String classpath, String klass) {
-//		performAnalysis(classpath, klass, RT_PATH, JCE_PATH);
-//	}
-
-	public static void compile_program(String file) {
+	private static void compile_program(String file) {
 		boolean errors_found = false;
 		try {
 			Process p = Runtime.getRuntime().exec(String.format(Constants.COMPILE_CMD, file));
@@ -120,7 +43,7 @@ public class Main {
 		}
 	}
 
-	public static void compile_programs() {
+	private static void compile_programs() {
 		File res = new File(Constants.RESOURCE_SRC);
 		String[] files = res.list();
 		compile_program(Constants.UTILS_JAVA_FILE);
@@ -208,6 +131,53 @@ public class Main {
 
 
 
-		m.performAnalysis(classpath, klass, rtpath, jcepath);
+		if(SystemUtils.IS_OS_WINDOWS) {
+			Logger.info( "Running on Windows OS.");
+
+		} else if(SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_LINUX) {
+			Logger.info( "Running on unix-like OS.");
+		}
+		classpath = classpath + Utils.get_sep() + rtpath + Utils.get_sep() + jcepath;
+
+		Logger.debug(String.format("CLASSPATH: %s", classpath));
+		Logger.debug(String.format("CLASS: %s", klass));
+
+		List <String> args = new ArrayList<>();
+		args.add("-w");
+		args.add("-p");
+		args.add("stp");
+		args.add("on");
+		// -f J causes Soot to write out .jimple files. The default output directory is sootOutput
+		// which is usually located in the same directory as src.
+		args.add("-f");
+		args.add("shimple"); //args[i++] = "J";
+
+		// -cp specifies the class path. Must include a path to the application classes, and the rt.jar
+		args.add("-cp");
+		args.add(classpath);
+		// specifies the class that contains the "main" method
+		args.add(klass);
+
+		long startTime = System.currentTimeMillis();
+
+		// Code hooks the Analysis then launches Soot, which traverses
+		PackManager pm = PackManager.v();
+		Pack p = pm.getPack("stp");
+
+		Analysis analysis = new Analysis();
+		Transform t = new Transform("stp.mixedprotocols", analysis);
+		//p.insertAfter(t, phaseName);
+		//p.insertAfter(t, "sop.cpf");
+		p.add(t);
+
+		soot.Main.main(args.toArray(new String[0]));
+
+		//        String outputDir = SourceLocator.v().getOutputDir();
+
+		// analysis.showResult();
+
+		long endTime   = System.currentTimeMillis();
+		String running_time_str = String.format("INFO: Total running time: %.2f sec", ((float)(endTime - startTime) / 1000));
+		Logger.info(running_time_str);
 	}
 }

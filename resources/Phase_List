@@ -1,0 +1,145 @@
+"C:\Program Files\Java\jdk1.8.0_221\bin\java.exe" "-javaagent:C:\Program Files\JetBrains\IntelliJ IDEA 2019.2.3\lib\idea_rt.jar=62751:C:\Program Files\JetBrains\IntelliJ IDEA 2019.2.3\bin" -Dfile.encoding=UTF-8 -classpath "C:\Program Files\Java\jdk1.8.0_221\jre\lib\charsets.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\deploy.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\ext\access-bridge-64.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\ext\cldrdata.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\ext\dnsns.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\ext\jaccess.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\ext\jfxrt.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\ext\localedata.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\ext\nashorn.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\ext\sunec.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\ext\sunjce_provider.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\ext\sunmscapi.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\ext\sunpkcs11.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\ext\zipfs.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\javaws.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\jce.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\jfr.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\jfxswt.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\jsse.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\management-agent.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\plugin.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\resources.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\rt.jar;C:\Users\fire\Desktop\research\MPCLoopParallelization\out\production\MPCLoopParallelization;C:\Users\fire\.m2\repository\ca\mcgill\sable\soot\4.0.0\soot-4.0.0.jar;C:\Users\fire\.m2\repository\commons-io\commons-io\2.6\commons-io-2.6.jar;C:\Users\fire\.m2\repository\org\smali\dexlib2\2.2.7\dexlib2-2.2.7.jar;C:\Users\fire\.m2\repository\com\google\code\findbugs\jsr305\1.3.9\jsr305-1.3.9.jar;C:\Users\fire\.m2\repository\com\google\guava\guava\18.0\guava-18.0.jar;C:\Users\fire\.m2\repository\org\ow2\asm\asm\7.1\asm-7.1.jar;C:\Users\fire\.m2\repository\org\ow2\asm\asm-tree\7.1\asm-tree-7.1.jar;C:\Users\fire\.m2\repository\org\ow2\asm\asm-util\7.1\asm-util-7.1.jar;C:\Users\fire\.m2\repository\org\ow2\asm\asm-analysis\7.1\asm-analysis-7.1.jar;C:\Users\fire\.m2\repository\org\ow2\asm\asm-commons\7.1\asm-commons-7.1.jar;C:\Users\fire\.m2\repository\xmlpull\xmlpull\1.1.3.4d_b4_min\xmlpull-1.1.3.4d_b4_min.jar;C:\Users\fire\.m2\repository\de\upb\cs\swt\axml\2.0.0\axml-2.0.0.jar;C:\Users\fire\.m2\repository\ca\mcgill\sable\polyglot\2006\polyglot-2006.jar;C:\Users\fire\.m2\repository\de\upb\cs\swt\heros\1.2.0\heros-1.2.0.jar;C:\Users\fire\.m2\repository\org\functionaljava\functionaljava\4.2\functionaljava-4.2.jar;C:\Users\fire\.m2\repository\ca\mcgill\sable\jasmin\3.0.2\jasmin-3.0.2.jar;C:\Users\fire\.m2\repository\ca\mcgill\sable\java_cup\0.9.2\java_cup-0.9.2.jar;C:\Users\fire\.m2\repository\org\slf4j\slf4j-api\1.7.5\slf4j-api-1.7.5.jar;C:\Users\fire\.m2\repository\org\mockito\mockito-core\3.2.0\mockito-core-3.2.0.jar;C:\Users\fire\.m2\repository\net\bytebuddy\byte-buddy\1.10.3\byte-buddy-1.10.3.jar;C:\Users\fire\.m2\repository\net\bytebuddy\byte-buddy-agent\1.10.3\byte-buddy-agent-1.10.3.jar;C:\Users\fire\.m2\repository\org\objenesis\objenesis\2.6\objenesis-2.6.jar;C:\Users\fire\.m2\repository\org\powermock\powermock-api-mockito2\2.0.4\powermock-api-mockito2-2.0.4.jar;C:\Users\fire\.m2\repository\org\powermock\powermock-api-support\2.0.4\powermock-api-support-2.0.4.jar;C:\Users\fire\.m2\repository\org\powermock\powermock-reflect\2.0.4\powermock-reflect-2.0.4.jar;C:\Users\fire\.m2\repository\org\powermock\powermock-core\2.0.4\powermock-core-2.0.4.jar;C:\Users\fire\.m2\repository\org\javassist\javassist\3.25.0-GA\javassist-3.25.0-GA.jar;C:\Users\fire\.m2\repository\org\powermock\powermock-module-junit4\2.0.4\powermock-module-junit4-2.0.4.jar;C:\Users\fire\.m2\repository\org\powermock\powermock-module-junit4-common\2.0.4\powermock-module-junit4-common-2.0.4.jar;C:\Users\fire\.m2\repository\junit\junit\4.12\junit-4.12.jar;C:\Users\fire\.m2\repository\org\hamcrest\hamcrest-core\1.3\hamcrest-core-1.3.jar;C:\Users\fire\.m2\repository\javax\annotation\javax.annotation-api\1.3.2\javax.annotation-api-1.3.2.jar;C:\Users\fire\.m2\repository\javax\xml\bind\jaxb-api\2.4.0-b180725.0427\jaxb-api-2.4.0-b180725.0427.jar;C:\Users\fire\.m2\repository\javax\activation\javax.activation-api\1.2.0\javax.activation-api-1.2.0.jar;C:\Users\fire\.m2\repository\org\glassfish\jaxb\jaxb-runtime\2.4.0-b180830.0438\jaxb-runtime-2.4.0-b180830.0438.jar;C:\Users\fire\.m2\repository\org\glassfish\jaxb\txw2\2.4.0-b180830.0438\txw2-2.4.0-b180830.0438.jar;C:\Users\fire\.m2\repository\com\sun\istack\istack-commons-runtime\3.0.7\istack-commons-runtime-3.0.7.jar;C:\Users\fire\.m2\repository\org\jvnet\staxex\stax-ex\1.8\stax-ex-1.8.jar;C:\Users\fire\.m2\repository\com\sun\xml\fastinfoset\FastInfoset\1.2.15\FastInfoset-1.2.15.jar;C:\Users\fire\.m2\repository\commons-cli\commons-cli\1.4\commons-cli-1.4.jar;C:\Users\fire\.m2\repository\com\google\code\gson\gson\2.8.6\gson-2.8.6.jar;C:\Users\fire\.m2\repository\org\apache\commons\commons-lang3\3.3.2\commons-lang3-3.3.2.jar;C:\Users\fire\.m2\repository\org\tinylog\tinylog\1.3.6\tinylog-1.3.6.jar" Main -c Test0 -cp resources/out -compile
+[2020-02-23 17:27:57][compile_program][Main.java:119][INFO]: Finished Compiling Utils.java
+[2020-02-23 17:27:57][compile_program][Main.java:119][INFO]: Finished Compiling Test0.java
+[2020-02-23 17:27:58][compile_program][Main.java:119][INFO]: Finished Compiling Test1.java
+[2020-02-23 17:27:58][compile_program][Main.java:119][INFO]: Finished Compiling Test2.java
+[2020-02-23 17:27:58][performAnalysis][Main.java:28][INFO]: Running on Windows OS.
+[2020-02-23 17:27:58][performAnalysis][Main.java:35][DEBUG]: CLASSPATH: resources/out;C:\Program Files\Java\jdk1.8.0_221\jre\lib\rt.jar;C:\Program Files\Java\jdk1.8.0_221\jre\lib\jce.jar
+[2020-02-23 17:27:58][performAnalysis][Main.java:36][DEBUG]: CLASS: Test0
+SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+ jb                            Creates a JimpleBody for each method
+    jb.dtr                       Reduces chains of catch-all traps
+    jb.ese                       Removes empty switch statements
+    jb.ls                        Local splitter: one local per DU-UD web
+    jb.a                         Aggregator: removes some unnecessary copies
+    jb.ule                       Unused local eliminator
+    jb.tr                        Assigns types to locals
+    jb.ulp                       Local packer: minimizes number of locals
+    jb.lns                       Local name standardizer
+    jb.cp                        Copy propagator
+    jb.dae                       Dead assignment eliminator
+    jb.cp-ule                    Post-copy propagation unused local eliminator
+    jb.lp                        Local packer: minimizes number of locals
+    jb.ne                        Nop eliminator
+    jb.uce                       Unreachable code eliminator
+    jb.tt                        Trap Tightener
+ jj                            Creates a JimpleBody for each method directly
+                               from source
+    jj.ls                        Local splitter: one local per DU-UD web
+    jj.a                         Aggregator: removes some unnecessary copies
+    jj.ule                       Unused local eliminator
+    jj.tr                        Assigns types to locals
+    jj.ulp                       Local packer: minimizes number of locals
+    jj.lns                       Local name standardizer
+    jj.cp                        Copy propagator
+    jj.dae                       Dead assignment eliminator
+    jj.cp-ule                    Post-copy propagation unused local eliminator
+    jj.lp                        Local packer: minimizes number of locals
+    jj.ne                        Nop eliminator
+    jj.uce                       Unreachable code eliminator
+ wjpp                          Whole Jimple Pre-processing Pack
+    wjpp.cimbt                   Replaces base objects of calls to
+                                 Method.invoke() that are string constants by
+                                 locals
+ wspp                          Whole Shimple Pre-processing Pack
+ cg                            Call graph constructor
+    cg.cha                       Builds call graph using Class Hierarchy
+                                 Analysis
+    cg.spark                     Spark points-to analysis framework
+    cg.paddle                    Paddle points-to analysis framework
+ wstp                          Whole-shimple transformation pack
+ wsop                          Whole-shimple optimization pack
+ wjtp                          Whole-jimple transformation pack
+    wjtp.mhp                     Determines what statements may be run
+                                 concurrently
+    wjtp.tn                      Finds critical sections, allocates locks
+    wjtp.rdc                     Rename duplicated classes when the file
+                                 system is not case sensitive
+ wjop                          Whole-jimple optimization pack
+    wjop.smb                     Static method binder: Devirtualizes
+                                 monomorphic calls
+    wjop.si                      Static inliner: inlines monomorphic calls
+ wjap                          Whole-jimple annotation pack: adds
+                               interprocedural tags
+    wjap.ra                      Rectangular array finder
+    wjap.umt                     Tags all unreachable methods
+    wjap.uft                     Tags all unreachable fields
+    wjap.tqt                     Tags all qualifiers that could be tighter
+    wjap.cgg                     Creates graphical call graph.
+    wjap.purity                  Emit purity attributes
+ shimple                       Sets parameters for Shimple SSA form
+ stp                           Shimple transformation pack
+ sop                           Shimple optimization pack
+    sop.cpf                      Shimple constant propagator and folder
+ jtp                           Jimple transformation pack: intraprocedural
+                               analyses added to Soot
+ jop                           Jimple optimization pack (intraprocedural)
+    jop.cse                      Common subexpression eliminator
+    jop.bcm                      Busy code motion: unaggressive partial
+                                 redundancy elimination
+    jop.lcm                      Lazy code motion: aggressive partial
+                                 redundancy elimination
+    jop.cp                       Copy propagator
+    jop.cpf                      Constant propagator and folder
+    jop.cbf                      Conditional branch folder
+    jop.dae                      Dead assignment eliminator
+    jop.nce                      Null Check Eliminator
+    jop.uce1                     Unreachable code eliminator, pass 1
+    jop.ubf1                     Unconditional branch folder, pass 1
+    jop.uce2                     Unreachable code eliminator, pass 2
+    jop.ubf2                     Unconditional branch folder, pass 2
+    jop.ule                      Unused local eliminator
+ jap                           Jimple annotation pack: adds intraprocedural
+                               tags
+    jap.npc                      Null pointer checker
+    jap.npcolorer                Null pointer colourer: tags references for
+                                 eclipse
+    jap.abc                      Array bound checker
+    jap.profiling                Instruments null pointer and array checks
+    jap.sea                      Side effect tagger
+    jap.fieldrw                  Field read/write tagger
+    jap.cgtagger                 Call graph tagger
+    jap.parity                   Parity tagger
+    jap.pat                      Colour-codes method parameters that may be
+                                 aliased
+    jap.lvtagger                 Creates color tags for live variables
+    jap.rdtagger                 Creates link tags for reaching defs
+    jap.che                      Indicates whether cast checks can be
+                                 eliminated
+    jap.umt                      Inserts assertions into unreachable methods
+    jap.lit                      Tags loop invariants
+    jap.aet                      Tags statements with sets of available
+                                 expressions
+    jap.dmt                      Tags dominators of statement
+ gb                            Creates a GrimpBody for each method
+    gb.a1                        Aggregator: removes some copies, pre-folding
+    gb.cf                        Constructor folder
+    gb.a2                        Aggregator: removes some copies, post-folding
+    gb.ule                       Unused local eliminator
+ gop                           Grimp optimization pack
+ bb                            Creates Baf bodies
+    bb.lso                       Load store optimizer
+    bb.sco                       Store chain optimizer
+    bb.pho                       Peephole optimizer
+    bb.ule                       Unused local eliminator
+    bb.lp                        Local packer: minimizes number of locals
+ bop                           Baf optimization pack
+ tag                           Tag aggregator: turns tags into attributes
+    tag.ln                       Line number aggregator
+    tag.an                       Array bounds and null pointer check
+                                 aggregator
+    tag.dep                      Dependence aggregator
+    tag.fieldrw                  Field read/write aggregator
+ db                            Dummy phase to store options for Dava
+    db.transformations           The Dava back-end with all its
+                                 transformations
+    db.renamer                   Apply heuristics based naming of local
+                                 variables
+    db.deobfuscate               Apply de-obfuscation analyses
+    db.force-recompile           Try to get recompilable code.
+
+[2020-02-23 17:27:58][performAnalysis][Main.java:93][INFO]: INFO: Total running time: 0.08 sec
+
+Process finished with exit code 0

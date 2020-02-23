@@ -8,15 +8,17 @@ import org.pmw.tinylog.Logger;
 
 class ArraySSAVisitor extends AbstractStmtSwitch {
     private Map<String, ArraySSAPhi> phis;
-    ArraySSAVisitor(Map <String, ArraySSAPhi> phis) {
+    private ArrayDefUseGraph graph;
+    ArraySSAVisitor(Map <String, ArraySSAPhi> phis, ArrayDefUseGraph graph) {
         this.phis = phis;
+        this.graph = graph;
     }
 
     Map <String, ArraySSAPhi> get_phis() {
         return phis;
     }
 
-    public void array_ssa_assignment(AssignStmt stmt) {
+    private void array_ssa_assignment(AssignStmt stmt) {
         ValueBox right = stmt.getRightOpBox();
         Logger.info("We are writing to an array, the following transform should be made!");
         ArrayRef array_ref = stmt.getArrayRef();
@@ -24,30 +26,35 @@ class ArraySSAVisitor extends AbstractStmtSwitch {
         ValueBox index = array_ref.getIndexBox();
         String base_name = base.getValue().toString();
         if(!phis.containsKey(base_name)) {
-            phis.put(base_name, new ArraySSAPhi((base)));
+            phis.put(base_name, new ArraySSAPhi(base, stmt));
         } else {
-            phis.get(base_name).add_copy();
+            phis.get(base_name).add_copy(stmt);
         }
+
         Logger.info(" Original: " + stmt.toString());
         Logger.info(" " + String.format(Constants.SSA_ARRAY_CPY,
                 phis.get(base_name).get_prev_copy(),
-                phis.get(base_name).get_latest_copy()));
+                phis.get(base_name).get_latest_name()));
         Logger.info(" " + String.format(Constants.SSA_ASSIGNMENT,
-                phis.get(base_name).get_latest_copy(),
+                phis.get(base_name).get_latest_name(),
                 index.getValue().toString(), right.getValue().toString()));
     }
 
-    public void check_array_ref(ArrayRef array_ref, Stmt stmt) {
+    private void check_array_ref(ArrayRef array_ref, Stmt stmt) {
         ValueBox base = array_ref.getBaseBox();
         ValueBox index = array_ref.getIndexBox();
         String base_name = base.getValue().toString();
         String index_name = index.getValue().toString();
         if(phis.containsKey(base_name)) {
-            Logger.info("Statement contains stale array ref.");
+            Logger.info("Statement contains stale array ref. Dependency found.");
             Logger.debug(" Original: " + stmt.toString());
             Logger.info(" " + array_ref.toString()
                     + " should be changed to " + String.format(Constants.ARRAY_REF,
-                    phis.get(base_name).get_latest_copy(), index_name));
+                    phis.get(base_name).get_latest_name(), index_name));
+            AssignStmt assign_stmt = phis.get(base_name).get_latest_definition();
+            Logger.info(String.format(Constants.DEPENDS_STMT, stmt, assign_stmt));
+            graph.add_edge(new Edge(new Node(assign_stmt), new Node(stmt)));
+
         }
     }
 
@@ -63,7 +70,6 @@ class ArraySSAVisitor extends AbstractStmtSwitch {
             check_array_ref(stmt.getArrayRef(), stmt);
         }
     }
-
 
     @Override
     public void caseAssignStmt(AssignStmt stmt) {

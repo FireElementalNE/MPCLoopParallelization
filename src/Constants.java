@@ -1,6 +1,6 @@
 import java.util.ArrayList;
 import java.util.Arrays;
-public class Constants {
+class Constants {
     static final boolean DEBUG = true;
     private static final String[] EXCLUDES_INTERNAL = new String[] { "jdk.*" };
     static final ArrayList<String> EXCLUDES = new ArrayList<>(Arrays.asList(EXCLUDES_INTERNAL));
@@ -17,6 +17,7 @@ public class Constants {
     static final String SSA_PHI = "phi(%s, %s)";
     static final String SSA_NAME = "%s_%d";
     static final String ARRAY_REF = "%s[%s]";
+    static final String DEPENDS_STMT = "Use '%s' depends on Definition '%s'";
 }
 
 
