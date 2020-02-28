@@ -1,12 +1,10 @@
 import java.lang.reflect.Array;
 import java.util.Arrays;
 class Utils {
-    static  Object arraycopy(Object a) {
-        if(a.getClass().isArray()) {
-            Object b = a; // Not a true deep copy...
-            return b;
-        }
-        return null;
+    static Object arraycopy(Object a) {
+        return new Object();
     }
-    static void phi(Object a, Object a1) {}
+    static Object phi(Object a, Object a1) {
+        return new Object();
+    }
 }

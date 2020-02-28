@@ -11,6 +11,15 @@ class Test0 {
     static int f4(int a, int b) {
         return Math.abs(a ^ b);
     }
+    static int[] make_arr() {
+        int a[] = new int[5];
+        a[0] = 1;
+        a[1] = 2;
+        a[2] = 3;
+        a[3] = 4;
+        a[4] = 5;
+        return a;
+    }
     public static void main(String[] args) {
         int N = 5;
         int[] A = {1, 2, 3, 4, 5};

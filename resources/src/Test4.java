@@ -1,13 +1,13 @@
 import java.util.Objects;
 
-class Test1 {
+class Test4 {
+    static double[] a = new double[5];
+    //        double[] a1 = new double[a.length];
+    static int i = 1;
+    static int z = 10;
+    static int p = 20;
     public static void main(String[] args) {
-        double[] a = new double[5];
-//        double[] a1 = new double[a.length];
-        int i = 1;
-        int z = 10;
-        int p = 20;
-        while(i < 5) {
+        for(int i = 0; i < a.length; i++) {
 //            Utils.phi(a, a1);
 //            a1 = (double[])Utils.arraycopy(a);
 //            assert !Objects.equals(a1, null);
@@ -16,7 +16,6 @@ class Test1 {
             a[i] = i + a[i];
             if(a[i] > 3) {
                 a[i] = p * i + z;
-                a[i] = z * i + p;
             } else {
                 a[i] = p * i - z;
             }

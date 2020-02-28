@@ -1,33 +1,32 @@
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 class ArrayDefUseGraph {
     private Map<Integer, Edge> edges;
-    private List<Node> nodes;
+    private Map<String, Node> nodes;
+
 
     ArrayDefUseGraph() {
         edges = new HashMap<>();
-        nodes = new ArrayList<>();
+        nodes = new HashMap<>();
     }
 
-
-    void add_edge(Edge edge) {
+    void add_node(Node node, boolean is_def) {
+        nodes.put(node.get_id(), node);
+        if(!is_def) {
+            add_edge(node);
+        }
+    }
+    @SuppressWarnings("WeakerAccess")
+    void add_edge(Node use_node) {
+        assert nodes.containsKey(Utils.use_to_def_id(use_node.get_id()));
+        Edge edge = new Edge(nodes.get(Utils.use_to_def_id(use_node.get_id())), use_node);
         edges.put(edge.hashCode(), edge);
-        if(!nodes.contains(edge.get_def())) {
-            nodes.add(edge.get_def());
-        }
-        if(!nodes.contains(edge.get_use())) {
-            nodes.add(edge.get_use());
-        }
-    }
 
+    }
     Map<Integer, Edge> get_edges() {
         return edges;
     }
-
-    List<Node> get_nodes() {
+    Map<String, Node> get_nodes() {
         return nodes;
     }
 }

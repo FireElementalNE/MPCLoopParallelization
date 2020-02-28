@@ -17,13 +17,6 @@ class Edge {
         return use;
     }
 
-    void set_def_phi(ArraySSAPhi phi) {
-        def.set_phi(phi);
-    }
-
-    void set_use_phi(ArraySSAPhi phi) {
-        use.set_phi(phi);
-    }
 
     @Override
     public int hashCode() {

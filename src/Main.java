@@ -7,13 +7,15 @@ import org.pmw.tinylog.writers.FileWriter;
 import soot.Pack;
 import soot.PackManager;
 import soot.Transform;
-import soot.options.SIOptions;
+import soot.options.Options;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 public class Main {
 
@@ -63,7 +65,7 @@ public class Main {
 				.formatPattern("[{date}][{method}][{file}:{line}][{level}]: {message}")
 				.activate();
 
-		Options options = new Options();
+		org.apache.commons.cli.Options options = new org.apache.commons.cli.Options();
 
 		Option r = Option.builder("r")
 				.hasArg()
@@ -127,9 +129,6 @@ public class Main {
 		String jcepath = cmd.getOptionValue("jcepath", JCE_PATH);
 		String classpath = cmd.getOptionValue("classpath");
 		String klass = cmd.getOptionValue("class");
-		Main m = new Main();
-
-
 
 		if(SystemUtils.IS_OS_WINDOWS) {
 			Logger.info( "Running on Windows OS.");
@@ -145,7 +144,7 @@ public class Main {
 		List <String> args = new ArrayList<>();
 		args.add("-w");
 		args.add("-p");
-		args.add("stp");
+		args.add("wstp");
 		args.add("on");
 		// -f J causes Soot to write out .jimple files. The default output directory is sootOutput
 		// which is usually located in the same directory as src.
@@ -159,13 +158,14 @@ public class Main {
 		args.add(klass);
 
 		long startTime = System.currentTimeMillis();
+		Options.v().set_whole_shimple(true);
 
 		// Code hooks the Analysis then launches Soot, which traverses
 		PackManager pm = PackManager.v();
 		Pack p = pm.getPack("stp");
 
 		Analysis analysis = new Analysis();
-		Transform t = new Transform("stp.mixedprotocols", analysis);
+		Transform t = new Transform("stp.arrayssa", analysis);
 		//p.insertAfter(t, phaseName);
 		//p.insertAfter(t, "sop.cpf");
 		p.add(t);

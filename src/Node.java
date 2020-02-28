@@ -1,33 +1,39 @@
+import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
 import soot.jimple.Stmt;
 
 class Node {
     private Stmt stmt;
     private DefOrUse type;
-    private ArraySSAPhi phi;
+    private String base_name;
 
-    Node(Stmt stmt) {
+
+    Node(Stmt stmt, ArrayRef aref) {
+        assert !(stmt instanceof AssignStmt);
         this.stmt = stmt;
         this.type = DefOrUse.USE;
-        this.phi = null;
+        this.base_name = aref.getBaseBox().getValue().toString();
+    }
+
+    Node(AssignStmt stmt, ArrayRef aref) {
+        this.stmt = stmt;
+        this.type = DefOrUse.DEF;
+        this.base_name = aref.getBaseBox().getValue().toString();
     }
 
     Node(AssignStmt stmt) {
+        // phi
         this.stmt = stmt;
         this.type = DefOrUse.DEF;
-    }
-
-    void set_phi(ArraySSAPhi phi) {
-        this.phi = phi;
+        this.base_name = stmt.getLeftOpBox().getValue().toString();
     }
 
     Stmt get_stmt() {
         return stmt;
     }
 
-    @Override
-    public int hashCode() {
-        return System.identityHashCode(stmt);
+    String get_id() {
+        return base_name + "_" + type.toString();
     }
 
 }
