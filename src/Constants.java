@@ -10,7 +10,7 @@ class Constants {
     static final String JCE_PATH_WINDOWS = "C:\\Program Files\\Java\\jdk1.8.0_221\\jre\\lib\\jce.jar";
     static final String RT_PATH_UNIX = "/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/rt.jar";
     static final String JCE_PATH_UNIX = "/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/jce.jar";
-    static final String UTILS_JAVA_FILE = "Utils.java";
+    static final String UTILS_JAVA_FILE = "src/Utils.java";
     static final String COMPILE_CMD = "javac %s -d %s -cp %s";
     static final String RESOURCE_SRC = "./resources/src/";
     static final String RESOURCE_OUT = "./resources/out/";
