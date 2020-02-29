@@ -11,7 +11,7 @@ class Constants {
     static final String RT_PATH_UNIX = "/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/rt.jar";
     static final String JCE_PATH_UNIX = "/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/jce.jar";
     static final String UTILS_JAVA_FILE = "Utils.java";
-    static final String COMPILE_CMD = "javac ./resources/src/%s -d ./resources/out -cp ./resources/out";
+    static final String COMPILE_CMD = "javac %s -d %s -cp %s";
     static final String RESOURCE_SRC = "./resources/src/";
     static final String RESOURCE_OUT = "./resources/out/";
     static final String SSA_ARRAY_CPY = "arraycopy(%s, %s)";
@@ -26,6 +26,10 @@ class Constants {
     static final String ARR_VER_STR = "%s_%d";
     static final String ARR_PHI_STR = "phi(%s, %s)";
     static final Pattern BLOCK_RE = Pattern.compile("^(Block\\s\\d+)");
+    static final String DEFAULT_CP = "resources/out";
+    static final String DEFAULT_SD = "resources/src";
+    static final String DEFAILT_RT_PATH = Utils.rt_path();
+    static final String DEFAILT_JCE_PATH = Utils.jce_path();
 }
 
 

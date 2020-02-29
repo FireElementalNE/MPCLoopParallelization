@@ -1,5 +1,7 @@
 import org.apache.commons.lang3.SystemUtils;
 import soot.toolkits.graph.Block;
+
+import java.io.File;
 import java.util.Objects;
 import java.util.regex.Matcher;
 
@@ -20,21 +22,19 @@ class Utils {
 	}
 
 	static String get_sep() {
-		if (SystemUtils.IS_OS_WINDOWS) {
-			return ";";
-		}
-		return ":";
+		return File.pathSeparator;
+//		if (SystemUtils.IS_OS_WINDOWS) {
+//			return ";";
+//		}
+//		return ":";
 	}
 
-	@SuppressWarnings("unused")
-	static String def_to_use_id(String id) {
-		String[] s = id.split("_");
-		return s[0] + "_" + DefOrUse.USE.toString();
-	}
-
-	static String use_to_def_id(String id) {
-		String[] s = id.split("_");
-		return s[0] + "_" + DefOrUse.DEF.toString();
+	static String get_path_sep() {
+		return File.separator;
+//		if (SystemUtils.IS_OS_WINDOWS) {
+//			return ";";
+//		}
+//		return ":";
 	}
 
 	static boolean not_null(Object o) {

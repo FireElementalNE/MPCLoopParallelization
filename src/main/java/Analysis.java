@@ -21,18 +21,18 @@ public class Analysis extends BodyTransformer {
 	private Set<Block> seen_blocks1;
 	private Set<Block> seen_blocks2;
 	private Set<ImmutablePair<String, String>> loop_head_exits;
-	private Set<String> array_vars;
+	private Map<String, ArrayVersion> array_vars;
+	private ArrayDefUseGraph graph;
 	// TODO: we need to keep track of arrays that are reassigned otherwise we will
 	// TODO:  never find the correct versions when we are looking in c_arr_ver.
-	private Set<String> array_aliasing;
 	public Analysis() {
 		seen_blocks1 = new HashSet<>();
 		seen_blocks2 = new HashSet<>();
 		c_arr_ver = new HashMap<>();
 		worklist = new LinkedList<>();
 		loop_head_exits = new HashSet<>();
-		array_vars = new HashSet<>();
-		array_aliasing = new HashSet<>();
+		array_vars = new HashMap<>();
+		graph = new ArrayDefUseGraph();
 	}
 
 	private boolean is_loop_head(Unit unit) {
@@ -64,9 +64,10 @@ public class Analysis extends BodyTransformer {
 		// Logger.info(Utils.fill_spaces(sc) + "Preds size: " + b.getPreds().size());
 		Logger.debug(Utils.get_block_name(b) + " head: " + b.getHead().toString());
 		for(Iterator<Unit> i = b.iterator(); i.hasNext();) {
-			ArrayVariableVisitor visitor = new ArrayVariableVisitor(array_aliasing);
+			ArrayVariableVisitor visitor = new ArrayVariableVisitor(array_vars, graph);
 			i.next().apply(visitor);
-			array_vars.addAll(visitor.get_vars());
+			array_vars = visitor.get_vars();
+			this.graph = visitor.get_graph();
 		}
 		if(is_loop_head(b.getHead())) {
 			if(!seen_blocks2.contains(b)) {
@@ -91,7 +92,6 @@ public class Analysis extends BodyTransformer {
 
 	// New Ana Algo!
 	private void find_loop_heads(Body body) {
-		// TODO: populate the array_vars list.
 		LoopFinder lf = new LoopFinder();
 		Set<Loop> loops = lf.getLoops(body);
 		for(Loop l : loops) {
@@ -121,37 +121,39 @@ public class Analysis extends BodyTransformer {
 			// CHECKTHIS: we are assuming we only have 2 pred blocks!
 			Block b2 = pred_blocks.get(1);
 			if (c_arr_ver.containsKey(b1) && c_arr_ver.containsKey(b2)) {
-				for (String s : array_vars) {
+				for (Map.Entry<String, ArrayVersion> entry : array_vars.entrySet()) {
 					DownwardExposedArrayRef daf1 = new DownwardExposedArrayRef(c_arr_ver.get(b1));
 					DownwardExposedArrayRef daf2 = new DownwardExposedArrayRef(c_arr_ver.get(b2));
-					ArrayVersion current_s1 = daf1.get(s);
-					ArrayVersion current_s2 = daf2.get(s);
+					ArrayVersion current_s1 = daf1.get(entry.getKey());
+					ArrayVersion current_s2 = daf2.get(entry.getKey());
 					// TODO: check if phi nodes?
 					if (Utils.not_null(b1) && Utils.not_null(b2)) {
-						if (current_s1.get_v1() != current_s2.get_v1()) {
-							// make a phi node!
-							ArrayVersion av = new ArrayVersion(current_s1.get_v1(), current_s2.get_v1());
-							DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
-							new_daf.put(s, av);
-							// TODO: we need to find the OLD version to set the phi node to (i.e
-							// TODO:  arr_2 = phi(arr_7, arr_6) where arr_2 is a new use of arr_1
-							Logger.info("We made a phi node: " + new_daf.get_name(s));
-							c_arr_ver.put(b, new_daf);
-
-						}
+						// make a phi node!
+						ArrayVersion av = new ArrayVersion(current_s1.get_v1(), current_s2.get_v1());
+						DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
+						new_daf.put(entry.getKey(), av);
+						Logger.info("We made a phi node: " + new_daf.get_name(entry.getKey()));
+						Node n = new Node(entry.getKey(), av);
+						graph.add_node(n, true);
+						c_arr_ver.put(b, new_daf);
+					} else {
+						Logger.info("False phi found!");
+						DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
+						c_arr_ver.put(b, new_daf);
 					}
 				}
 			} else {
 				Logger.warn("Both should already be in c_arr_ver!");
+				System.exit(0);
 			}
 		} else { // we do not have a merge
 			if(!exits.contains(pred_blocks.get(0).getHead().toString())) {
 				DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
 				if (c_arr_ver.containsKey(b1)) {
-					for (String s : array_vars) {
+					for (Map.Entry<String, ArrayVersion> entry : array_vars.entrySet()) {
 						// CHECKTHIS: throwing NullPointerException because of aliasing issue (see top of class)
-						ArrayVersion current_s = new ArrayVersion(c_arr_ver.get(b1).get(s));
-						new_daf.put(s, current_s);
+						ArrayVersion current_s = new ArrayVersion(c_arr_ver.get(b1).get(entry.getKey()));
+						new_daf.put(entry.getKey(), current_s);
 					}
 					c_arr_ver.put(b, new_daf);
 
@@ -164,13 +166,14 @@ public class Analysis extends BodyTransformer {
 		}
 		// process stmts
 		for(Iterator<Unit> i = b.iterator(); i.hasNext();) {
-			BFSVisitor visitor = new BFSVisitor(c_arr_ver, b);
-			ArrayVariableVisitor visitor2 = new ArrayVariableVisitor(array_aliasing);
+			BFSVisitor bfs_visitor = new BFSVisitor(c_arr_ver, b, graph);
+			ArrayVariableVisitor av_visitor = new ArrayVariableVisitor(array_vars, graph);
 			Unit u = i.next();
-			u.apply(visitor);
-			u.apply(visitor2);
-			array_vars.addAll(visitor2.get_vars());
-			c_arr_ver = visitor.get_c_arr_ver();
+			u.apply(bfs_visitor);
+			u.apply(av_visitor);
+			array_vars = av_visitor.get_vars();
+			c_arr_ver = bfs_visitor.get_c_arr_ver();
+			graph = bfs_visitor.get_graph();
 		}
 		List<Block> succ_blocks = b.getSuccs();
 		Logger.debug("We found " + succ_blocks.size() + " successor blocks.");
@@ -187,8 +190,8 @@ public class Analysis extends BodyTransformer {
 
 	private void init_BFS_vars(Block b) {
 		DownwardExposedArrayRef down_ar = new DownwardExposedArrayRef(b);
-		for(String s : array_vars) {
-			down_ar.put(s, new ArrayVersion(1));
+		for (Map.Entry<String, ArrayVersion> entry : array_vars.entrySet()) {
+			down_ar.put(entry.getKey(), new ArrayVersion(1));
 		}
 		c_arr_ver.put(b, down_ar);
 	}
@@ -222,5 +225,8 @@ public class Analysis extends BodyTransformer {
 		}
 		find_loop_heads(body);
 		parse_blocks_start(body);
+
+		Logger.info("Node count: " + graph.get_nodes().size());
+		Logger.info("Edge count: " + graph.get_edges().size());
 	}
 }

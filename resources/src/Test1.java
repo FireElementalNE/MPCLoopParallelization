@@ -2,11 +2,12 @@ import java.util.Objects;
 
 class Test1 {
     public static void main(String[] args) {
-        double[] a = new double[5];
+        int[] a = new int[5];
 //        double[] a1 = new double[a.length];
         int i = 1;
         int z = 10;
         int p = 20;
+        int q = 0;
         while(i < 5) {
 //            Utils.phi(a, a1);
 //            a1 = (double[])Utils.arraycopy(a);
@@ -20,6 +21,7 @@ class Test1 {
             } else {
                 a[i] = p * i - z;
             }
+            q = q + a[i];
             i++;
         }
     }

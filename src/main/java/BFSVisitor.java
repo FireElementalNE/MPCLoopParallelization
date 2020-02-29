@@ -10,22 +10,31 @@ class BFSVisitor extends AbstractStmtSwitch {
     private Map<Block, DownwardExposedArrayRef> c_arr_ver;
     private Block b;
     private DownwardExposedArrayRef daf;
-    BFSVisitor(Map<Block, DownwardExposedArrayRef> c_arr_ver, Block b) {
+    private ArrayDefUseGraph graph;
+    BFSVisitor(Map<Block, DownwardExposedArrayRef> c_arr_ver, Block b, ArrayDefUseGraph graph) {
         this.c_arr_ver = c_arr_ver;
         this.b = b;
         assert c_arr_ver.containsKey(b); // this should always be here!
         this.daf = new DownwardExposedArrayRef(c_arr_ver.get(b));
+        this.graph = new ArrayDefUseGraph(graph);
     }
 
     Map<Block, DownwardExposedArrayRef> get_c_arr_ver() {
         return c_arr_ver;
     }
 
+    ArrayDefUseGraph get_graph() {
+        return graph;
+    }
+
     private void check_array_read(Stmt stmt) {
         String basename = stmt.getArrayRef().getBaseBox().getValue().toString();
-        daf.new_ver(basename);
         Logger.debug("Change needed in stmt: " + stmt.toString());
         Logger.debug(" " + basename + " should be changed to " + daf.get_name(basename));
+        Logger.debug(" " + "This is a use for " + daf.get_name(basename));
+        ArrayVersion av = new ArrayVersion(daf.get(basename));
+        Node new_node = new Node(stmt, basename, av, DefOrUse.USE);
+        graph.add_node(new_node, false);
         c_arr_ver.put(b, daf);
     }
 
@@ -51,6 +60,9 @@ class BFSVisitor extends AbstractStmtSwitch {
                 Logger.debug("Array write found (change needed): " + stmt.toString());
                 daf.new_ver(basename);
                 Logger.debug(" " + basename + " needs to be changed to " + daf.get_name(basename));
+                Logger.debug("This is a new def for " + daf.get_name(basename));
+                ArrayVersion av = new ArrayVersion(daf.get(basename));
+                graph.add_node(new Node(stmt, basename, av, DefOrUse.DEF), true);
                 c_arr_ver.put(b, daf);
             } else {
                 check_array_read(stmt);

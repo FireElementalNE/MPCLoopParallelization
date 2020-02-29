@@ -15,7 +15,11 @@ class DownwardExposedArrayRef {
     }
 
     DownwardExposedArrayRef(DownwardExposedArrayRef daf) {
-        this.b = daf.b;
+        try {
+            this.b = daf.b;
+        } catch (NullPointerException e) {
+            Logger.error("What?");
+        }
         this.array_ver = new HashMap<>();
         for(Map.Entry<String, ArrayVersion> entry : daf.array_ver.entrySet()) {
             this.array_ver.put(entry.getKey(), new ArrayVersion(entry.getValue()));
@@ -45,6 +49,8 @@ class DownwardExposedArrayRef {
     boolean contains_var(String s) {
         return array_ver.containsKey(s);
     }
+
+
 
     String get_name(String s) {
         if(array_ver.containsKey(s)) {
