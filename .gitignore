@@ -26,5 +26,5 @@ hs_err_pid*
 *.iml
 *.json
 SootOutput/*
-resources/out/*
+test_programs/out/*
 out/*
