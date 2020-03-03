@@ -15,14 +15,10 @@ class DownwardExposedArrayRef {
     }
 
     DownwardExposedArrayRef(DownwardExposedArrayRef daf) {
-        try {
-            this.b = daf.b;
-        } catch (NullPointerException e) {
-            Logger.error("What?");
-        }
+        this.b = daf.b;
         this.array_ver = new HashMap<>();
         for(Map.Entry<String, ArrayVersion> entry : daf.array_ver.entrySet()) {
-            this.array_ver.put(entry.getKey(), new ArrayVersion(entry.getValue()));
+            this.array_ver.put(entry.getKey(), Utils.copy_av(entry.getValue()));
         }
     }
 
@@ -34,7 +30,7 @@ class DownwardExposedArrayRef {
     void new_ver(String s) {
         if(array_ver.containsKey(s)) {
             ArrayVersion new_ver = array_ver.get(s);
-            new_ver.incr_v1();
+            new_ver.incr_version();
             array_ver.put(s, new_ver);
         } else {
             Logger.error("Key " + s + " not found, cannot increment version.");
@@ -50,18 +46,9 @@ class DownwardExposedArrayRef {
         return array_ver.containsKey(s);
     }
 
-
-
     String get_name(String s) {
         if(array_ver.containsKey(s)) {
-            ArrayVersion av = array_ver.get(s);
-            String v1 = String.format(Constants.ARR_VER_STR, s, av.get_v1());
-            if (av.is_phi()) {
-                String v2 = String.format(Constants.ARR_VER_STR, s, av.get_v2());
-                return String.format(Constants.ARR_PHI_STR, v1, v2);
-            } else {
-                return v1;
-            }
+            return String.format(Constants.ARR_VER_STR, s, array_ver.get(s).get_version());
         } else {
             Logger.error("Key " + s + " not found.");
             return null;

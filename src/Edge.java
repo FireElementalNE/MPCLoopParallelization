@@ -20,7 +20,6 @@ class Edge {
 
     @Override
     public int hashCode() {
-        assert def.get_stmt() instanceof AssignStmt;
-        return System.identityHashCode(new DefUseHash((AssignStmt)def.get_stmt(), use.get_stmt()));
+        return System.identityHashCode(new DefUseHash(def.get_stmt(), use.get_stmt()));
     }
 }

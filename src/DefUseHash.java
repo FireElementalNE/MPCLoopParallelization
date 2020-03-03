@@ -2,10 +2,10 @@ import soot.jimple.AssignStmt;
 import soot.jimple.Stmt;
 
 class DefUseHash {
-    private AssignStmt def;
-    private Stmt use;
+    private String def;
+    private String use;
 
-    DefUseHash(AssignStmt def, Stmt use) {
+    DefUseHash(String def, String use) {
         this.def = def;
         this.use = use;
     }

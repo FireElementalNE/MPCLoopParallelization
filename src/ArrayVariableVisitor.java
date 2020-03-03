@@ -1,4 +1,5 @@
 import org.pmw.tinylog.Logger;
+import soot.ValueBox;
 import soot.jimple.*;
 import soot.jimple.internal.JNewArrayExpr;
 
@@ -32,10 +33,14 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
     private void check_array_ref(Stmt stmt) {
         if(stmt.containsArrayRef()) {
             String basename = get_basename(stmt.getArrayRef());
+            ValueBox index_box = stmt.getArrayRef().getIndexBox();
             if(vars.containsKey(basename)) {
                 Logger.debug("Key " + basename + " already exists.");
             } else {
-                vars.put(basename, new ArrayVersion(1));
+                // CHECKTHIS: not sure this is right
+//                Logger.error("How can we ref something that does not exist??");
+                // If we have not referenced it how can it be a phi node??? I THINK this is right...
+                vars.put(basename, new ArrayVersionSingle(1, new Index(index_box)));
             }
         }
     }
@@ -56,18 +61,21 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
         String right_op = stmt.getRightOp().toString();
         if(stmt.containsArrayRef()) {
             check_array_ref(stmt);
-        } else if(stmt.getRightOp() instanceof JNewArrayExpr) {
+        }
+        if(stmt.getRightOp() instanceof JNewArrayExpr) {
+            // NOTE: ALWAYS a new array!
             Logger.info("Found a new array: " + left_op);
-            ArrayVersion av = new ArrayVersion(1);
-            graph.add_node(new Node(stmt, left_op, av, DefOrUse.DEF), true);
+            ArrayVersion av = new ArrayVersionSingle(1, null);
+            graph.add_node(new Node(stmt.toString(), left_op, av, DefOrUse.DEF), true);
             vars.put(left_op, av);
         }
-//        Logger.debug("Right op -> " + right_op + " (" + stmt.toString() + ")");
         if(vars.containsKey(right_op)) {
-            // TODO: this will need some rethinking.
-            assert !stmt.containsArrayRef(); // TODO: this will need to go most likely!
-            vars.put(left_op, new ArrayVersion(1));
-            graph.array_def_rename(right_op, vars.get(right_op), left_op, stmt);
+            // NOTE: PURE array renaming!
+            assert !stmt.containsArrayRef();
+            ArrayVersion av = vars.get(right_op);
+            ArrayVersion new_av = Utils.rename_av(av);
+            vars.put(left_op, new_av);
+            graph.array_def_rename(right_op, vars.get(right_op), left_op, new_av, stmt);
             vars.remove(right_op);
             Logger.debug("An array got renamed...");
         }

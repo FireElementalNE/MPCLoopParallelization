@@ -30,6 +30,7 @@ class Constants {
     static final String DEFAULT_SD = "test_programs/src";
     static final String DEFAILT_RT_PATH = Utils.rt_path();
     static final String DEFAILT_JCE_PATH = Utils.jce_path();
+    static final String ARRAY_VERSION_NEW_ARRAY = "NEW_ARRAY";
 }
 
 

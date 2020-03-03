@@ -34,13 +34,12 @@ class ArrayDefUseGraph {
         edges.put(edge.hashCode(), edge);
     }
 
-    void array_def_rename(String old_name, ArrayVersion old_av, String new_name, Stmt new_stmt) {
+    void array_def_rename(String old_name, ArrayVersion old_av, String new_name, ArrayVersion new_av, Stmt new_stmt) {
         String id = Node.make_id(old_name, old_av, DefOrUse.DEF);
         assert nodes.containsKey(id);
         nodes.remove(id);
-        ArrayVersion new_av = new ArrayVersion(1);
         String new_id = Node.make_id(new_name, new_av, DefOrUse.DEF);
-        Node new_node = new Node(new_stmt, new_name, new ArrayVersion(1), DefOrUse.DEF);
+        Node new_node = new Node(new_stmt.toString(), new_name, new_av, DefOrUse.DEF);
         nodes.put(new_id, new_node);
     }
 

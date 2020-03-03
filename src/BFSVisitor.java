@@ -29,11 +29,13 @@ class BFSVisitor extends AbstractStmtSwitch {
 
     private void check_array_read(Stmt stmt) {
         String basename = stmt.getArrayRef().getBaseBox().getValue().toString();
+        String index = stmt.getArrayRef().getIndex().toString();
         Logger.debug("Change needed in stmt: " + stmt.toString());
+        Logger.debug(" The index is: " + index);
         Logger.debug(" " + basename + " should be changed to " + daf.get_name(basename));
         Logger.debug(" " + "This is a use for " + daf.get_name(basename));
-        ArrayVersion av = new ArrayVersion(daf.get(basename));
-        Node new_node = new Node(stmt, basename, av, DefOrUse.USE);
+        ArrayVersion av = Utils.copy_av(daf.get(basename));
+        Node new_node = new Node(stmt.toString(), basename, av, DefOrUse.USE);
         graph.add_node(new_node, false);
         c_arr_ver.put(b, daf);
     }
@@ -61,8 +63,8 @@ class BFSVisitor extends AbstractStmtSwitch {
                 daf.new_ver(basename);
                 Logger.debug(" " + basename + " needs to be changed to " + daf.get_name(basename));
                 Logger.debug("This is a new def for " + daf.get_name(basename));
-                ArrayVersion av = new ArrayVersion(daf.get(basename));
-                graph.add_node(new Node(stmt, basename, av, DefOrUse.DEF), true);
+                ArrayVersion av = Utils.copy_av(daf.get(basename));
+                graph.add_node(new Node(stmt.toString(), basename, av, DefOrUse.DEF), true);
                 c_arr_ver.put(b, daf);
             } else {
                 check_array_read(stmt);

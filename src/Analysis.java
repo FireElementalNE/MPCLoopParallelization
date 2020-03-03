@@ -23,8 +23,8 @@ public class Analysis extends BodyTransformer {
 	private Set<ImmutablePair<String, String>> loop_head_exits;
 	private Map<String, ArrayVersion> array_vars;
 	private ArrayDefUseGraph graph;
-	// TODO: we need to keep track of arrays that are reassigned otherwise we will
-	// TODO:  never find the correct versions when we are looking in c_arr_ver.
+	// TODO: need to finish indexes!
+	// TODO: need to finish loop dependent changes!
 	public Analysis() {
 		seen_blocks1 = new HashSet<>();
 		seen_blocks2 = new HashSet<>();
@@ -66,7 +66,7 @@ public class Analysis extends BodyTransformer {
 		for(Iterator<Unit> i = b.iterator(); i.hasNext();) {
 			ArrayVariableVisitor visitor = new ArrayVariableVisitor(array_vars, graph);
 			i.next().apply(visitor);
-			array_vars = visitor.get_vars();
+			this.array_vars = visitor.get_vars();
 			this.graph = visitor.get_graph();
 		}
 		if(is_loop_head(b.getHead())) {
@@ -112,6 +112,7 @@ public class Analysis extends BodyTransformer {
 			Logger.error("Were have seen this block: " + b.getHead().toString());
 			return;
 		}
+		// TODO: update indexes!
 		seen_blocks1.add(b);
 		seen_blocks2.add(b);
 		Logger.info(Utils.get_block_name(b) + ": " + b.getHead().toString());
@@ -129,11 +130,12 @@ public class Analysis extends BodyTransformer {
 					// TODO: check if phi nodes?
 					if (Utils.not_null(b1) && Utils.not_null(b2)) {
 						// make a phi node!
-						ArrayVersion av = new ArrayVersion(current_s1.get_v1(), current_s2.get_v1());
+						// Indexes MUST be the same!
+						ArrayVersionPhi av_phi = new ArrayVersionPhi(new Index(null), current_s1, current_s2);
 						DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
-						new_daf.put(entry.getKey(), av);
+						new_daf.put(entry.getKey(), av_phi);
 						Logger.info("We made a phi node: " + new_daf.get_name(entry.getKey()));
-						Node n = new Node(entry.getKey(), av);
+						Node n = new Node(entry.getKey(), av_phi);
 						graph.add_node(n, true);
 						c_arr_ver.put(b, new_daf);
 					} else {
@@ -152,7 +154,7 @@ public class Analysis extends BodyTransformer {
 				if (c_arr_ver.containsKey(b1)) {
 					for (Map.Entry<String, ArrayVersion> entry : array_vars.entrySet()) {
 						// CHECKTHIS: throwing NullPointerException because of aliasing issue (see top of class)
-						ArrayVersion current_s = new ArrayVersion(c_arr_ver.get(b1).get(entry.getKey()));
+						ArrayVersion current_s = Utils.copy_av(c_arr_ver.get(b1).get(entry.getKey()));
 						new_daf.put(entry.getKey(), current_s);
 					}
 					c_arr_ver.put(b, new_daf);
@@ -191,7 +193,7 @@ public class Analysis extends BodyTransformer {
 	private void init_BFS_vars(Block b) {
 		DownwardExposedArrayRef down_ar = new DownwardExposedArrayRef(b);
 		for (Map.Entry<String, ArrayVersion> entry : array_vars.entrySet()) {
-			down_ar.put(entry.getKey(), new ArrayVersion(1));
+			down_ar.put(entry.getKey(), Utils.copy_av(entry.getValue()));
 		}
 		c_arr_ver.put(b, down_ar);
 	}
@@ -227,6 +229,15 @@ public class Analysis extends BodyTransformer {
 		parse_blocks_start(body);
 
 		Logger.info("Node count: " + graph.get_nodes().size());
+		for(Map.Entry<String, Node> entry : graph.get_nodes().entrySet()) {
+			Logger.info(entry.getKey() + " -> " + entry.getValue().get_stmt());
+		}
 		Logger.info("Edge count: " + graph.get_edges().size());
+		for(Map.Entry<Integer, Edge> entry : graph.get_edges().entrySet()) {
+			Logger.info(entry.getKey() + ": ");
+			Logger.info(" " + entry.getValue().get_def().get_stmt());
+			Logger.info(" " + entry.getValue().get_use().get_stmt());
+		}
+
 	}
 }

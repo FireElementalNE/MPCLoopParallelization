@@ -54,7 +54,15 @@ public class Main {
 	}
 
 	private static void compile_programs() {
-		// TODO: create out folder if it does not exist
+		File out_dir = new File(Constants.RESOURCE_OUT);
+		if (!out_dir.exists()){
+			boolean rc = out_dir.mkdir();
+			if(!rc) {
+				Logger.error("Could not make output dir " + Constants.RESOURCE_OUT +". Exiting.");
+				System.exit(0);
+			}
+		}
+
 		File res = new File(Constants.RESOURCE_SRC);
 		String[] files = res.list();
 		assert files != null;
