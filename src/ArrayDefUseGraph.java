@@ -2,6 +2,7 @@ import soot.jimple.Stmt;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.tinylog.Logger;
 import java.util.stream.Collectors;
 
 class ArrayDefUseGraph {
@@ -30,8 +31,14 @@ class ArrayDefUseGraph {
 
     private void add_edge(Node use_node) {
         assert nodes.containsKey(use_node.get_opposite_id());
-        Edge edge = new Edge(nodes.get(use_node.get_opposite_id()), use_node);
-        edges.put(edge.hashCode(), edge);
+        Node def_node = new Node(nodes.get(use_node.get_opposite_id()));
+        if(use_node.get_av().get_index() == def_node.get_av().get_index()) {
+            Logger.info("Adding edge, indexes match. ");
+            Edge edge = new Edge(nodes.get(use_node.get_opposite_id()), use_node);
+            edges.put(edge.hashCode(), edge);
+        } else {
+            Logger.info("Not adding edge, indexes mismatch. ");
+        }
     }
 
     void array_def_rename(String old_name, ArrayVersion old_av, String new_name, ArrayVersion new_av, Stmt new_stmt) {

@@ -1,6 +1,3 @@
-import soot.jimple.AssignStmt;
-import soot.jimple.Stmt;
-
 class DefUseHash {
     private String def;
     private String use;

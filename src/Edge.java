@@ -1,5 +1,3 @@
-import soot.jimple.AssignStmt;
-
 class Edge {
     private Node def;
     private Node use;

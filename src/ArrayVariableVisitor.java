@@ -1,4 +1,4 @@
-import org.pmw.tinylog.Logger;
+import org.tinylog.Logger;
 import soot.ValueBox;
 import soot.jimple.*;
 import soot.jimple.internal.JNewArrayExpr;
@@ -34,9 +34,9 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
         if(stmt.containsArrayRef()) {
             String basename = get_basename(stmt.getArrayRef());
             ValueBox index_box = stmt.getArrayRef().getIndexBox();
-            if(vars.containsKey(basename)) {
-                Logger.debug("Key " + basename + " already exists.");
-            } else {
+            if(!vars.containsKey(basename)) {
+//                Logger.debug("Key " + basename + " already exists.");
+//            } else {
                 // CHECKTHIS: not sure this is right
 //                Logger.error("How can we ref something that does not exist??");
                 // If we have not referenced it how can it be a phi node??? I THINK this is right...

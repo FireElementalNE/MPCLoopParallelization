@@ -1,9 +1,6 @@
 import org.apache.commons.cli.*;
 import org.apache.commons.lang3.SystemUtils;
-import org.pmw.tinylog.Configurator;
-import org.pmw.tinylog.Level;
-import org.pmw.tinylog.Logger;
-import org.pmw.tinylog.writers.FileWriter;
+import org.tinylog.Logger;
 import soot.Pack;
 import soot.PackManager;
 import soot.Transform;
@@ -13,6 +10,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Properties;
 
 public class Main {
 
@@ -32,7 +30,6 @@ public class Main {
 			// TODO: maybe?
 			// TODO: create out folder if it does not exist
 			String cmd = String.format(Constants.COMPILE_CMD, full_path, cp, cp);
-			Logger.info(cmd);
 			Process p = Runtime.getRuntime().exec(cmd);
 			BufferedReader stdError = new BufferedReader(new
 					InputStreamReader(p.getErrorStream()));
@@ -74,12 +71,8 @@ public class Main {
 	}
 
 	public static void main(String[] argv) {
-		// TODO: fix this, the properties file does not work...
-		Configurator.defaultConfig()
-				.addWriter(new FileWriter("output.log"))
-				.level(Level.DEBUG)
-				.formatPattern("[{date}][{method}][{file}:{line}][{level}]: {message}")
-				.activate();
+		// needed fix...
+		System.setProperty("tinylog.configuration", "tinylog.properties");
 
 		org.apache.commons.cli.Options options = new org.apache.commons.cli.Options();
 

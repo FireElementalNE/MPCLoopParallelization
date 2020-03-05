@@ -1,4 +1,4 @@
-import org.pmw.tinylog.Logger;
+import org.tinylog.Logger;
 import soot.toolkits.graph.Block;
 
 import java.util.HashMap;

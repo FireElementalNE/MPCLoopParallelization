@@ -1,5 +1,5 @@
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.pmw.tinylog.Logger;
+import org.tinylog.Logger;
 import soot.Body;
 import soot.BodyTransformer;
 import soot.Unit;
@@ -22,6 +22,7 @@ public class Analysis extends BodyTransformer {
 	private Set<Block> seen_blocks2;
 	private Set<ImmutablePair<String, String>> loop_head_exits;
 	private Map<String, ArrayVersion> array_vars;
+	private List<Variable> vars;
 	private ArrayDefUseGraph graph;
 	// TODO: need to finish indexes!
 	// TODO: need to finish loop dependent changes!
@@ -33,6 +34,7 @@ public class Analysis extends BodyTransformer {
 		loop_head_exits = new HashSet<>();
 		array_vars = new HashMap<>();
 		graph = new ArrayDefUseGraph();
+		vars = new ArrayList<>();
 	}
 
 	private boolean is_loop_head(Unit unit) {
@@ -65,9 +67,13 @@ public class Analysis extends BodyTransformer {
 		Logger.debug(Utils.get_block_name(b) + " head: " + b.getHead().toString());
 		for(Iterator<Unit> i = b.iterator(); i.hasNext();) {
 			ArrayVariableVisitor visitor = new ArrayVariableVisitor(array_vars, graph);
-			i.next().apply(visitor);
+			VariableVisitor var_visitor = new VariableVisitor(vars);
+			Unit u = i.next();
+			u.apply(visitor);
+			u.apply(var_visitor);
 			this.array_vars = visitor.get_vars();
 			this.graph = visitor.get_graph();
+			this.vars = var_visitor.get_vars();
 		}
 		if(is_loop_head(b.getHead())) {
 			if(!seen_blocks2.contains(b)) {
@@ -170,12 +176,15 @@ public class Analysis extends BodyTransformer {
 		for(Iterator<Unit> i = b.iterator(); i.hasNext();) {
 			BFSVisitor bfs_visitor = new BFSVisitor(c_arr_ver, b, graph);
 			ArrayVariableVisitor av_visitor = new ArrayVariableVisitor(array_vars, graph);
+			VariableVisitor var_visitor = new VariableVisitor(vars);
 			Unit u = i.next();
 			u.apply(bfs_visitor);
 			u.apply(av_visitor);
+			u.apply(var_visitor);
 			array_vars = av_visitor.get_vars();
 			c_arr_ver = bfs_visitor.get_c_arr_ver();
 			graph = bfs_visitor.get_graph();
+			vars = var_visitor.get_vars();
 		}
 		List<Block> succ_blocks = b.getSuccs();
 		Logger.debug("We found " + succ_blocks.size() + " successor blocks.");

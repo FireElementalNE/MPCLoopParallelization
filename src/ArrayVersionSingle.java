@@ -1,5 +1,3 @@
-import org.pmw.tinylog.Logger;
-
 class ArrayVersionSingle implements ArrayVersion {
     private int version;
     private boolean diff_ver_match;

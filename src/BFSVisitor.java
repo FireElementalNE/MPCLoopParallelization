@@ -1,4 +1,4 @@
-import org.pmw.tinylog.Logger;
+import org.tinylog.Logger;
 import soot.ValueBox;
 import soot.jimple.*;
 import soot.toolkits.graph.Block;

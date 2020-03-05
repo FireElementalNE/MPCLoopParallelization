@@ -31,6 +31,7 @@ class Constants {
     static final String DEFAILT_RT_PATH = Utils.rt_path();
     static final String DEFAILT_JCE_PATH = Utils.jce_path();
     static final String ARRAY_VERSION_NEW_ARRAY = "NEW_ARRAY";
+    static final String INT_TYPE = "int";
 }
 
 
