@@ -38,10 +38,6 @@ class Utils {
 //		return ":";
 	}
 
-	static boolean not_null(Object o) {
-		return !Objects.equals(o, null);
-	}
-
 	static String get_block_name(Block b) {
 		Matcher m = Constants.BLOCK_RE.matcher(b.toString());
 		if(m.find()) {
@@ -62,24 +58,39 @@ class Utils {
 	static String create_phi_stmt(String s, ArrayVersion av) {
 		assert av instanceof ArrayVersionPhi;
 		ArrayVersionPhi av_phi = (ArrayVersionPhi)av;
-		String v1 = String.format(Constants.ARR_VER_STR, s, copy_av(av_phi.get_av1()).get_version());
-		String v2 = String.format(Constants.ARR_VER_STR, s, copy_av(av_phi.get_av2()).get_version());
-		String phi_stmt = String.format(Constants.ARR_PHI_STR, v1, v2);
-		return String.format("%s_%d = %s;", s, av.get_version(), phi_stmt);
+		StringBuilder sb = new StringBuilder();
+		sb.append(Constants.ARR_PHI_STR_START);
+		ArrayVersion[] versions = av_phi.get_array_versions().toArray(new ArrayVersion[0]);
+		for(int i = 0; i < versions.length; i++) {
+			sb.append(String.format(Constants.ARR_VER_STR, s, versions[i].get_version()));
+			if(i + 1 < versions.length) {
+				sb.append(", ");
+			} else {
+				sb.append(")");
+			}
+		}
+		return String.format("%s_%d = %s;", s, av.get_version(), sb.toString());
 	}
 
 	static ArrayVersion rename_av(ArrayVersion av) {
 		Index old_index = av.get_index();
 		if(av.is_phi()) {
 			ArrayVersionPhi av_phi = (ArrayVersionPhi)av;
-			ArrayVersion av1 = copy_av(av_phi.get_av1());
-			ArrayVersion av2 = copy_av(av_phi.get_av2());
-			return new ArrayVersionPhi(old_index, av1, av2);
+			return new ArrayVersionPhi(old_index, av_phi.get_array_versions());
 		} else {
 			ArrayVersionSingle avs = (ArrayVersionSingle)av;
 			return new ArrayVersionSingle(1, old_index);
 		}
 	}
 
+	static boolean all_not_null(List<?> lst) {
+		return lst.stream()
+				.map(Utils::not_null)
+				.reduce(true, Boolean::logicalAnd);
+	}
+
+	static <T> boolean not_null(T o) {
+		return !Objects.equals(o, null);
+	}
 
 }

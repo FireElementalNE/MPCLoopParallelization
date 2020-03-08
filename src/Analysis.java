@@ -112,6 +112,12 @@ public class Analysis extends BodyTransformer {
 		}
 	}
 
+	private boolean check_c_arr_ver(List<Block> preds_list) {
+		Set<Block> possible = c_arr_ver.keySet();
+		Set<Block> preds_set = new HashSet<>(preds_list);
+		return possible.containsAll(preds_set);
+	}
+
 	@SuppressWarnings("ForLoopReplaceableByForEach")
 	private void process(Block b, Block head, List<String> exits) {
 		if(seen_blocks1.contains(b) || seen_blocks2.contains(b)) {
@@ -119,25 +125,21 @@ public class Analysis extends BodyTransformer {
 			return;
 		}
 		// TODO: update indexes!
-		seen_blocks1.add(b);
-		seen_blocks2.add(b);
 		Logger.info(Utils.get_block_name(b) + ": " + b.getHead().toString());
 		List<Block> pred_blocks = b.getPreds();
 		Block b1 = pred_blocks.get(0);
 		if(pred_blocks.size() > 1) { // we have a merge
-			// CHECKTHIS: we are assuming we only have 2 pred blocks!
-			Block b2 = pred_blocks.get(1);
-			if (c_arr_ver.containsKey(b1) && c_arr_ver.containsKey(b2)) {
+			if (check_c_arr_ver(pred_blocks)) {
 				for (Map.Entry<String, ArrayVersion> entry : array_vars.entrySet()) {
-					DownwardExposedArrayRef daf1 = new DownwardExposedArrayRef(c_arr_ver.get(b1));
-					DownwardExposedArrayRef daf2 = new DownwardExposedArrayRef(c_arr_ver.get(b2));
-					ArrayVersion current_s1 = daf1.get(entry.getKey());
-					ArrayVersion current_s2 = daf2.get(entry.getKey());
-					// TODO: check if phi nodes?
-					if (Utils.not_null(b1) && Utils.not_null(b2)) {
+					if (Utils.all_not_null(pred_blocks)) {
+						List<ArrayVersion> avs = new ArrayList<>();
+						for(Block blk : pred_blocks) {
+							DownwardExposedArrayRef daf = new DownwardExposedArrayRef(c_arr_ver.get(blk));
+							avs.add(Utils.copy_av(daf.get(entry.getKey())));
+						}
 						// make a phi node!
 						// Indexes MUST be the same!
-						ArrayVersionPhi av_phi = new ArrayVersionPhi(new Index(null), current_s1, current_s2);
+						ArrayVersionPhi av_phi = new ArrayVersionPhi(new Index(null), avs);
 						DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
 						new_daf.put(entry.getKey(), av_phi);
 						Logger.info("We made a phi node: " + new_daf.get_name(entry.getKey()));
@@ -151,8 +153,10 @@ public class Analysis extends BodyTransformer {
 					}
 				}
 			} else {
-				Logger.warn("Both should already be in c_arr_ver!");
-				System.exit(0);
+				Logger.info("Both preds should already be in c_arr_ver!");
+				Logger.info("Skipping and adding this block to the back of worklist.");
+				worklist.addLast(b);
+				return;
 			}
 		} else { // we do not have a merge
 			if(!exits.contains(pred_blocks.get(0).getHead().toString())) {
@@ -197,6 +201,8 @@ public class Analysis extends BodyTransformer {
 				}
 			}
 		}
+		seen_blocks1.add(b);
+		seen_blocks2.add(b);
 	}
 
 	private void init_BFS_vars(Block b) {
@@ -230,7 +236,6 @@ public class Analysis extends BodyTransformer {
 	@Override
 	protected void internalTransform(Body body, String phaseName, Map<String, String> options) {
 		assert body instanceof ShimpleBody;
-		// ShimpleBody sb = (ShimpleBody)body;
 		for(Map.Entry<String, String> e : options.entrySet()) {
 			Logger.debug(e.getKey() + " ----> " + e.getValue());
 		}

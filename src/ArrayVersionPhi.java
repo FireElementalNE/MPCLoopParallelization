@@ -1,37 +1,39 @@
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class ArrayVersionPhi implements ArrayVersion {
     private int version;
     private Index index;
 
-    private ArrayVersion av1;
-    private ArrayVersion av2;
+    private List<ArrayVersion> array_versions;
+
     private boolean diff_ver_match;
 
-    ArrayVersionPhi(Index index, ArrayVersion av1, ArrayVersion av2) {
-        if(av1.get_version() >= av2.get_version()) {
-            this.version = av1.get_version() + 1;
-        } else {
-            this.version = av2.get_version() + 1;
-        }
+    ArrayVersionPhi(Index index, List<ArrayVersion> array_versions) {
+        this.version = array_versions.stream()
+                .map(ArrayVersion::get_version)
+                .reduce(Integer.MIN_VALUE, Math::max);
         this.index = index;
-        this.av1 = av1;
-        this.av2 = av2;
-        this.diff_ver_match = av1.get_version() == av2.get_version();
+        this.array_versions = array_versions;
+        List<Integer> versions = array_versions.stream().map(ArrayVersion::get_version).collect(Collectors.toList());
+        this.diff_ver_match = versions.size() != new HashSet<>(versions).size();
     }
 
     ArrayVersionPhi(ArrayVersionPhi av_phi) {
         this.version = av_phi.version;
         this.index = av_phi.index;
-        this.av1 = av_phi.av1;
-        this.av2 = av_phi.av2;
+        this.array_versions = av_phi.array_versions;
         this.diff_ver_match = av_phi.diff_ver_match;
     }
 
-    ArrayVersion get_av1() {
-        return av1;
-    }
-
-    ArrayVersion get_av2() {
-        return av2;
+    List<ArrayVersion> get_array_versions() {
+        List <ArrayVersion> tmp = new ArrayList<>();
+        for(ArrayVersion av : array_versions) {
+            tmp.add(Utils.copy_av(av));
+        }
+        return tmp;
     }
 
     @Override
@@ -58,4 +60,5 @@ public class ArrayVersionPhi implements ArrayVersion {
     public boolean has_diff_ver_match() {
         return diff_ver_match;
     }
+
 }

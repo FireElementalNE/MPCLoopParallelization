@@ -24,7 +24,7 @@ class Constants {
     static final int NO_VER_SET = -1;
     static final int INIT_ARR_VER = 1;
     static final String ARR_VER_STR = "%s_%d";
-    static final String ARR_PHI_STR = "phi(%s, %s)";
+    static final String ARR_PHI_STR_START = "phi(";
     static final Pattern BLOCK_RE = Pattern.compile("^(Block\\s\\d+)");
     static final String DEFAULT_CP = "test_programs/out";
     static final String DEFAULT_SD = "test_programs/src";
@@ -32,6 +32,9 @@ class Constants {
     static final String DEFAILT_JCE_PATH = Utils.jce_path();
     static final String ARRAY_VERSION_NEW_ARRAY = "NEW_ARRAY";
     static final String INT_TYPE = "int";
+    static final String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
+    static final char[] ALPHABET_ARRAY = ALPHABET.toCharArray();
+    static final String UNDERSCORE = "_";
 }
 
 

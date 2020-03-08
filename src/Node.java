@@ -1,4 +1,8 @@
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 class Node {
     private String stmt;
@@ -43,41 +47,39 @@ class Node {
         return av;
     }
 
-    @SuppressWarnings("DuplicatedCode")
+
     String get_id() {
-        if(av.is_phi()) {
-            ArrayVersionPhi av_phi = (ArrayVersionPhi)av;
-            if (av.has_diff_ver_match()) {
-                return basename + "_" + av_phi.get_av1().get_version() + "a_" + av_phi.get_av2().get_version() + "b_" + type;
-            }
-            return basename + "_" + av_phi.get_av1().get_version() + "_" + av_phi.get_av2().get_version() + "_" + type;
-        }
-        ArrayVersionSingle av_single = (ArrayVersionSingle)av;
-        return basename + "_" + av_single.get_version() + "_" + type;
+        return Node.make_id(basename, av, type);
     }
 
-    @SuppressWarnings("DuplicatedCode")
     String get_opposite_id() {
         DefOrUse t = Objects.equals(DefOrUse.DEF, type) ? DefOrUse.USE : DefOrUse.DEF;
-        if(av.is_phi()) {
-            ArrayVersionPhi av_phi = (ArrayVersionPhi)av;
-            if (av.has_diff_ver_match()) {
-                return basename + "_" + av_phi.get_av1().get_version() + "a_" + av_phi.get_av2().get_version() + "b_" + t;
-            }
-            return basename + "_" + av_phi.get_av1().get_version() + "_" + av_phi.get_av2().get_version() + "_" + t;
-        }
-        ArrayVersionSingle av_single = (ArrayVersionSingle)av;
-        return basename + "_" + av_single.get_version() + "_" + t;
+        return Node.make_id(basename, av, t);
     }
 
-    @SuppressWarnings("DuplicatedCode")
     static String make_id(String id, ArrayVersion av, DefOrUse t) {
         if(av.is_phi()) {
             ArrayVersionPhi av_phi = (ArrayVersionPhi)av;
-            if (av.has_diff_ver_match()) {
-                return id + "_" + av_phi.get_av1().get_version() + "a_" + av_phi.get_av2().get_version() + "b_" + t;
+            StringBuilder sb = new StringBuilder(id);
+            sb.append(Constants.UNDERSCORE);
+            Map<Integer, Integer> have_seen = new HashMap<>();
+            List<Integer> versions = av_phi.get_array_versions().stream()
+                    .map(ArrayVersion::get_version)
+                    .collect(Collectors.toList());
+            for(int s : versions) {
+                sb.append(s);
+                if(av_phi.has_diff_ver_match()) {
+                    if(have_seen.containsKey(s)) {
+                        sb.append(Constants.ALPHABET_ARRAY[have_seen.get(s)]);
+                        have_seen.put(s, have_seen.get(s) + 1);
+                    } else {
+                        have_seen.put(s, 0);
+                    }
+                }
+                sb.append(Constants.UNDERSCORE);
             }
-            return id + "_" + av_phi.get_av1().get_version() + "_" + av_phi.get_av2().get_version() + "_" + t;
+            sb.append(t);
+            return sb.toString();
         }
         ArrayVersionSingle av_single = (ArrayVersionSingle)av;
         return id + "_" + av_single.get_version() + "_" + t;

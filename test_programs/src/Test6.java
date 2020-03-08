@@ -1,6 +1,6 @@
 import java.util.Objects;
 
-class Test5 {
+class Test6 {
     public static void main(String[] args) {
         int[] a = new int[5];
 //        double[] a1 = new double[a.length];
@@ -24,6 +24,7 @@ class Test5 {
                 } else {
                     a[i] = p * 30;
                 }
+                z = z + a[i];
             } else {
                 a[i] = p * 40;
             }
