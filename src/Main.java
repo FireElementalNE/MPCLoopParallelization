@@ -216,7 +216,7 @@ public class Main {
 		PackManager pm = PackManager.v();
 		Pack p = pm.getPack("stp");
 
-		Analysis analysis = new Analysis();
+		Analysis analysis = new Analysis(klass);
 		Transform t = new Transform("stp.arrayssa", analysis);
 		//p.insertAfter(t, phaseName);
 		//p.insertAfter(t, "sop.cpf");

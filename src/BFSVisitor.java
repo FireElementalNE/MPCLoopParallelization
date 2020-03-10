@@ -1,3 +1,4 @@
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.tinylog.Logger;
 import soot.ValueBox;
 import soot.jimple.*;
@@ -35,7 +36,8 @@ class BFSVisitor extends AbstractStmtSwitch {
         Logger.debug(" " + basename + " should be changed to " + daf.get_name(basename));
         Logger.debug(" " + "This is a use for " + daf.get_name(basename));
         ArrayVersion av = Utils.copy_av(daf.get(basename));
-        Node new_node = new Node(stmt.toString(), basename, av, DefOrUse.USE);
+        Node new_node = new Node(stmt.toString(), basename, av, DefOrUse.USE,
+                new ImmutablePair<>(basename, daf.get_name(basename)));
         graph.add_node(new_node, false);
         c_arr_ver.put(b, daf);
     }
@@ -64,7 +66,8 @@ class BFSVisitor extends AbstractStmtSwitch {
                 Logger.debug(" " + basename + " needs to be changed to " + daf.get_name(basename));
                 Logger.debug("This is a new def for " + daf.get_name(basename));
                 ArrayVersion av = Utils.copy_av(daf.get(basename));
-                graph.add_node(new Node(stmt.toString(), basename, av, DefOrUse.DEF), true);
+                graph.add_node(new Node(stmt.toString(), basename, av, DefOrUse.DEF,
+                        new ImmutablePair<>(basename, daf.get_name(basename))), true);
                 c_arr_ver.put(b, daf);
             } else {
                 check_array_read(stmt);

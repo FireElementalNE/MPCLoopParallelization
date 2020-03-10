@@ -14,7 +14,7 @@ public class ArrayVersionPhi implements ArrayVersion {
     ArrayVersionPhi(Index index, List<ArrayVersion> array_versions) {
         this.version = array_versions.stream()
                 .map(ArrayVersion::get_version)
-                .reduce(Integer.MIN_VALUE, Math::max);
+                .reduce(Integer.MIN_VALUE, Math::max) + 1;
         this.index = index;
         this.array_versions = array_versions;
         List<Integer> versions = array_versions.stream().map(ArrayVersion::get_version).collect(Collectors.toList());

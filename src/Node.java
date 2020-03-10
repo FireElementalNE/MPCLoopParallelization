@@ -1,3 +1,5 @@
+import org.apache.commons.lang3.tuple.ImmutablePair;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,6 +11,8 @@ class Node {
     private DefOrUse type;
     private ArrayVersion av;
     private String basename;
+    private String aug_stmt;
+    private boolean is_aug;
 
 
     Node(String stmt, String basename, ArrayVersion av, DefOrUse type) {
@@ -16,6 +20,17 @@ class Node {
         this.type = type;
         this.av = av;
         this.basename = basename;
+        this.aug_stmt = null;
+        this.is_aug = false;
+    }
+
+    Node(String stmt, String basename, ArrayVersion av, DefOrUse type, ImmutablePair<String, String> replacements) {
+        this.stmt = stmt;
+        this.type = type;
+        this.av = av;
+        this.basename = basename;
+        this.is_aug = true;
+        this.aug_stmt = stmt.replace(replacements.getLeft(), replacements.getRight());
     }
 
     Node(String basename, ArrayVersion av) {
@@ -31,6 +46,8 @@ class Node {
         this.type = n.type;
         this.av = n.av;
         this.basename = n.basename;
+        this.is_aug = n.is_aug;
+        this.aug_stmt = n.aug_stmt;
     }
 
 //    void process_redefine(Stmt stmt, String basename, ArrayVersion av) {
@@ -40,13 +57,20 @@ class Node {
 //    }
 
     String get_stmt() {
-        return stmt;
+        if(is_aug) {
+            return aug_stmt;
+        } else {
+            return stmt;
+        }
     }
 
     ArrayVersion get_av() {
         return av;
     }
 
+    boolean is_aug() {
+        return is_aug;
+    }
 
     String get_id() {
         return Node.make_id(basename, av, type);

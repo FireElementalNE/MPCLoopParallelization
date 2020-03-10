@@ -1,3 +1,7 @@
+import guru.nidi.graphviz.attribute.LinkAttr;
+import guru.nidi.graphviz.attribute.Style;
+import guru.nidi.graphviz.engine.Format;
+import guru.nidi.graphviz.engine.Graphviz;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.tinylog.Logger;
 import soot.Body;
@@ -11,30 +15,59 @@ import soot.shimple.ShimpleBody;
 import soot.toolkits.graph.Block;
 import soot.toolkits.graph.BlockGraph;
 import soot.toolkits.graph.ExceptionalBlockGraph;
+import static guru.nidi.graphviz.model.Factory.*;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 
 public class Analysis extends BodyTransformer {
 	private Map<Block, DownwardExposedArrayRef> c_arr_ver; // current array version
 	private LinkedList<Block> worklist;
-	private Set<Block> seen_blocks1;
-	private Set<Block> seen_blocks2;
+//	private Set<Block> seen_blocks1;
+//	private Set<Block> seen_blocks2;
+	private Set<Block> seen_blocks;
 	private Set<ImmutablePair<String, String>> loop_head_exits;
 	private Map<String, ArrayVersion> array_vars;
 	private List<Variable> vars;
 	private ArrayDefUseGraph graph;
+	private guru.nidi.graphviz.model.MutableGraph final_graph;
+	private guru.nidi.graphviz.model.MutableGraph flow_graph;
 	// TODO: need to finish indexes!
 	// TODO: need to finish loop dependent changes!
-	public Analysis() {
-		seen_blocks1 = new HashSet<>();
-		seen_blocks2 = new HashSet<>();
+	public Analysis(String class_name) {
+		final_graph = mutGraph(class_name + "_final").setDirected(true);
+		flow_graph = mutGraph(class_name + "_flow").setDirected(true);
+//		seen_blocks1 = new HashSet<>();
+//		seen_blocks2 = new HashSet<>();
+		seen_blocks = new HashSet<>();
 		c_arr_ver = new HashMap<>();
 		worklist = new LinkedList<>();
 		loop_head_exits = new HashSet<>();
 		array_vars = new HashMap<>();
 		graph = new ArrayDefUseGraph();
 		vars = new ArrayList<>();
+	}
+
+	private void make_graph_png() {
+		guru.nidi.graphviz.model.Node n = node("start");
+		Map<String, guru.nidi.graphviz.model.Node> seen = new HashMap<>();
+		for(Map.Entry<Integer, Edge> entry: graph.get_edges().entrySet()) {
+			Edge e = entry.getValue();
+			Node def = e.get_def();
+			Node use = e.get_use();
+			guru.nidi.graphviz.model.Node def_node = node(def.get_stmt());
+			guru.nidi.graphviz.model.Node use_node = node(use.get_stmt());
+			final_graph.add(def_node.link(to(use_node).with(LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+		}
+		try {
+			Graphviz.fromGraph(final_graph).width(Constants.GRAPHVIZ_WIDTH).render(Format.PNG)
+					.toFile(new File(final_graph.name() + ".png"));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
 	}
 
 	private boolean is_loop_head(Unit unit) {
@@ -45,6 +78,16 @@ public class Analysis extends BodyTransformer {
 			}
 		}
 		return false;
+	}
+
+	private void add_flow_edge(Block from_blk, Block to_blk, boolean is_loop) {
+		guru.nidi.graphviz.model.Node from_node = node(Utils.get_block_name(from_blk));
+		guru.nidi.graphviz.model.Node to_node = node(Utils.get_block_name(to_blk));
+		if(is_loop) {
+			flow_graph.add(from_node.link(to(to_node).with(Style.DASHED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+		} else {
+			flow_graph.add(from_node.link(to(to_node).with(LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+		}
 	}
 
 	private List<String> get_exits(Unit unit) {
@@ -60,7 +103,7 @@ public class Analysis extends BodyTransformer {
 
 	@SuppressWarnings("ForLoopReplaceableByForEach")
 	private void parse_block(Block b, int sc) {
-		seen_blocks1.add(b);
+
 		// Logger.info(Utils.fill_spaces(sc) + "Found Block (head is first line).");
 		// Logger.info(Utils.fill_spaces(sc) + "Number of successor Blocks: " + b.getSuccs().size());
 		// Logger.info(Utils.fill_spaces(sc) + "Preds size: " + b.getPreds().size());
@@ -76,13 +119,15 @@ public class Analysis extends BodyTransformer {
 			this.vars = var_visitor.get_vars();
 		}
 		if(is_loop_head(b.getHead())) {
-			if(!seen_blocks2.contains(b)) {
+			if(!seen_blocks.contains(b)) {
 				Logger.info("We found a loop head, starting BFS: " + b.getHead());
 				BFS(b, get_exits(b.getHead()));
 			}
 		}
 		for(Block sb : b.getSuccs()) {
-			if(!seen_blocks1.contains(sb)) {
+			if(!seen_blocks.contains(sb)) {
+				add_flow_edge(b, sb, false);
+				seen_blocks.add(b);
 				parse_block(sb, sc + 1);
 			}
 		}
@@ -120,7 +165,7 @@ public class Analysis extends BodyTransformer {
 
 	@SuppressWarnings("ForLoopReplaceableByForEach")
 	private void process(Block b, Block head, List<String> exits) {
-		if(seen_blocks1.contains(b) || seen_blocks2.contains(b)) {
+		if(seen_blocks.contains(b)) {
 			Logger.error("Were have seen this block: " + b.getHead().toString());
 			return;
 		}
@@ -196,13 +241,17 @@ public class Analysis extends BodyTransformer {
 			Logger.info("We found an exit, stopping.");
 		} else {
 			for(Block s1 : succ_blocks) {
-				if (!seen_blocks2.contains(s1)) {
+				if (!seen_blocks.contains(s1)) {
+					add_flow_edge(b, s1, false);
 					worklist.addLast(s1);
+				}
+				else if(Utils.get_block_name(s1).equals(Utils.get_block_name(head))) {
+					Logger.info("We found the head! We are entering a new second iteration!");
+					add_flow_edge(b, head, true);
 				}
 			}
 		}
-		seen_blocks1.add(b);
-		seen_blocks2.add(b);
+		seen_blocks.add(b);
 	}
 
 	private void init_BFS_vars(Block b) {
@@ -214,7 +263,7 @@ public class Analysis extends BodyTransformer {
 	}
 
 	private void BFS(Block head, List<String> exits) {
-		seen_blocks2.add(head);
+		seen_blocks.add(head);
 		init_BFS_vars(head);
 		// CHECKTHIS: Assuming we only have one head...
 		for(Block b : head.getSuccs()) {
@@ -224,6 +273,7 @@ public class Analysis extends BodyTransformer {
 			if(loop_head_exits.contains(head_exit)) {
 				Logger.debug("Found an exit, skipping.");
 			} else {
+				add_flow_edge(head, b, false);
 				worklist.addFirst(b);
 			}
 		}
@@ -252,6 +302,12 @@ public class Analysis extends BodyTransformer {
 			Logger.info(" " + entry.getValue().get_def().get_stmt());
 			Logger.info(" " + entry.getValue().get_use().get_stmt());
 		}
-
+		make_graph_png();
+		try {
+			Graphviz.fromGraph(flow_graph).width(700).render(Format.PNG)
+					.toFile(new File(flow_graph.name() + ".png"));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

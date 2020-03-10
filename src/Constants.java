@@ -35,6 +35,8 @@ class Constants {
     static final String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
     static final char[] ALPHABET_ARRAY = ALPHABET.toCharArray();
     static final String UNDERSCORE = "_";
+    static final int GRAPHVIZ_EDGE_WEIGHT = 8;
+    static final int GRAPHVIZ_WIDTH = 700;
 }
 
 
