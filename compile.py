@@ -21,46 +21,24 @@ def execute_cmd_helper(cmd):
         outs, errs = proc.communicate()
         return (outs, errs)
 
-def cp_sep():
-	if platform.system() == 'Windows':
-		return ";"
-	else:
-		return ":"
+test_base_dir = 'test_programs'
+out_dir = os.path.join(test_base_dir, 'out')
 
-def make_cp():
-	jars = os.listdir('project_jars')
-	cp = "\""
-	for jar in jars:
-		full_path = os.path.join('project_jars', jar)
-		cp += "{}{}".format(full_path, cp_sep())
-	cp += "\""
-	return cp
+print(out_dir + " exists, removing and remaking.")
 
-def make_manifest():
-	fh = open('manifest.txt', 'w+')
-	fh.write('Main-Class: Main\n')
-	tmp = make_cp()
-	tmp = tmp.replace(cp_sep(), " ")
-	tmp = tmp.replace("\"", '')
-	fh.write("Class-Path: {}\n".format(tmp))
-	fh.close()
+if os.path.exists(out_dir):
+	shutil.rmtree(out_dir)
+os.mkdir(out_dir)
 
-# if os.path.exists('build'):
-# 	shutil.rmtree('build')
-# os.mkdir('build')
+src_dir = os.path.join(test_base_dir, 'src')
+src_files = [os.path.join(src_dir, filename) for filename in os.listdir(src_dir)]
 
-os.chdir('build')
+print("Found {} source files.".format(len(src_files)))
 
-make_manifest()
-
-all_lib_jars = os.path.join('project_jars', '*.jar')
-all_class_files = os.path.join('*.class')
-all_src_files = os.path.join('..', 'src', '*.java')
-
-cmd = 'javac -cp {} {} -d .'.format(make_cp(), all_src_files)
-execute_cmd(cmd)
-cmd = 'jar cvfm MPCLoopParallelization.jar manifest.txt *.class {}'.format(all_lib_jars)
-execute_cmd(cmd)
+for file in src_files:
+    print('Compiling {}...'.format(file), end='')
+    cmd = ['javac', file, '-d', out_dir, '-cp', out_dir]
+    execute_cmd(cmd)
 
 
 

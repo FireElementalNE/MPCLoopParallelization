@@ -6,74 +6,17 @@ import soot.PackManager;
 import soot.Transform;
 import soot.options.Options;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class Main {
 
 	private static String RT_PATH = Utils.rt_path();
 	private static String JCE_PATH = Utils.jce_path();
 
-	private static void compile_program(String file, String src_dir, String cp, boolean add_java_extension) {
-		if(!src_dir.endsWith(Utils.get_sep())) {
-			src_dir = String.format("%s%s", src_dir, Utils.get_path_sep());
-		}
-		String full_path = src_dir + file;
-		if(add_java_extension) {
-			full_path = full_path+ ".java";
-		}
-		boolean errors_found = false;
-		try {
-			// TODO: maybe?
-			// TODO: create out folder if it does not exist
-			String cmd = String.format(Constants.COMPILE_CMD, full_path, cp, cp);
-			Process p = Runtime.getRuntime().exec(cmd);
-			BufferedReader stdError = new BufferedReader(new
-					InputStreamReader(p.getErrorStream()));
-			String s;
-			while ((s = stdError.readLine()) != null) {
-				Logger.error(s);
-				errors_found = true;
-			}
-		} catch (IOException e) {
-			Logger.error("Caught exception: " + e.getMessage());
-			errors_found = true;
-		}
-		if(errors_found) {
-			Logger.error(String.format("Found errors while compiling %s exiting.", file));
-			System.exit(0);
-		} else {
-			Logger.info(String.format("Finished Compiling %s", file));
-		}
-	}
-
-	private static void compile_programs() {
-		File out_dir = new File(Constants.RESOURCE_OUT);
-		if (!out_dir.exists()){
-			boolean rc = out_dir.mkdir();
-			if(!rc) {
-				Logger.error("Could not make output dir " + Constants.RESOURCE_OUT +". Exiting.");
-				System.exit(0);
-			}
-		}
-
-		File res = new File(Constants.RESOURCE_SRC);
-		String[] files = res.list();
-		assert files != null;
-		for (String file : files) {
-			if(!Objects.equals(file, Constants.UTILS_JAVA_FILE)) {
-				compile_program(file, Constants.DEFAULT_SD, Constants.DEFAULT_CP, false);
-			}
-		}
-	}
-
 	public static void main(String[] argv) {
 		// needed fix...
+
 		System.setProperty("tinylog.configuration", "tinylog.properties");
 
 		org.apache.commons.cli.Options options = new org.apache.commons.cli.Options();
@@ -110,34 +53,6 @@ public class Main {
 				.build();
 		options.addOption(c);
 
-		Option source_dir =  Option.builder("sd")
-				.hasArg(true)
-				.longOpt("src-dir")
-				.desc("compile from the target directory. (i.e if you want to compile " +
-						"MyClass.java in the directory /foo/bar/ add /foo/bar/")
-				.required(false)
-				.build();
-
-		options.addOption(source_dir);
-
-		Option test_arg = Option.builder("t")
-				.hasArg(false)
-				.longOpt("test")
-				.desc("use test program paths.")
-				.required(false)
-				.build();
-
-		options.addOption(test_arg);
-
-		Option comp = Option.builder("compile")
-				.hasArg(false)
-				.longOpt("compile")
-				.desc("Compile program.")
-				.required(false)
-				.build();
-
-		options.addOption(comp);
-
 
 		CommandLineParser parser = new DefaultParser();
 		HelpFormatter formatter = new HelpFormatter();
@@ -152,35 +67,11 @@ public class Main {
 
 			System.exit(1);
 		}
-
-		String classpath = Constants.DEFAULT_CP;
-		String rtpath = Constants.DEFAILT_RT_PATH;
-		String jcepath = Constants.DEFAILT_JCE_PATH;
-		String src_dir = Constants.DEFAULT_SD;
-
-
-		if(!cmd.hasOption("test")) {
-			classpath = cmd.getOptionValue("classpath", Constants.DEFAULT_CP);
-			rtpath = cmd.getOptionValue("rtpath", Constants.DEFAILT_RT_PATH);
-			jcepath = cmd.getOptionValue("jcepath", Constants.DEFAILT_JCE_PATH);
-			src_dir = cmd.getOptionValue("src-dir", Constants.DEFAULT_SD);
-		} else {
-			Logger.info("Using default paths. Ignoring all args except compile (which will compile all test classes)  and target class.");
-		}
+		String classpath = cmd.getOptionValue("classpath", Constants.DEFAULT_CP);
+		String rtpath = cmd.getOptionValue("rtpath", Constants.DEFAILT_RT_PATH);
+		String jcepath = cmd.getOptionValue("jcepath", Constants.DEFAILT_JCE_PATH);
 
 		String klass = cmd.getOptionValue("class");
-
-		if(cmd.hasOption("compile")) {
-			if(!cmd.hasOption("test")) {
-				compile_program(klass, src_dir, classpath, true);
-			} else {
-				compile_programs();
-			}
-		}
-
-
-
-
 
 		if(SystemUtils.IS_OS_WINDOWS) {
 			Logger.info( "Running on Windows OS.");
