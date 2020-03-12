@@ -8,21 +8,23 @@ class Test6 {
         int z = 10;
         int p = 20;
         int q = 0;
+        int k = 0;
 //        int j = 1;
         while(i < 5) {
 //            Utils.phi(a, a1);
 //            a1 = (double[])Utils.arraycopy(a);
 //            assert !Objects.equals(a1, null);
+            k = i;
             z = z + i;
             a[i] = i;
-            a[i] = i + a[i];
+            a[k] = i + a[i];
             int j = i - 1;
             if(a[i] > 3) {
-                a[i] = p * 10;
+                a[k] = p * 10;
                 if(p > 20) {
                     a[i] = p * 20;
                 } else {
-                    a[i] = p * 30;
+                    a[k] = p * 30;
                 }
                 z = z + a[i];
             } else {

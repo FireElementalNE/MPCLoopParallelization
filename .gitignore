@@ -28,3 +28,4 @@ SootOutput/*
 test_programs/out/*
 out/*
 target/*
+graphs/*

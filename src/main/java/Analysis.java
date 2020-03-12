@@ -15,11 +15,12 @@ import soot.shimple.ShimpleBody;
 import soot.toolkits.graph.Block;
 import soot.toolkits.graph.BlockGraph;
 import soot.toolkits.graph.ExceptionalBlockGraph;
-import static guru.nidi.graphviz.model.Factory.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+
+import static guru.nidi.graphviz.model.Factory.*;
 
 
 public class Analysis extends BodyTransformer {
@@ -51,8 +52,6 @@ public class Analysis extends BodyTransformer {
 	}
 
 	private void make_graph_png() {
-		guru.nidi.graphviz.model.Node n = node("start");
-		Map<String, guru.nidi.graphviz.model.Node> seen = new HashMap<>();
 		for(Map.Entry<Integer, Edge> entry: graph.get_edges().entrySet()) {
 			Edge e = entry.getValue();
 			Node def = e.get_def();
@@ -63,7 +62,7 @@ public class Analysis extends BodyTransformer {
 		}
 		try {
 			Graphviz.fromGraph(final_graph).width(Constants.GRAPHVIZ_WIDTH).render(Format.PNG)
-					.toFile(new File(final_graph.name() + ".png"));
+					.toFile(new File(Utils.make_graph_name(final_graph.name().toString())));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -304,10 +303,13 @@ public class Analysis extends BodyTransformer {
 		}
 		make_graph_png();
 		try {
-			Graphviz.fromGraph(flow_graph).width(700).render(Format.PNG)
-					.toFile(new File(flow_graph.name() + ".png"));
+			Graphviz.fromGraph(flow_graph).width(Constants.GRAPHVIZ_WIDTH).render(Format.PNG)
+					.toFile(new File(Utils.make_graph_name(flow_graph.name().toString())));
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+		for(Variable v : vars) {
+			v.make_graph();
 		}
 	}
 }

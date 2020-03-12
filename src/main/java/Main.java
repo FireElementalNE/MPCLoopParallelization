@@ -6,7 +6,13 @@ import soot.PackManager;
 import soot.Transform;
 import soot.options.Options;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public class Main {
@@ -14,10 +20,44 @@ public class Main {
 	private static String RT_PATH = Utils.rt_path();
 	private static String JCE_PATH = Utils.jce_path();
 
+	// Found here:
+	// https://javarevisited.blogspot.com/2015/03/how-to-delete-directory-in-java-with-files.html
+	// Thanks!
+	public static boolean deleteDirectory(File dir) {
+		if (dir.isDirectory()) {
+			File[] children = dir.listFiles();
+			assert children != null;
+			for (File child : children) {
+				boolean success = deleteDirectory(child);
+				if (!success) {
+					return false;
+				}
+			}
+		}
+		Logger.debug("removing file or directory : " + dir.getName());
+		return dir.delete();
+	}
+
 	public static void main(String[] argv) {
 		// needed fix...
 
 		System.setProperty("tinylog.configuration", "tinylog.properties");
+		File directory = new File(Constants.GRAPH_DIR);
+		boolean rc;
+		if(directory.exists()) {
+			rc = deleteDirectory(directory);
+			if (!rc) {
+				Logger.error("Old graph directory could not be deleted, exiting.");
+				System.exit(0);
+			}
+		}
+		rc = directory.mkdir();
+		if(!rc) {
+			Logger.error("New graph directory could not be created, exiting.");
+			System.exit(0);
+		}
+
+
 
 		org.apache.commons.cli.Options options = new org.apache.commons.cli.Options();
 
@@ -53,7 +93,6 @@ public class Main {
 				.build();
 		options.addOption(c);
 
-
 		CommandLineParser parser = new DefaultParser();
 		HelpFormatter formatter = new HelpFormatter();
 		CommandLine cmd = null;
@@ -79,7 +118,7 @@ public class Main {
 		} else if(SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_LINUX) {
 			Logger.info( "Running on unix-like OS.");
 		}
-		classpath = classpath + Utils.get_sep() + rtpath + Utils.get_sep() + jcepath;
+		classpath = classpath + File.pathSeparator + rtpath + File.pathSeparator + jcepath;
 
 		Logger.debug(String.format("CLASSPATH: %s", classpath));
 		Logger.debug(String.format("CLASS: %s", klass));

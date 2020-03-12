@@ -22,22 +22,6 @@ class Utils {
 		return Constants.JCE_PATH_UNIX;
 	}
 
-	static String get_sep() {
-		return File.pathSeparator;
-//		if (SystemUtils.IS_OS_WINDOWS) {
-//			return ";";
-//		}
-//		return ":";
-	}
-
-	static String get_path_sep() {
-		return File.separator;
-//		if (SystemUtils.IS_OS_WINDOWS) {
-//			return ";";
-//		}
-//		return ":";
-	}
-
 	static String get_block_name(Block b) {
 		Matcher m = Constants.BLOCK_RE.matcher(b.toString());
 		if(m.find()) {
@@ -78,9 +62,13 @@ class Utils {
 			ArrayVersionPhi av_phi = (ArrayVersionPhi)av;
 			return new ArrayVersionPhi(old_index, av_phi.get_array_versions());
 		} else {
-			ArrayVersionSingle avs = (ArrayVersionSingle)av;
+//			ArrayVersionSingle avs = (ArrayVersionSingle)av;
 			return new ArrayVersionSingle(1, old_index);
 		}
+	}
+
+	static String make_graph_name(String basename) {
+		return String.format("%s%s%s%s", Constants.GRAPH_DIR, File.separator, basename, Constants.GRAPH_EXT);
 	}
 
 	static boolean all_not_null(List<?> lst) {
@@ -92,5 +80,6 @@ class Utils {
 	static <T> boolean not_null(T o) {
 		return !Objects.equals(o, null);
 	}
+
 
 }
