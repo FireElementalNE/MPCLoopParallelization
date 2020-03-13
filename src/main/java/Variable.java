@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import static guru.nidi.graphviz.model.Factory.*;
 
 public class Variable {
+    // TODO: this class is going to have to change, see large comment in PhiVariable.java
     private Map<Integer, ImmutablePair<String, String>> previous_versions;
     private String current_version;
     private String current_stmt;

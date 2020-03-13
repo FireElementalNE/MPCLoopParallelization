@@ -26,12 +26,11 @@ import static guru.nidi.graphviz.model.Factory.*;
 public class Analysis extends BodyTransformer {
 	private Map<Block, DownwardExposedArrayRef> c_arr_ver; // current array version
 	private LinkedList<Block> worklist;
-//	private Set<Block> seen_blocks1;
-//	private Set<Block> seen_blocks2;
 	private Set<Block> seen_blocks;
 	private Set<ImmutablePair<String, String>> loop_head_exits;
 	private Map<String, ArrayVersion> array_vars;
 	private List<Variable> vars;
+	private Set<PhiVariable> phi_vars;
 	private ArrayDefUseGraph graph;
 	private guru.nidi.graphviz.model.MutableGraph final_graph;
 	private guru.nidi.graphviz.model.MutableGraph flow_graph;
@@ -40,11 +39,10 @@ public class Analysis extends BodyTransformer {
 	public Analysis(String class_name) {
 		final_graph = mutGraph(class_name + "_final").setDirected(true);
 		flow_graph = mutGraph(class_name + "_flow").setDirected(true);
-//		seen_blocks1 = new HashSet<>();
-//		seen_blocks2 = new HashSet<>();
 		seen_blocks = new HashSet<>();
 		c_arr_ver = new HashMap<>();
 		worklist = new LinkedList<>();
+		phi_vars = new HashSet<>();
 		loop_head_exits = new HashSet<>();
 		array_vars = new HashMap<>();
 		graph = new ArrayDefUseGraph();
@@ -109,13 +107,14 @@ public class Analysis extends BodyTransformer {
 		Logger.debug(Utils.get_block_name(b) + " head: " + b.getHead().toString());
 		for(Iterator<Unit> i = b.iterator(); i.hasNext();) {
 			ArrayVariableVisitor visitor = new ArrayVariableVisitor(array_vars, graph);
-			VariableVisitor var_visitor = new VariableVisitor(vars);
+			VariableVisitor var_visitor = new VariableVisitor(vars, phi_vars);
 			Unit u = i.next();
 			u.apply(visitor);
 			u.apply(var_visitor);
 			this.array_vars = visitor.get_vars();
 			this.graph = visitor.get_graph();
 			this.vars = var_visitor.get_vars();
+			this.phi_vars = var_visitor.get_phi_vars();
 		}
 		if(is_loop_head(b.getHead())) {
 			if(!seen_blocks.contains(b)) {
@@ -224,7 +223,7 @@ public class Analysis extends BodyTransformer {
 		for(Iterator<Unit> i = b.iterator(); i.hasNext();) {
 			BFSVisitor bfs_visitor = new BFSVisitor(c_arr_ver, b, graph);
 			ArrayVariableVisitor av_visitor = new ArrayVariableVisitor(array_vars, graph);
-			VariableVisitor var_visitor = new VariableVisitor(vars);
+			VariableVisitor var_visitor = new VariableVisitor(vars, phi_vars);
 			Unit u = i.next();
 			u.apply(bfs_visitor);
 			u.apply(av_visitor);
@@ -233,6 +232,7 @@ public class Analysis extends BodyTransformer {
 			c_arr_ver = bfs_visitor.get_c_arr_ver();
 			graph = bfs_visitor.get_graph();
 			vars = var_visitor.get_vars();
+			phi_vars = var_visitor.get_phi_vars();
 		}
 		List<Block> succ_blocks = b.getSuccs();
 		Logger.debug("We found " + succ_blocks.size() + " successor blocks.");
