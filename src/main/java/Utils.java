@@ -62,7 +62,6 @@ class Utils {
 			ArrayVersionPhi av_phi = (ArrayVersionPhi)av;
 			return new ArrayVersionPhi(old_index, av_phi.get_array_versions());
 		} else {
-//			ArrayVersionSingle avs = (ArrayVersionSingle)av;
 			return new ArrayVersionSingle(1, old_index);
 		}
 	}

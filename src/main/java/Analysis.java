@@ -34,8 +34,12 @@ public class Analysis extends BodyTransformer {
 	private ArrayDefUseGraph graph;
 	private guru.nidi.graphviz.model.MutableGraph final_graph;
 	private guru.nidi.graphviz.model.MutableGraph flow_graph;
-	// TODO: need to finish indexes!
-	// TODO: need to finish loop dependent changes!
+	// TODO: finish documenting.
+
+	/**
+	 * Create an analysis object
+	 * @param class_name the class that is being analyzed
+	 */
 	public Analysis(String class_name) {
 		final_graph = mutGraph(class_name + "_final").setDirected(true);
 		flow_graph = mutGraph(class_name + "_flow").setDirected(true);
@@ -49,6 +53,9 @@ public class Analysis extends BodyTransformer {
 		vars = new ArrayList<>();
 	}
 
+	/**
+	 * Make a pretty graph of the defuse graph
+	 */
 	private void make_graph_png() {
 		for(Map.Entry<Integer, Edge> entry: graph.get_edges().entrySet()) {
 			Edge e = entry.getValue();
@@ -67,6 +74,11 @@ public class Analysis extends BodyTransformer {
 
 	}
 
+	/**
+	 * check is a given unit is the head of a loop
+	 * @param unit the unit
+	 * @return true iff the unit is the head of a loop
+	 */
 	private boolean is_loop_head(Unit unit) {
 		Stmt stmt = (Stmt)unit;
 		for(ImmutablePair<String, String> el : loop_head_exits) {
@@ -77,6 +89,12 @@ public class Analysis extends BodyTransformer {
 		return false;
 	}
 
+	/**
+	 * Add an edge for the flow graph (generated with GraphViz)
+	 * @param from_blk the source block
+	 * @param to_blk the target block
+	 * @param is_loop true iff it is a looping edge (return to head)
+	 */
 	private void add_flow_edge(Block from_blk, Block to_blk, boolean is_loop) {
 		guru.nidi.graphviz.model.Node from_node = node(Utils.get_block_name(from_blk));
 		guru.nidi.graphviz.model.Node to_node = node(Utils.get_block_name(to_blk));
@@ -87,6 +105,11 @@ public class Analysis extends BodyTransformer {
 		}
 	}
 
+	/**
+	 * get all exits that correspond to a given unit
+	 * @param unit the unit
+	 * @return a list of exits that correspond to the unit
+	 */
 	private List<String> get_exits(Unit unit) {
 		List<String> exits = new ArrayList<>();
 		Stmt stmt = (Stmt)unit;
@@ -98,12 +121,13 @@ public class Analysis extends BodyTransformer {
 		return exits;
 	}
 
+	/**
+	 * Recursive block traversal function. This is the main parser for the _entire_ program.
+	 * At this point we are _NOT_ in a loop
+	 * @param b the block we are currently parsing
+	 */
 	@SuppressWarnings("ForLoopReplaceableByForEach")
-	private void parse_block(Block b, int sc) {
-
-		// Logger.info(Utils.fill_spaces(sc) + "Found Block (head is first line).");
-		// Logger.info(Utils.fill_spaces(sc) + "Number of successor Blocks: " + b.getSuccs().size());
-		// Logger.info(Utils.fill_spaces(sc) + "Preds size: " + b.getPreds().size());
+	private void parse_block(Block b) {
 		Logger.debug(Utils.get_block_name(b) + " head: " + b.getHead().toString());
 		for(Iterator<Unit> i = b.iterator(); i.hasNext();) {
 			ArrayVariableVisitor visitor = new ArrayVariableVisitor(array_vars, graph);
@@ -126,20 +150,27 @@ public class Analysis extends BodyTransformer {
 			if(!seen_blocks.contains(sb)) {
 				add_flow_edge(b, sb, false);
 				seen_blocks.add(b);
-				parse_block(sb, sc + 1);
+				parse_block(sb);
 			}
 		}
 	}
 
+	/**
+	 * the start function for parsing blocks
+	 * @param body the body being parsed
+	 */
 	private void parse_blocks_start(Body body) {
 		BlockGraph bg = new ExceptionalBlockGraph(body);
-		List<Block> blocks = bg.getBlocks();
+		List<Block> blocks = bg.getHeads();;
 		for(Block b : blocks) {
-			parse_block(b, 0);
+			parse_block(b);
 		}
 	}
 
-	// New Ana Algo!
+	/**
+	 * find all loop heads/exits in a given body
+	 * @param body the body being parsed
+	 */
 	private void find_loop_heads(Body body) {
 		LoopFinder lf = new LoopFinder();
 		Set<Loop> loops = lf.getLoops(body);
@@ -206,7 +237,6 @@ public class Analysis extends BodyTransformer {
 				DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
 				if (c_arr_ver.containsKey(b1)) {
 					for (Map.Entry<String, ArrayVersion> entry : array_vars.entrySet()) {
-						// CHECKTHIS: throwing NullPointerException because of aliasing issue (see top of class)
 						ArrayVersion current_s = Utils.copy_av(c_arr_ver.get(b1).get(entry.getKey()));
 						new_daf.put(entry.getKey(), current_s);
 					}
@@ -308,8 +338,8 @@ public class Analysis extends BodyTransformer {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		for(Variable v : vars) {
-			v.make_graph();
-		}
+//		for(Variable v : vars) {
+//			v.make_graph();
+//		}
 	}
 }

@@ -12,6 +12,7 @@ class BFSVisitor extends AbstractStmtSwitch {
     private Block b;
     private DownwardExposedArrayRef daf;
     private ArrayDefUseGraph graph;
+
     BFSVisitor(Map<Block, DownwardExposedArrayRef> c_arr_ver, Block b, ArrayDefUseGraph graph) {
         this.c_arr_ver = c_arr_ver;
         this.b = b;
