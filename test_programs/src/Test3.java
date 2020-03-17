@@ -1,5 +1,3 @@
-import java.util.Objects;
-
 class Test3 {
     static int[] arraycpy(int[] a) {
         int[] b = new int[a.length];

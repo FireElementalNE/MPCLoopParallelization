@@ -1,5 +1,3 @@
-import java.util.Objects;
-
 class Test8 {
     public static void main(String[] args) {
         int[] a = new int[5];

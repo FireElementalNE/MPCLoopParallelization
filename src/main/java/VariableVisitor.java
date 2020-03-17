@@ -2,6 +2,7 @@ import org.tinylog.Logger;
 import soot.Value;
 import soot.ValueBox;
 import soot.jimple.AbstractStmtSwitch;
+import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
 import soot.shimple.PhiExpr;
 
@@ -11,8 +12,6 @@ import java.util.stream.Collectors;
 
 public class VariableVisitor extends AbstractStmtSwitch {
 
-    private List<Variable> vars;
-
     private Set<PhiVariable> phi_vars;
 
     /**
@@ -21,20 +20,10 @@ public class VariableVisitor extends AbstractStmtSwitch {
      * Index values are either:
      *   1. Constants
      *   2. Have a Phi variable somewhere in their def chain
-     * @param vars a list of variables at the time the visitor is created
      * @param phi_vars a list of phi variables at the time the visitor is created
      */
-    VariableVisitor(List<Variable> vars, Set<PhiVariable> phi_vars) {
-        this.vars =  vars.stream().map(Variable::new).collect(Collectors.toList());
+    VariableVisitor(Set<PhiVariable> phi_vars) {
         this.phi_vars = phi_vars.stream().map(PhiVariable::new).collect(Collectors.toSet());
-    }
-
-    /**
-     * get the list of variables (this is called after everything has finished
-     * @return the list of variables
-     */
-    List<Variable> get_vars() {
-        return vars.stream().map(Variable::new).collect(Collectors.toList());
     }
 
     /**
@@ -52,44 +41,39 @@ public class VariableVisitor extends AbstractStmtSwitch {
      */
     @Override
     public void caseAssignStmt(AssignStmt stmt) {
-//        ValueBox left = stmt.getLeftOpBox();
+        ValueBox left = stmt.getLeftOpBox();
         ValueBox right = stmt.getRightOpBox();
         if(right.getValue() instanceof PhiExpr) {
+            // getting a brand new phi variable
             Logger.debug("We found a phi node: " + stmt.toString());
-            // TODO: do we actually need to record phi links? we can always find the looping variable, so who cares.
-            // TODO: see the commented out stuff in PhiVariable
-//            boolean phi_links = false;
-//            for(PhiVariable pv : phi_vars) {
-//                if(pv.defines_phi_var(stmt)) {
-//                    Logger.debug("\tnew phi node links with '" + pv.toString() + "'.");
-//                    phi_links = true;
-//                }
-//            }
-//            if(!phi_links) {
-                phi_vars.add(new PhiVariable(stmt));
-//            }
+            phi_vars.add(new PhiVariable(stmt));
         } else {
             Logger.debug("Not a phi node, looking for links: " + stmt.toString());
+            Logger.debug("Checking phi_vars");
+            // loop through phi variables
             for(PhiVariable pv : phi_vars) {
                 List<Value> values = pv.get_phi_var_uses(stmt);
+                // if we are REDEFINING a phi variable it is a looping stmt.
                 if(pv.defines_phi_var(stmt) && !values.isEmpty()) {
                     Logger.debug("Found that stmt '" + stmt.toString()  + "' links to phi stmt '" + pv.toString() + "'.");
                     Logger.debug("This is most likely a Looping stmt.");
                     pv.add_linked_stmt(stmt);
                 }
-                else if(!values.isEmpty()) {
+                else if(!values.isEmpty() && !(left.getValue() instanceof ArrayRef)) {
+                    // if we we are not DEFINING a phi var but we are using one
                     Logger.debug("Found that stmt '" + stmt.toString() + "' uses phi vars:");
+                    Logger.debug("\toriginal phi: " + pv.toString());
                     for(Value v : values) {
-                        // I think this list should only ever be of size one....
-                        vars.add(new Variable(stmt.getLeftOpBox().getValue(), stmt, v, pv.get_phi_expr()));
-                        Logger.debug("\t" + stmt.getLeftOpBox().getValue() + " is effected by " + v.toString());
+                        Logger.debug("\t  " + stmt.getLeftOpBox().getValue() + " is effected by " + v.toString());
                     }
-
+                    pv.add_alias(left, stmt);
                 }
-                else if(pv.defines_phi_var(stmt)) {
-                    Logger.debug("I do not think we should get here (" + stmt.toString() + ")." );
+                else {
+                    // error catch
+                    Logger.error("error processing stmt: " + stmt.toString());
                 }
             }
+
         }
         /* TODO:
         From here we need to do something like the following.

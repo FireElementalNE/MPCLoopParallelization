@@ -1,8 +1,8 @@
+import org.tinylog.Logger;
 import soot.jimple.Stmt;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.tinylog.Logger;
 import java.util.stream.Collectors;
 
 class ArrayDefUseGraph {
