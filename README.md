@@ -35,6 +35,8 @@ compile.py
 
 * There are two loggers, one is a file set to INFO the other is a console logger set to DEBUG both can be configured in tinylog.properties.
 
+* the default **-j** and **-r** arguments change depending on operating system.
+
 * Currently the depedencies are:
     *  [tinylog-api 2.0.1](https://mvnrepository.com/artifact/org.tinylog/tinylog-api/2.0.1)
     * [tinylog-impl 2.0.1](https://mvnrepository.com/artifact/org.tinylog/tinylog-impl/2.0.1)
