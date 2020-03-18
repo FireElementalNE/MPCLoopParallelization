@@ -1,3 +1,4 @@
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.tinylog.Logger;
 import soot.Value;
 import soot.ValueBox;
@@ -52,7 +53,7 @@ public class VariableVisitor extends AbstractStmtSwitch {
             Logger.debug("Checking phi_vars");
             // loop through phi variables
             for(PhiVariable pv : phi_vars) {
-                List<Value> values = pv.get_phi_var_uses(stmt);
+                List<ImmutablePair<Value, Value>> values = pv.get_phi_var_uses(stmt);
                 // if we are REDEFINING a phi variable it is a looping stmt.
                 if(pv.defines_phi_var(stmt) && !values.isEmpty()) {
                     Logger.debug("Found that stmt '" + stmt.toString()  + "' links to phi stmt '" + pv.toString() + "'.");
@@ -63,15 +64,15 @@ public class VariableVisitor extends AbstractStmtSwitch {
                     // if we we are not DEFINING a phi var but we are using one
                     Logger.debug("Found that stmt '" + stmt.toString() + "' uses phi vars:");
                     Logger.debug("\toriginal phi: " + pv.toString());
-                    for(Value v : values) {
-                        Logger.debug("\t  " + stmt.getLeftOpBox().getValue() + " is effected by " + v.toString());
+                    for(ImmutablePair<Value, Value> v_pair : values) {
+                        Logger.debug("\t  " + v_pair.getLeft().toString() + " is effected by " + v_pair.getRight().toString());
                     }
-                    pv.add_alias(left, stmt);
+                    pv.add_alias(left, stmt, values);
                 }
-                else {
-                    // error catch
-                    Logger.error("error processing stmt: " + stmt.toString());
-                }
+//                else {
+//                    // error catch
+//                    Logger.error("error processing stmt: " + stmt.toString() + " Values size: " + values.size() + " left class: " + left.getValue().getClass().getName());
+//                }
             }
 
         }

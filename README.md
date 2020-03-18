@@ -2,6 +2,13 @@
 
 Loop Parallelization for MPC
 
+Currently working:
+
+* [BFS algorithm](https://github.com/FireElementalNE/MPCLoopParallelization/blob/master/src/main/java/Analysis.java#L291-L310) to create array SSA links
+* [Phi variable parsing](https://github.com/FireElementalNE/MPCLoopParallelization/blob/master/src/main/java/VariableVisitor.java)
+* Maven packaging system (see below)
+* Graph creation
+
 ## Building
 
 This should be pretty strait forward, you will need these reqs:
@@ -31,9 +38,11 @@ usage: utility-name
 ## Notes
 
 * You can compile the test programs (assuming that javac is in your PATH) by running
-compile.py
+[compile.py](https://github.com/FireElementalNE/MPCLoopParallelization/blob/master/compile.py)
 
-* There are two loggers, one is a file set to INFO the other is a console logger set to DEBUG both can be configured in tinylog.properties.
+* There are two loggers, one is a file set to DEBUG the other is a console logger set to DEBUG both can be configured in [tinylog.properties](https://github.com/FireElementalNE/MPCLoopParallelization/blob/master/src/main/resources/tinylog.properties).
+
+* a folder that holds the graphs is [deleted (if it exists) and recreated at runtime](https://github.com/FireElementalNE/MPCLoopParallelization/blob/master/src/main/java/Main.java#L21-L53).
 
 * Currently the depedencies are:
     *  [tinylog-api 2.0.1](https://mvnrepository.com/artifact/org.tinylog/tinylog-api/2.0.1)

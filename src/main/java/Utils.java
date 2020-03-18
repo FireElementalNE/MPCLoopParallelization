@@ -1,7 +1,12 @@
+import guru.nidi.graphviz.engine.Format;
+import guru.nidi.graphviz.engine.Graphviz;
+import guru.nidi.graphviz.model.MutableGraph;
 import org.apache.commons.lang3.SystemUtils;
+import org.tinylog.Logger;
 import soot.toolkits.graph.Block;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -80,5 +85,16 @@ class Utils {
 		return !Objects.equals(o, null);
 	}
 
+	static void print_graph(MutableGraph graph) {
+		try {
+			Graphviz.fromGraph(graph).width(Constants.GRAPHVIZ_WIDTH).render(Format.PNG)
+					.toFile(new File(Utils.make_graph_name(graph.name().toString())));
+		} catch (IOException e) {
+			Logger.error("Caught " + e.getClass().getName() + ": " + e.getMessage());
+			if(Constants.PRINT_ST) {
+				e.printStackTrace();
+			}
+		}
+	}
 
 }

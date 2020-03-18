@@ -2,6 +2,7 @@ import java.util.regex.Pattern;
 
 
 class Constants {
+    static final boolean PRINT_ST = false;
 //    private static final String[] EXCLUDES_INTERNAL = new String[] { "jdk.*" };
 //    static final ArrayList<String> EXCLUDES = new ArrayList<>(Arrays.asList(EXCLUDES_INTERNAL));
     static final String RT_PATH_WINDOWS = "C:\\Program Files\\Java\\jdk1.8.0_221\\jre\\lib\\rt.jar";

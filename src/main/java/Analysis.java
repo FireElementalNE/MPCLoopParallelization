@@ -64,13 +64,7 @@ public class Analysis extends BodyTransformer {
 			guru.nidi.graphviz.model.Node use_node = node(use.get_stmt());
 			final_graph.add(def_node.link(to(use_node).with(LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
 		}
-		try {
-			Graphviz.fromGraph(final_graph).width(Constants.GRAPHVIZ_WIDTH).render(Format.PNG)
-					.toFile(new File(Utils.make_graph_name(final_graph.name().toString())));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
+		Utils.print_graph(final_graph);
 	}
 
 	/**
@@ -329,12 +323,7 @@ public class Analysis extends BodyTransformer {
 			Logger.info(" " + entry.getValue().get_use().get_stmt());
 		}
 		make_graph_png();
-		try {
-			Graphviz.fromGraph(flow_graph).width(Constants.GRAPHVIZ_WIDTH).render(Format.PNG)
-					.toFile(new File(Utils.make_graph_name(flow_graph.name().toString())));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		Utils.print_graph(flow_graph);
 		for(PhiVariable pv : phi_vars) {
 			pv.make_graph();
 		}
