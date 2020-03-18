@@ -4,7 +4,7 @@ Loop Parallelization for MPC
 
 Currently working:
 
-* [BFS algorithm](https://github.com/FireElementalNE/MPCLoopParallelization/blob/master/src/main/java/Analysis.java#L291-L310) to create array SSA links
+* [BFS algorithm](https://github.com/FireElementalNE/MPCLoopParallelization/blob/master/src/main/java/Analysis.java#L285-L304) to create array SSA links
 * [Phi variable parsing](https://github.com/FireElementalNE/MPCLoopParallelization/blob/master/src/main/java/VariableVisitor.java)
 * Maven packaging system (see below)
 * Graph creation
