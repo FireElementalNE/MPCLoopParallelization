@@ -44,6 +44,8 @@ usage: utility-name
 
 * a folder that holds the graphs is [deleted (if it exists) and recreated at runtime](https://github.com/FireElementalNE/MPCLoopParallelization/blob/master/src/main/java/Main.java#L21-L53).
 
+* the default **-j** and **-r** arguments change depending on operating system.
+
 * Currently the depedencies are:
     *  [tinylog-api 2.0.1](https://mvnrepository.com/artifact/org.tinylog/tinylog-api/2.0.1)
     * [tinylog-impl 2.0.1](https://mvnrepository.com/artifact/org.tinylog/tinylog-impl/2.0.1)
