@@ -89,7 +89,7 @@ class Utils {
 		try {
 			Graphviz.fromGraph(graph).width(Constants.GRAPHVIZ_WIDTH).render(Format.PNG)
 					.toFile(new File(Utils.make_graph_name(graph.name().toString())));
-		} catch (IOException e) {
+		} catch (IOException | java.awt.AWTError e) {
 			Logger.error("Caught " + e.getClass().getName() + ": " + e.getMessage());
 			if(Constants.PRINT_ST) {
 				e.printStackTrace();
