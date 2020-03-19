@@ -29,9 +29,9 @@ public class PhiVariable {
         this.counter = 1;
         this.all_values.put(counter, new ImmutablePair<>(stmt.getLeftOpBox(), stmt));
         this.var_links = new ArrayList<>();
-        var_links.add(new Variable(phi_def.getValue()));
+        var_links.add(new Variable(phi_def.getValue(), phi_expr));
         for(ValueUnitPair vup : phi_expr.getArgs()) {
-            var_links.add(new Variable(vup.getValue()));
+            var_links.add(new Variable(vup.getValue(), phi_expr));
         }
 
     }
@@ -120,12 +120,12 @@ public class PhiVariable {
      * @param v the value to check
      * @return true iff this PhiVariable has ever been this value
      */
-    boolean has_ever_been(Value v) {
+    boolean has_ever_been(String v) {
         // must be int!
-        assert Objects.equals(v.getType().toString(), Constants.INT_TYPE);
+        assert Objects.equals(v, Constants.INT_TYPE);
         for(Map.Entry<Integer, ImmutablePair<ValueBox, AssignStmt>> entry : all_values.entrySet()) {
             Value v1 = entry.getValue().getLeft().getValue();
-            if(Objects.equals(v1.toString(), v.toString())) {
+            if(Objects.equals(v1.toString(), v)) {
                 return true;
             }
         }
@@ -135,20 +135,35 @@ public class PhiVariable {
     /**
      * add an alias for this PhiVariable
      * @param vb the ValueBox for the variable
-     * @param s the assignment statement for this variable
+     * @param stmt the assignment statement for this variable
      * @param value_links observed links between aliased values
      */
-    void add_alias(ValueBox vb, AssignStmt s, List<ImmutablePair<Value, Value>> value_links) {
+    void add_alias(ValueBox vb, AssignStmt stmt, List<ImmutablePair<Value, Value>> value_links) {
         counter++;
-        all_values.put(counter, new ImmutablePair<>(vb, s));
+        all_values.put(counter, new ImmutablePair<>(vb, stmt));
         for(ImmutablePair<Value, Value> v_pair : value_links) {
             for(Variable var : this.var_links) {
-                if(var.has_ever_been(v_pair.getLeft())) {
+                if(var.has_ever_been(v_pair.getLeft().toString())) {
 //                    if(v_pair.getRight() instanceof ArrayRef)
-                    var.add_alias(v_pair);
+                    var.add_alias(v_pair, stmt);
                 }
             }
         }
+    }
+
+    /**
+     * create a def/use string for a given variable
+     * @param v the variable name
+     * @return a def/use string iff this PhiVariable contains a Variable that has been the passed variable at
+     *         at some point, otherwise null
+     */
+    String get_var_dep_chain(String v) {
+        for(Variable var : var_links) {
+            if(var.has_ever_been(v)) {
+                return var.print_defs(v);
+            }
+        }
+        return null;
     }
 
     /**

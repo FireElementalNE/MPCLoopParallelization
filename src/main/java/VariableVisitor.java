@@ -1,19 +1,12 @@
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.tinylog.Logger;
-import soot.Value;
 import soot.ValueBox;
 import soot.jimple.AbstractStmtSwitch;
-import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
 import soot.shimple.PhiExpr;
 
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 public class VariableVisitor extends AbstractStmtSwitch {
 
-    private Set<PhiVariable> phi_vars;
+    private PhiVariableContainer phi_vars;
 
     /**
      * create new VariableVisitor
@@ -21,18 +14,19 @@ public class VariableVisitor extends AbstractStmtSwitch {
      * Index values are either:
      *   1. Constants
      *   2. Have a Phi variable somewhere in their def chain
-     * @param phi_vars a list of phi variables at the time the visitor is created
+     * @param phi_vars a container containing all phi_variables that have been seen up to this point
+     *                 (along with the aliases of those PhiVariables
      */
-    VariableVisitor(Set<PhiVariable> phi_vars) {
-        this.phi_vars = phi_vars.stream().map(PhiVariable::new).collect(Collectors.toSet());
+    VariableVisitor(PhiVariableContainer phi_vars) {
+        this.phi_vars = new PhiVariableContainer(phi_vars);
     }
 
     /**
-     * get the list of phi variables (this is called after everything has finished)
-     * @return the list of phi variables
+     * get the (possibly) modified phi variable container  (this is called after everything has finished)
+     * @return the phi variable container
      */
-    Set<PhiVariable> get_phi_vars() {
-        return phi_vars.stream().map(PhiVariable::new).collect(Collectors.toSet());
+    PhiVariableContainer get_phi_vars() {
+        return new PhiVariableContainer(phi_vars);
     }
 
     /**
@@ -42,7 +36,6 @@ public class VariableVisitor extends AbstractStmtSwitch {
      */
     @Override
     public void caseAssignStmt(AssignStmt stmt) {
-        ValueBox left = stmt.getLeftOpBox();
         ValueBox right = stmt.getRightOpBox();
         if(right.getValue() instanceof PhiExpr) {
             // getting a brand new phi variable
@@ -52,29 +45,7 @@ public class VariableVisitor extends AbstractStmtSwitch {
             Logger.debug("Not a phi node, looking for links: " + stmt.toString());
             Logger.debug("Checking phi_vars");
             // loop through phi variables
-            for(PhiVariable pv : phi_vars) {
-                List<ImmutablePair<Value, Value>> values = pv.get_phi_var_uses(stmt);
-                // if we are REDEFINING a phi variable it is a looping stmt.
-                if(pv.defines_phi_var(stmt) && !values.isEmpty()) {
-                    Logger.debug("Found that stmt '" + stmt.toString()  + "' links to phi stmt '" + pv.toString() + "'.");
-                    Logger.debug("This is most likely a Looping stmt.");
-                    pv.add_linked_stmt(stmt);
-                }
-                else if(!values.isEmpty() && !(left.getValue() instanceof ArrayRef)) {
-                    // if we we are not DEFINING a phi var but we are using one
-                    Logger.debug("Found that stmt '" + stmt.toString() + "' uses phi vars:");
-                    Logger.debug("\toriginal phi: " + pv.toString());
-                    for(ImmutablePair<Value, Value> v_pair : values) {
-                        Logger.debug("\t  " + v_pair.getLeft().toString() + " is effected by " + v_pair.getRight().toString());
-                    }
-                    pv.add_alias(left, stmt, values);
-                }
-//                else {
-//                    // error catch
-//                    Logger.error("error processing stmt: " + stmt.toString() + " Values size: " + values.size() + " left class: " + left.getValue().getClass().getName());
-//                }
-            }
-
+            phi_vars.process_assignment(stmt);
         }
         /* TODO:
         From here we need to do something like the following.

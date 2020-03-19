@@ -7,6 +7,10 @@ import soot.Transform;
 import soot.options.Options;
 
 import java.io.File;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryPoolMXBean;
+import java.lang.management.MemoryType;
+import java.lang.management.MemoryUsage;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -154,7 +158,31 @@ public class Main {
 		// analysis.showResult();
 
 		long endTime   = System.currentTimeMillis();
-		String running_time_str = String.format("INFO: Total running time: %.2f sec", ((float)(endTime - startTime) / 1000));
-		Logger.info(running_time_str);
+		Logger.info(String.format("Total running time: %.2f sec", ((float)(endTime - startTime) / 1000)));
+		try {
+			List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
+			double heap_mem_used = 0.0d;
+			double heap_mem_com = 0.0d;
+			double non_heap_mem_used = 0.0d;
+			double non_heap_mem_com = 0.0d;
+			for (MemoryPoolMXBean pool : pools) {
+				MemoryUsage peak = pool.getPeakUsage();
+				if(pool.getType() == MemoryType.NON_HEAP) {
+					non_heap_mem_used += peak.getUsed();
+					non_heap_mem_com += peak.getCommitted();
+
+				} else {
+					heap_mem_used += peak.getUsed();
+					heap_mem_com += peak.getCommitted();
+				}
+			}
+			Logger.info(String.format("Peak HEAP used: %.2f MB", heap_mem_used * 1e-6));
+			Logger.info(String.format("Peak HEAP memory reserved: %.2f MB", heap_mem_com * 1e-6));
+			Logger.info(String.format("Peak NON-HEAP used: %.2f MB", non_heap_mem_used * 1e-6));
+			Logger.info(String.format("Peak NON-HEAP memory reserved: %.2f MB", non_heap_mem_com * 1e-6));
+
+		} catch (Throwable t1) {
+			Logger.error("Exception in agent: " + t1);
+		}
 	}
 }

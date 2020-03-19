@@ -1,7 +1,5 @@
 import guru.nidi.graphviz.attribute.LinkAttr;
 import guru.nidi.graphviz.attribute.Style;
-import guru.nidi.graphviz.engine.Format;
-import guru.nidi.graphviz.engine.Graphviz;
 import guru.nidi.graphviz.model.MutableGraph;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.tinylog.Logger;
@@ -17,8 +15,6 @@ import soot.toolkits.graph.Block;
 import soot.toolkits.graph.BlockGraph;
 import soot.toolkits.graph.ExceptionalBlockGraph;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.*;
 
 import static guru.nidi.graphviz.model.Factory.*;
@@ -30,7 +26,7 @@ public class Analysis extends BodyTransformer {
 	private Set<Block> seen_blocks;
 	private Set<ImmutablePair<String, String>> loop_head_exits;
 	private Map<String, ArrayVersion> array_vars;
-	private Set<PhiVariable> phi_vars;
+	private PhiVariableContainer phi_vars;
 	private ArrayDefUseGraph graph;
 	private MutableGraph final_graph;
 	private MutableGraph flow_graph;
@@ -46,7 +42,7 @@ public class Analysis extends BodyTransformer {
 		seen_blocks = new HashSet<>();
 		c_arr_ver = new HashMap<>();
 		worklist = new LinkedList<>();
-		phi_vars = new HashSet<>();
+		phi_vars = new PhiVariableContainer();
 		loop_head_exits = new HashSet<>();
 		array_vars = new HashMap<>();
 		graph = new ArrayDefUseGraph();
@@ -324,8 +320,8 @@ public class Analysis extends BodyTransformer {
 		}
 		make_graph_png();
 		Utils.print_graph(flow_graph);
-		for(PhiVariable pv : phi_vars) {
-			pv.make_graph();
-		}
+		phi_vars.make_graphs();
+		phi_vars.print_var_dep_chain("i3");
+		phi_vars.print_var_dep_chain("i16_2");
 	}
 }
