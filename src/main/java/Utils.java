@@ -7,7 +7,9 @@ import soot.toolkits.graph.Block;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 
@@ -50,8 +52,18 @@ class Utils {
 		StringBuilder sb = new StringBuilder();
 		sb.append(Constants.ARR_PHI_STR_START);
 		ArrayVersion[] versions = av_phi.get_array_versions().toArray(new ArrayVersion[0]);
+		Map<Integer, Integer> have_seen = new HashMap<>();
 		for(int i = 0; i < versions.length; i++) {
-			sb.append(String.format(Constants.ARR_VER_STR, s, versions[i].get_version()));
+			String aug = Constants.EMPTY_STR;
+			if(av_phi.has_diff_ver_match()) {
+				if(have_seen.containsKey(versions[i].get_version())) {
+					have_seen.put(versions[i].get_version(), have_seen.get(versions[i].get_version()) + 1);
+				} else {
+					have_seen.put(versions[i].get_version(), 0);
+				}
+				aug = String.valueOf(Constants.ALPHABET_ARRAY[have_seen.get(versions[i].get_version())]);
+			}
+			sb.append(String.format(Constants.ARR_VER_STR, s, versions[i].get_version(), aug));
 			if(i + 1 < versions.length) {
 				sb.append(", ");
 			} else {
@@ -62,12 +74,11 @@ class Utils {
 	}
 
 	static ArrayVersion rename_av(ArrayVersion av) {
-		Index old_index = av.get_index();
 		if(av.is_phi()) {
 			ArrayVersionPhi av_phi = (ArrayVersionPhi)av;
-			return new ArrayVersionPhi(old_index, av_phi.get_array_versions());
+			return new ArrayVersionPhi(av_phi.get_array_versions());
 		} else {
-			return new ArrayVersionSingle(1, old_index);
+			return new ArrayVersionSingle(av.get_version());
 		}
 	}
 

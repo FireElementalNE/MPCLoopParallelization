@@ -5,7 +5,6 @@ import soot.jimple.*;
 import soot.toolkits.graph.Block;
 
 import java.util.Map;
-import java.util.Objects;
 
 class BFSVisitor extends AbstractStmtSwitch {
     private Map<Block, DownwardExposedArrayRef> c_arr_ver;
@@ -31,13 +30,13 @@ class BFSVisitor extends AbstractStmtSwitch {
 
     private void check_array_read(Stmt stmt) {
         String basename = stmt.getArrayRef().getBaseBox().getValue().toString();
-        String index = stmt.getArrayRef().getIndex().toString();
+        ValueBox index_box = stmt.getArrayRef().getIndexBox();
         Logger.debug("Change needed in stmt: " + stmt.toString());
-        Logger.debug(" The index is: " + index);
+        Logger.debug(" The index is: " + index_box.getValue().toString());
         Logger.debug(" " + basename + " should be changed to " + daf.get_name(basename));
         Logger.debug(" " + "This is a use for " + daf.get_name(basename));
         ArrayVersion av = Utils.copy_av(daf.get(basename));
-        Node new_node = new Node(stmt.toString(), basename, av, DefOrUse.USE,
+        Node new_node = new Node(stmt.toString(), basename, av, new Index(index_box), DefOrUse.USE,
                 new ImmutablePair<>(basename, daf.get_name(basename)));
         graph.add_node(new_node, false);
         c_arr_ver.put(b, daf);
@@ -60,14 +59,14 @@ class BFSVisitor extends AbstractStmtSwitch {
     public void caseAssignStmt(AssignStmt stmt) {
         if(stmt.containsArrayRef()) {
             ValueBox left = stmt.getLeftOpBox();
-            if(Objects.equals(stmt.getArrayRefBox(), left)) {
+            if(left.getValue() instanceof ArrayRef) {
                 String basename = stmt.getArrayRef().getBaseBox().getValue().toString();
                 Logger.debug("Array write found (change needed): " + stmt.toString());
                 daf.new_ver(basename);
                 Logger.debug(" " + basename + " needs to be changed to " + daf.get_name(basename));
                 Logger.debug("This is a new def for " + daf.get_name(basename));
                 ArrayVersion av = Utils.copy_av(daf.get(basename));
-                graph.add_node(new Node(stmt.toString(), basename, av, DefOrUse.DEF,
+                graph.add_node(new Node(stmt.toString(), basename, av, new Index(stmt.getArrayRef().getIndexBox()), DefOrUse.DEF,
                         new ImmutablePair<>(basename, daf.get_name(basename))), true);
                 c_arr_ver.put(b, daf);
             } else {

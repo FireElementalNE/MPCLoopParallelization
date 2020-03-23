@@ -82,7 +82,7 @@ class DownwardExposedArrayRef {
      */
     String get_name(String s) {
         if(array_ver.containsKey(s)) {
-            return String.format(Constants.ARR_VER_STR, s, array_ver.get(s).get_version());
+            return String.format(Constants.ARR_VER_STR, s, array_ver.get(s).get_version(), Constants.EMPTY_STR);
         } else {
             Logger.error("Key " + s + " not found.");
             return null;

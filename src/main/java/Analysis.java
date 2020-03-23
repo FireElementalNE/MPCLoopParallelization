@@ -201,8 +201,9 @@ public class Analysis extends BodyTransformer {
 						}
 						// make a phi node!
 						// Indexes MUST be the same!
-						ArrayVersionPhi av_phi = new ArrayVersionPhi(new Index(null), avs);
+						ArrayVersionPhi av_phi = new ArrayVersionPhi(avs);
 						DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
+						// TODO: branch renaming???? if we branch just call new vars a or b then for further branches aa, bb etc??
 						new_daf.put(entry.getKey(), av_phi);
 						Logger.info("We made a phi node: " + new_daf.get_name(entry.getKey()));
 						Node n = new Node(entry.getKey(), av_phi);

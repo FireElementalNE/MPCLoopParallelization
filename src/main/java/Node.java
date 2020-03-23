@@ -10,24 +10,30 @@ class Node {
     private String stmt;
     private DefOrUse type;
     private ArrayVersion av;
+    private Index index;
     private String basename;
     private String aug_stmt;
     private boolean is_aug;
+    private boolean phi_flag;
 
 
-    Node(String stmt, String basename, ArrayVersion av, DefOrUse type) {
+    Node(String stmt, String basename, ArrayVersion av, Index index, DefOrUse type) {
         this.stmt = stmt;
         this.type = type;
         this.av = av;
+        this.phi_flag = av.is_phi();
         this.basename = basename;
         this.aug_stmt = null;
         this.is_aug = false;
+        this.index = index;
     }
 
-    Node(String stmt, String basename, ArrayVersion av, DefOrUse type, ImmutablePair<String, String> replacements) {
+    Node(String stmt, String basename, ArrayVersion av, Index index, DefOrUse type, ImmutablePair<String, String> replacements) {
         this.stmt = stmt;
         this.type = type;
         this.av = av;
+        this.phi_flag = av.is_phi();
+        this.index = index;
         this.basename = basename;
         this.is_aug = true;
         this.aug_stmt = stmt.replace(replacements.getLeft(), replacements.getRight());
@@ -39,6 +45,8 @@ class Node {
         this.type = DefOrUse.DEF;
         this.av = av;
         this.basename = basename;
+        this.phi_flag = av.is_phi();
+        this.index = new Index();
     }
 
     Node(Node n) {
@@ -48,13 +56,9 @@ class Node {
         this.basename = n.basename;
         this.is_aug = n.is_aug;
         this.aug_stmt = n.aug_stmt;
+        this.index = n.index;
+        this.phi_flag = n.phi_flag;
     }
-
-//    void process_redefine(Stmt stmt, String basename, ArrayVersion av) {
-//        this.basename = basename;
-//        this.av = new ArrayVersion(av);
-//        this.stmt = stmt;
-//    }
 
     String get_stmt() {
         if(is_aug) {
@@ -70,6 +74,14 @@ class Node {
 
     boolean is_aug() {
         return is_aug;
+    }
+
+    boolean is_phi() {
+        return phi_flag;
+    }
+
+    Index get_index() {
+        return index;
     }
 
     String get_id() {
@@ -94,11 +106,11 @@ class Node {
                 sb.append(s);
                 if(av_phi.has_diff_ver_match()) {
                     if(have_seen.containsKey(s)) {
-                        sb.append(Constants.ALPHABET_ARRAY[have_seen.get(s)]);
                         have_seen.put(s, have_seen.get(s) + 1);
                     } else {
                         have_seen.put(s, 0);
                     }
+                    sb.append(Constants.ALPHABET_ARRAY[have_seen.get(s)]);
                 }
                 sb.append(Constants.UNDERSCORE);
             }

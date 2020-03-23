@@ -8,14 +8,19 @@ public class Index {
 
 
     Index(ValueBox index_valuebox) {
-        if(!Objects.equals(index_valuebox, null)) {
-            this.index_valuebox = index_valuebox;
-            this.has_index_flag = true;
-        } else {
-            this.index_valuebox = null;
-            this.has_index_flag = false;
-        }
+        this.index_valuebox = index_valuebox;
+        this.has_index_flag = true;
     }
+    Index() {
+        this.index_valuebox = null;
+        this.has_index_flag = false;
+    }
+
+    Index(Index i) {
+        this.index_valuebox = i.index_valuebox;
+        this.has_index_flag = i.has_index_flag;
+    }
+
 
     String to_str() {
         if(has_index_flag) {
@@ -25,7 +30,7 @@ public class Index {
         }
     }
 
-    boolean has_index() {
+    boolean index_set() {
         return has_index_flag;
     }
 
