@@ -60,6 +60,22 @@ public class Main {
 
 		org.apache.commons.cli.Options options = new org.apache.commons.cli.Options();
 
+		Option a = Option.builder("a")
+				.hasArg()
+				.longOpt("address")
+				.desc("address of z3 python server, default: " + Constants.Z3_HOST)
+				.required(false)
+				.build();
+		options.addOption(a);
+
+		Option p = Option.builder("s")
+				.hasArg()
+				.longOpt("port")
+				.desc("port of z3 python server, default: " + Constants.Z3_PORT)
+				.required(false)
+				.build();
+		options.addOption(p);
+
 		Option r = Option.builder("r")
 				.hasArg()
 				.longOpt("rtpath")
@@ -108,7 +124,15 @@ public class Main {
 		String classpath = cmd.getOptionValue("classpath", Constants.DEFAULT_CP);
 		String rtpath = cmd.getOptionValue("rtpath", Constants.DEFAILT_RT_PATH);
 		String jcepath = cmd.getOptionValue("jcepath", Constants.DEFAILT_JCE_PATH);
-
+		String address = cmd.getOptionValue("address", Constants.Z3_HOST);
+		String port_str = cmd.getOptionValue("port", Constants.Z3_PORT);
+		int port;
+		try {
+			port = Integer.parseInt(port_str);
+		} catch (NumberFormatException e) {
+			Logger.error("Value '" + port_str + "' could not be parsed, using default");
+			port = Integer.parseInt(Constants.Z3_PORT);
+		}
 		String klass = cmd.getOptionValue("class");
 
 		if(SystemUtils.IS_OS_WINDOWS) {
@@ -143,13 +167,13 @@ public class Main {
 
 		// Code hooks the Analysis then launches Soot, which traverses
 		PackManager pm = PackManager.v();
-		Pack p = pm.getPack("stp");
+		Pack pack = pm.getPack("stp");
 
-		Analysis analysis = new Analysis(klass);
+		Analysis analysis = new Analysis(klass, address, port);
 		Transform t = new Transform("stp.arrayssa", analysis);
 		//p.insertAfter(t, phaseName);
 		//p.insertAfter(t, "sop.cpf");
-		p.add(t);
+		pack.add(t);
 
 		soot.Main.main(args.toArray(new String[0]));
 

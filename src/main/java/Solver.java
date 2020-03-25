@@ -1,3 +1,10 @@
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+
 public class Solver {
 
     // TODO: this will be the solver class!
@@ -23,4 +30,25 @@ public class Solver {
             print(s.model())
 
      */
+
+    private String test_stmt;
+    private String host;
+    private int port;
+    private Socket s;
+    Solver(String test_stmt, String host, int port) throws IOException {
+        this.test_stmt = test_stmt;
+        this.host = host;
+        this.port = port;
+    }
+
+    String send_recv_stmt() throws IOException {
+        this.s = new Socket(host, port);
+        DataOutputStream out = new DataOutputStream(s.getOutputStream());
+        BufferedReader br = new BufferedReader(new InputStreamReader(s.getInputStream()));
+        byte[] bytes = test_stmt.getBytes(StandardCharsets.UTF_8);
+        out.write(bytes);
+        s.close();
+        // TODO: get answers
+        return "NOT IMPL";
+    }
 }

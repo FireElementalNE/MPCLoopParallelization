@@ -24,6 +24,8 @@ class Constants {
     static final String GRAPH_DIR = "graphs";
     static final String GRAPH_EXT =  ".png";
     static final String EMPTY_STR = "";
+    static final String Z3_PORT = "25241";
+    static final String Z3_HOST = "localhost";
 }
 
 

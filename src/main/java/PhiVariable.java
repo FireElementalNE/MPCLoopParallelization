@@ -16,6 +16,7 @@ public class PhiVariable {
     private List<AssignStmt> linked_stmts;
     private List<Variable> var_links;
     private int counter;
+    private boolean used_as_index;
 
     /**
      * create a new PhiVariable
@@ -33,7 +34,6 @@ public class PhiVariable {
         for(ValueUnitPair vup : phi_expr.getArgs()) {
             var_links.add(new Variable(vup.getValue(), phi_expr));
         }
-
     }
 
     /**
@@ -47,6 +47,7 @@ public class PhiVariable {
         this.all_values = new HashMap<>(pv.all_values);
         this.linked_stmts = new ArrayList<>(pv.linked_stmts);
         this.var_links = new ArrayList<>(pv.var_links);
+        this.used_as_index = pv.used_as_index;
     }
 
     /**
@@ -175,6 +176,14 @@ public class PhiVariable {
     }
 
     /**
+     * check if the phi variable is a looping phi variable (that we care about)
+     * @return true iff the variable is a looping variable that is also used as an index.
+     */
+    boolean is_looping_index_var() {
+        return has_link() && used_as_index;
+    }
+
+    /**
      * getter for phi_expr
      * @return the phi_expr for this PhiVariable
      */
@@ -197,4 +206,30 @@ public class PhiVariable {
     List<AssignStmt> get_linked_stmts() {
         return new ArrayList<>(linked_stmts);
     }
+
+    /**
+     * method for determining if this phi variable has links
+     * @return true iff this phi variable has links (is most likely a looping var)
+     */
+    boolean has_link() {
+        return !linked_stmts.isEmpty();
+    }
+
+    /**
+     * check if this phi variable is ever used as an index
+     * @return true iff this phi variables is used as an index
+     */
+    boolean is_used_as_index() {
+        return used_as_index;
+    }
+
+    /**
+     * setter for used as index, set the variable to passed value
+     * @param used_as_index passed used as index value
+     */
+    void set_used_as_index(boolean used_as_index) {
+        this.used_as_index = used_as_index;
+    }
+
+
 }

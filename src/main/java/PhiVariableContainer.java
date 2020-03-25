@@ -5,9 +5,7 @@ import soot.ValueBox;
 import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 // TODO: possibly rename this?
@@ -53,8 +51,10 @@ public class PhiVariableContainer {
             // if we are REDEFINING a phi variable it is a looping stmt.
             if(pv.defines_phi_var(stmt) && !values.isEmpty()) {
                 Logger.debug("Found that stmt '" + stmt.toString()  + "' links to phi stmt '" + pv.toString() + "'.");
-                Logger.debug("This is most likely a Looping stmt.");
+                Logger.debug("This is most likely a Looping stmt, also needs to be used as an index to be useful.");
                 pv.add_linked_stmt(stmt);
+                // TODO: not sure if this is correct...
+                pv.add_alias(left, stmt, values);
             }
             else if(!values.isEmpty() && !(left.getValue() instanceof ArrayRef)) {
                 // if we we are not DEFINING a phi var but we are using one
@@ -64,6 +64,14 @@ public class PhiVariableContainer {
                     Logger.debug("\t  " + v_pair.getLeft().toString() + " is effected by " + v_pair.getRight().toString());
                 }
                 pv.add_alias(left, stmt, values);
+            }
+            if(stmt.containsArrayRef()) {
+                ArrayRef ar = stmt.getArrayRef();
+                String index_name = ar.getIndexBox().getValue().toString();
+                if(Objects.equals(pv.get_phi_def().getValue().toString(), index_name)) {
+                    Logger.debug("PhiVar " + index_name + " used as an index, needs to also have a link");
+                    pv.set_used_as_index(true);
+                }
             }
         }
     }
@@ -92,5 +100,19 @@ public class PhiVariableContainer {
                 }
             }
         }
+    }
+
+    /**
+     * get a list of looping index vars
+     * @return a list of all looping index vars
+     */
+    List<PhiVariable> get_looping_index_vars() {
+        List<PhiVariable> pv_lst = new ArrayList<>();
+        for(PhiVariable pv : phi_vars) {
+            if(pv.is_looping_index_var()) {
+                pv_lst.add(new PhiVariable(pv));
+            }
+        }
+        return pv_lst;
     }
 }

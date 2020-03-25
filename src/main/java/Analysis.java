@@ -6,6 +6,8 @@ import org.tinylog.Logger;
 import soot.Body;
 import soot.BodyTransformer;
 import soot.Unit;
+import soot.ValueBox;
+import soot.jimple.AssignStmt;
 import soot.jimple.IfStmt;
 import soot.jimple.Stmt;
 import soot.jimple.toolkits.annotation.logic.Loop;
@@ -15,6 +17,7 @@ import soot.toolkits.graph.Block;
 import soot.toolkits.graph.BlockGraph;
 import soot.toolkits.graph.ExceptionalBlockGraph;
 
+import java.io.IOException;
 import java.util.*;
 
 import static guru.nidi.graphviz.model.Factory.*;
@@ -31,13 +34,15 @@ public class Analysis extends BodyTransformer {
 	private ArrayDefUseGraph graph;
 	private MutableGraph final_graph;
 	private MutableGraph flow_graph;
+	private int port;
+	private String host;
 	// TODO: finish documenting.
 
 	/**
 	 * Create an analysis object
 	 * @param class_name the class that is being analyzed
 	 */
-	public Analysis(String class_name) {
+	public Analysis(String class_name, String host, int port) {
 		final_graph = mutGraph(class_name + "_final").setDirected(true);
 		flow_graph = mutGraph(class_name + "_flow").setDirected(true);
 		seen_blocks = new HashSet<>();
@@ -48,6 +53,8 @@ public class Analysis extends BodyTransformer {
 		array_vars = new HashMap<>();
 		graph = new ArrayDefUseGraph();
 		loop_blocks = new HashSet<>();
+		this.host = host;
+		this.port = port;
 	}
 
 	/**
@@ -213,7 +220,15 @@ public class Analysis extends BodyTransformer {
 
 	@SuppressWarnings("ForLoopReplaceableByForEach")
 	private void process(Block b, Block head, List<String> exits, boolean second_iter) {
+		List<Block> pred_blocks = b.getPreds();
+		Block b1 = pred_blocks.get(0);
 		if(second_iter) {
+			for (Iterator<Unit> i = b.iterator(); i.hasNext(); ) {
+				Unit u = i.next();
+				IndexVisitor iv = new IndexVisitor(phi_vars);
+				u.apply(iv);
+			}
+
 			// TODO: remove this if stmt and replace with true second iteration:
 			//       look at current index variables and how they have changed!
 			boolean nop;
@@ -224,8 +239,6 @@ public class Analysis extends BodyTransformer {
 			}
 			// TODO: update indexes!
 			Logger.info(Utils.get_block_name(b) + ": " + b.getHead().toString());
-			List<Block> pred_blocks = b.getPreds();
-			Block b1 = pred_blocks.get(0);
 			if (b.getPreds().size() > 1) { // we have a merge
 				if (check_c_arr_ver(b.getPreds())) {
 					handle_merge(b);
@@ -237,6 +250,7 @@ public class Analysis extends BodyTransformer {
 				}
 				handle_merge(b);
 			} else { // we do not have a merge
+				// second iter is always false here.
 				if (!exits.contains(pred_blocks.get(0).getHead().toString())) {
 					DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
 					if (c_arr_ver.containsKey(b1)) {
@@ -274,11 +288,11 @@ public class Analysis extends BodyTransformer {
 			} else {
 				for (Block s1 : succ_blocks) {
 					if (!seen_blocks.contains(s1)) {
-						add_flow_edge(b, s1, false, second_iter);
+						add_flow_edge(b, s1, false, false);
 						worklist.addLast(s1);
 					} else if (Utils.get_block_name(s1).equals(Utils.get_block_name(head))) {
 						Logger.info("We found the head!");
-						add_flow_edge(b, head, true, second_iter);
+						add_flow_edge(b, head, true, false);
 						// TODO: should I clear the worklist?
 					}
 				}
@@ -360,7 +374,26 @@ public class Analysis extends BodyTransformer {
 		make_graph_png();
 		Utils.print_graph(flow_graph);
 		phi_vars.make_graphs();
-		phi_vars.print_var_dep_chain("i3");
-		phi_vars.print_var_dep_chain("i16_2");
+		List<PhiVariable> linked_pvars = phi_vars.get_looping_index_vars();
+		for(PhiVariable pv : linked_pvars) {
+			ValueBox var = pv.get_phi_def();
+			Logger.info("Checking def for looping index var: " + var.getValue().toString());
+			List<AssignStmt> assignments = pv.get_linked_stmts();
+			phi_vars.print_var_dep_chain(var.getValue().toString());
+			Logger.debug("Here are the linked assignment stmts: ");
+			for(AssignStmt stmt : assignments) {
+				String linked_var = stmt.getLeftOpBox().getValue().toString();
+				try {
+					Solver solver = new Solver(stmt.toString(), host, port);
+					String resp = solver.send_recv_stmt();
+					Logger.debug("Got this from server: " + resp);
+
+				} catch (IOException e) {
+					Logger.error("Could not send '" + stmt.toString() + "' to solver.");
+				}
+				phi_vars.print_var_dep_chain(linked_var);
+			}
+
+		}
 	}
 }
