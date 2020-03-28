@@ -93,7 +93,7 @@ public class PhiVariableContainer {
         // TODO: this is a proof of concept function
         for(PhiVariable pv : phi_vars) {
             if(pv.has_ever_been(v)) {
-                String s = pv.get_var_dep_chain(v);
+                String s = pv.get_var_dep_chain_str(v);
                 if(Utils.not_null(s)) {
                     // make sure it is not null!
                     Logger.info(s);
@@ -101,6 +101,23 @@ public class PhiVariableContainer {
             }
         }
     }
+
+    /**
+     * get the actual list of assignments for the passed variable
+     * @param v the variable name
+     * @return a pair consisting of the variable and the list of assignment statements (if it exists)
+     *   otherwise null.
+     */
+    ImmutablePair<Variable, List<AssignStmt>> get_var_dep_chain(String v) {
+        for(PhiVariable pv : phi_vars) {
+            if(pv.has_ever_been(v)) {
+                return pv.get_var_dep_chain(v);
+            }
+        }
+        return null;
+    }
+
+
 
     /**
      * get a list of looping index vars

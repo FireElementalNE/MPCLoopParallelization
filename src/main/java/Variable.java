@@ -161,11 +161,11 @@ public class Variable {
      * @param current_var the current variable
      * @return the def/use string
      */
-    private String parse_node_print(String current_var) {
+    private String get_parse_node_str(String current_var) {
         ImmutablePair<String, Alias> p_pair = get_parent(current_var);
         if(Utils.not_null(p_pair)) {
             return current_var + " (" + p_pair.getRight().get_stmt().getRightOp().toString() +
-                    ") -> " + parse_node_print(p_pair.getLeft());
+                    ") -> " + get_parse_node_str(p_pair.getLeft());
         } else {
             // if it has no parent it must be a root node!
             return current_var + " (" + phi_expr.toString() + ").";
@@ -177,12 +177,51 @@ public class Variable {
      * @param v the variable
      * @return the parse node string if there is some alias of it otherwise null
      */
-    String print_defs(String v) {
+    String get_defs_str(String v) {
         // TODO: check root var?
         if(aliases.containsKey(v)) {
-            return parse_node_print(v);
+            return get_parse_node_str(v);
         }
         return null;
+    }
+
+    /**
+     * Recursive function to get the def/use chain of from the passed variable to the root variable
+     * represented as a list.
+     * @param current_var the variable name
+     * @param def_lst the list of assignment statements
+     * @return the list of assignment statements
+     */
+    List<AssignStmt> get_parse_node_lst(String current_var, List<AssignStmt> def_lst) {
+        ImmutablePair<String, Alias> p_pair = get_parent(current_var);
+        if(Utils.not_null(p_pair)) {
+            def_lst.add(p_pair.getRight().get_stmt());
+            return get_parse_node_lst(p_pair.getLeft(), def_lst);
+        } else {
+            // if it has no parent it must be a root node!
+            return def_lst;
+        }
+    }
+
+    /**
+     * function to start the recursive function get_parse_node_lst() with an empty list
+     * @param v a variable name
+     * @return the def/use chain of from the passed variable to the root variable represented as a list.
+     */
+    List<AssignStmt> get_def_lst(String v) {
+        List<AssignStmt> def_lst = new ArrayList<>();
+        if(aliases.containsKey(v)) {
+            return get_parse_node_lst(v, def_lst);
+        }
+        return def_lst;
+    }
+
+    /**
+     * getter function for the PhiExpr
+     * @return the PhiExpr
+     */
+    PhiExpr get_phi_expr() {
+        return phi_expr;
     }
 
 }

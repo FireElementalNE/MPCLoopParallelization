@@ -68,26 +68,6 @@ class Node {
         }
     }
 
-    ArrayVersion get_av() {
-        return av;
-    }
-
-    boolean is_aug() {
-        return is_aug;
-    }
-
-    boolean is_phi() {
-        return phi_flag;
-    }
-
-    Index get_index() {
-        return index;
-    }
-
-    String get_id() {
-        return Node.make_id(basename, av, type);
-    }
-
     String get_opposite_id() {
         DefOrUse t = Objects.equals(DefOrUse.DEF, type) ? DefOrUse.USE : DefOrUse.DEF;
         return Node.make_id(basename, av, t);
@@ -119,5 +99,25 @@ class Node {
         }
         ArrayVersionSingle av_single = (ArrayVersionSingle)av;
         return id + "_" + av_single.get_version() + "_" + t;
+    }
+
+    ArrayVersion get_av() {
+        return av;
+    }
+
+    boolean is_aug() {
+        return is_aug;
+    }
+
+    boolean is_phi() {
+        return phi_flag;
+    }
+
+    Index get_index() {
+        return index;
+    }
+
+    String get_id() {
+        return Node.make_id(basename, av, type);
     }
 }

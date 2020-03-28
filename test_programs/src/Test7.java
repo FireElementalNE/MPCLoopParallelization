@@ -5,6 +5,7 @@ class Test7 {
         for(int i = 1; i < 5; i++) {
             a[i] = i;
             b[i] = a[i - 1];
+            a[i - 1] = b[i - 2];
         }
     }
 }

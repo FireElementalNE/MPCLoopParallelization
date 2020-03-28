@@ -2,14 +2,19 @@ import os
 import subprocess
 import shutil
 import platform
+import argparse
+
+BASE_DIR = 'test_programs'
+OUT_DIR = os.path.join(BASE_DIR, 'out')
+SRC_DIR = os.path.join(BASE_DIR, 'src')
 
 def execute_cmd(cmd):
-	(outs, errs) = execute_cmd_helper(cmd)
-	if errs:
-		print('ERROR.')
-		print(errs)
-	else:
-		print('Done.')
+    (outs, errs) = execute_cmd_helper(cmd)
+    if errs:
+        print('ERROR.')
+        print(errs)
+    else:
+        print('Done.')
 
 def execute_cmd_helper(cmd):
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
@@ -21,25 +26,41 @@ def execute_cmd_helper(cmd):
         outs, errs = proc.communicate()
         return (outs, errs)
 
-test_base_dir = 'test_programs'
-out_dir = os.path.join(test_base_dir, 'out')
+def get_all_files():
+    global SRC_DIR
+    return [os.path.join(SRC_DIR, filename) for filename in os.listdir(SRC_DIR)]
 
-print(out_dir + " exists, removing and remaking.")
+def main(args):
+    global BASE_DIR
+    global OUT_DIR
+    global SRC_DIR
 
-if os.path.exists(out_dir):
-	shutil.rmtree(out_dir)
-os.mkdir(out_dir)
+    if(args.classname == "all"):
+        if os.path.exists(OUT_DIR):
+            print(OUT_DIR + " exists, removing and remaking.")
+            shutil.rmtree(OUT_DIR)
+        os.mkdir(OUT_DIR)
+        src_files = get_all_files();
+        print("Found {} source files.".format(len(src_files)))
+    else:
+        src_files = [os.path.join(SRC_DIR, args.classname) + ".java"]
 
-src_dir = os.path.join(test_base_dir, 'src')
-src_files = [os.path.join(src_dir, filename) for filename in os.listdir(src_dir)]
+    for file in src_files:
+        print('Compiling {}...'.format(file), end='')
+        cmd = ['javac', file, '-d', OUT_DIR, '-cp', OUT_DIR]
+        execute_cmd(cmd)
 
-print("Found {} source files.".format(len(src_files)))
+if __name__ == '__main__':
 
-for file in src_files:
-    print('Compiling {}...'.format(file), end='')
-    cmd = ['javac', file, '-d', out_dir, '-cp', out_dir]
-    execute_cmd(cmd)
+    choice_lst = [os.path.basename(el).split('.')[0] for el in get_all_files()]
+    choice_lst.append('all')
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--classname", choices=choice_lst, 
+        help="what class to compile (pass 'all' to compile everythiong) Allowed values are: " + 
+        ", ".join(choice_lst), metavar='', default="all", required=False)
+    args = parser.parse_args()
 
+    main(args)
 
-	
+    

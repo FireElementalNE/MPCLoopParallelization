@@ -6,15 +6,23 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 class ArrayDefUseGraph {
+    // An def use graph for arrays
+
     private Map<Integer, Edge> edges;
     private Map<String, Node> nodes;
 
-
+    /**
+     * constructor for ArrayDefUseGraph
+     */
     ArrayDefUseGraph() {
         edges = new HashMap<>();
         nodes = new HashMap<>();
     }
 
+    /**
+     * copy constructor for ArrayDefUseGraph
+     * @param a_graph the ArrayDefUseGraph being copied
+     */
     ArrayDefUseGraph(ArrayDefUseGraph a_graph) {
         this.edges =  a_graph.edges.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -22,6 +30,11 @@ class ArrayDefUseGraph {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
+    /**
+     * add a node (and possibly an edge) to the graph
+     * @param node the node
+     * @param is_def true iff the node is a def node
+     */
     void add_node(Node node, boolean is_def) {
         nodes.put(node.get_id(), node);
         if(!is_def) {
@@ -29,6 +42,11 @@ class ArrayDefUseGraph {
         }
     }
 
+    /**
+     * possibly add an edge to the graph
+     * this is only called as nodes are added via the add_node() function
+     * @param use_node the node being added
+     */
     private void add_edge(Node use_node) {
         assert nodes.containsKey(use_node.get_opposite_id());
         Node def_node = new Node(nodes.get(use_node.get_opposite_id()));
@@ -48,6 +66,14 @@ class ArrayDefUseGraph {
         }
     }
 
+    /**
+     * rename an array definition based on a new alias
+     * @param old_name the old name
+     * @param old_av the old ArrayVersion
+     * @param new_name the new name
+     * @param new_av the new Array Version
+     * @param new_stmt the new definition Statement
+     */
     void array_def_rename(String old_name, ArrayVersion old_av, String new_name, ArrayVersion new_av, Stmt new_stmt) {
         String id = Node.make_id(old_name, old_av, DefOrUse.DEF);
         assert nodes.containsKey(id);
@@ -57,9 +83,18 @@ class ArrayDefUseGraph {
         nodes.put(new_id, new_node);
     }
 
+    /**
+     * getter for all edges
+     * @return all edges in the graph
+     */
     Map<Integer, Edge> get_edges() {
         return edges;
     }
+
+    /**
+     * getter for all nodes
+     * @return all nodes in the graph
+     */
     Map<String, Node> get_nodes() {
         return nodes;
     }

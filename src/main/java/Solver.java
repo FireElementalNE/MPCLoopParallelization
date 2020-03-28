@@ -1,3 +1,5 @@
+import soot.jimple.AssignStmt;
+
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -31,24 +33,24 @@ public class Solver {
 
      */
 
-    private String test_stmt;
+    private AssignStmt stmt;
     private String host;
     private int port;
-    private Socket s;
-    Solver(String test_stmt, String host, int port) throws IOException {
-        this.test_stmt = test_stmt;
+
+    Solver(AssignStmt stmt, String host, int port) throws IOException {
+        this.stmt = stmt;
         this.host = host;
         this.port = port;
     }
 
     String send_recv_stmt() throws IOException {
-        this.s = new Socket(host, port);
+        Socket s = new Socket(host, port);
         DataOutputStream out = new DataOutputStream(s.getOutputStream());
         BufferedReader br = new BufferedReader(new InputStreamReader(s.getInputStream()));
-        byte[] bytes = test_stmt.getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = stmt.toString().getBytes(StandardCharsets.UTF_8);
         out.write(bytes);
+        String ans = br.readLine();
         s.close();
-        // TODO: get answers
-        return "NOT IMPL";
+        return ans;
     }
 }

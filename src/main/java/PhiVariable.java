@@ -158,10 +158,27 @@ public class PhiVariable {
      * @return a def/use string iff this PhiVariable contains a Variable that has been the passed variable at
      *         at some point, otherwise null
      */
-    String get_var_dep_chain(String v) {
+    String get_var_dep_chain_str(String v) {
         for(Variable var : var_links) {
             if(var.has_ever_been(v)) {
-                return var.print_defs(v);
+                return var.get_defs_str(v);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * get a pair that consists of:
+     *   1. a variable
+     *   2. the dep chain of that variable
+     * @param v the variable name
+     * @return a pair consisting of the variable and the list of assignment statements (if it exists)
+     *   otherwise null.
+     */
+    ImmutablePair<Variable, List<AssignStmt>> get_var_dep_chain(String v) {
+        for(Variable var : var_links) {
+            if(var.has_ever_been(v)) {
+                return new ImmutablePair<>(var, var.get_def_lst(v));
             }
         }
         return null;

@@ -1,6 +1,9 @@
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.tinylog.Logger;
 import soot.ValueBox;
 import soot.jimple.*;
+
+import java.util.List;
 
 public class IndexVisitor extends AbstractStmtSwitch {
 
@@ -15,10 +18,23 @@ public class IndexVisitor extends AbstractStmtSwitch {
     }
 
     private void check_index(Stmt stmt) {
+        // TODO:
+        //   Just check the stmt on the _right_ if it is an operation if any kind
+        //   then it is some sort of intra-loop dependency
         ArrayRef ar = stmt.getArrayRef();
         ValueBox index_box = ar.getIndexBox();
-        Logger.info("Printing def-chain: '" + index_box.getValue().toString() + "' in stmt '" + stmt.toString() + "'");
+        String index_name = index_box.getValue().toString();
+        Logger.info("Printing def-chain: '" + index_name + "' in stmt '" + stmt.toString() + "'");
         pvc.print_var_dep_chain(index_box.getValue().toString());
+        ImmutablePair<Variable, List<AssignStmt>> dep_chain = pvc.get_var_dep_chain(index_name);
+        if(Utils.not_null(dep_chain)) {
+            Logger.debug("Dep chain for " + index_name + ":");
+            for(AssignStmt a : dep_chain.getRight()) {
+                Logger.debug("\t" + a.toString());
+            }
+        } else {
+            Logger.debug("dep chain for " + index_box.getValue().toString() + " is null.");
+        }
     }
 
 

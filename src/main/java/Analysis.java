@@ -228,7 +228,6 @@ public class Analysis extends BodyTransformer {
 				IndexVisitor iv = new IndexVisitor(phi_vars);
 				u.apply(iv);
 			}
-
 			// TODO: remove this if stmt and replace with true second iteration:
 			//       look at current index variables and how they have changed!
 			boolean nop;
@@ -384,8 +383,8 @@ public class Analysis extends BodyTransformer {
 			for(AssignStmt stmt : assignments) {
 				String linked_var = stmt.getLeftOpBox().getValue().toString();
 				try {
-					Solver solver = new Solver(stmt.toString(), host, port);
-					String resp = solver.send_recv_stmt();
+					Solver solver = new Solver(stmt, host, port);
+					String resp = "NONE"; // solver.send_recv_stmt();
 					Logger.debug("Got this from server: " + resp);
 
 				} catch (IOException e) {
