@@ -1,7 +1,9 @@
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.tinylog.Logger;
+import soot.Value;
 import soot.ValueBox;
 import soot.jimple.*;
+import soot.jimple.internal.*;
 
 import java.util.List;
 
@@ -15,6 +17,44 @@ public class IndexVisitor extends AbstractStmtSwitch {
 
     public PhiVariableContainer get_pvc() {
         return new PhiVariableContainer(pvc);
+    }
+
+    private void print_dep_box_info(ValueBox vb) {
+        Value v = vb.getValue();
+        if(v instanceof AbstractFloatBinopExpr) {
+            if(v instanceof JAddExpr) {
+                Logger.info("JAddExpr");
+            }
+            else if(v instanceof JDivExpr) {
+                Logger.info("JDivExpr");
+            }
+            else if(v instanceof JMulExpr) {
+                Logger.info("JMulExpr");
+            }
+            else if(v instanceof JRemExpr) {
+                Logger.info("JRemExpr");
+            }
+            else if(v instanceof JSubExpr) {
+                Logger.info("JSubExpr");
+                JSubExpr vsub = (JSubExpr)v;
+                Logger.info("Subtracting " + vsub.getOp2().toString() + " from " + vsub.getOp1().toString());
+            } else {
+                Logger.error("Error: we should not get here. All classes should be caught. (inner)");
+            }
+            Logger.info("AbstractFloatBinopExpr");
+        }
+        else if(v instanceof AbstractIntBinopExpr) {
+            Logger.info("AbstractFloatBinopExpr");
+        }
+        else if(v instanceof AbstractIntLongBinopExpr) {
+            Logger.info("AbstractFloatBinopExpr");
+        }
+        else if(v instanceof AbstractJimpleBinopExpr){
+            Logger.info("AbstractJimpleBinopExpr");
+        } else {
+            Logger.error("Error: we should not get here. All classes should be caught. (outer)");
+        }
+
     }
 
     private void check_index(Stmt stmt) {
@@ -31,6 +71,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
             Logger.debug("Dep chain for " + index_name + ":");
             for(AssignStmt a : dep_chain.getRight()) {
                 Logger.debug("\t" + a.toString());
+                print_dep_box_info(a.getRightOpBox());
             }
         } else {
             Logger.debug("dep chain for " + index_box.getValue().toString() + " is null.");
@@ -41,7 +82,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
     @Override
     public void caseBreakpointStmt(BreakpointStmt stmt) {
         if(stmt.containsArrayRef()) {
-            Logger.debug("Checking " + stmt.toString());
+            Logger.debug("caseBreakpointStmt Checking " + stmt.toString());
             check_index(stmt);
         }
     }
@@ -49,7 +90,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
     @Override
     public void caseInvokeStmt(InvokeStmt stmt) {
         if(stmt.containsArrayRef()) {
-            Logger.debug("Checking " + stmt.toString());
+            Logger.debug("caseInvokeStmt Checking " + stmt.toString());
             check_index(stmt);
         }
     }
@@ -57,7 +98,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
     @Override
     public void caseAssignStmt(AssignStmt stmt) {
         if(stmt.containsArrayRef()) {
-            Logger.debug("Checking " + stmt.toString());
+            Logger.debug("caseAssignStmt Checking " + stmt.toString());
             check_index(stmt);
         }
     }
@@ -65,7 +106,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
     @Override
     public void caseIdentityStmt(IdentityStmt stmt) {
         if(stmt.containsArrayRef()) {
-            Logger.debug("Checking " + stmt.toString());
+            Logger.debug("caseIdentityStmt Checking " + stmt.toString());
             check_index(stmt);
         }
     }
@@ -73,7 +114,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
     @Override
     public void caseEnterMonitorStmt(EnterMonitorStmt stmt) {
         if(stmt.containsArrayRef()) {
-            Logger.debug("Checking " + stmt.toString());
+            Logger.debug("caseEnterMonitorStmt Checking " + stmt.toString());
             check_index(stmt);
         }
     }
@@ -81,7 +122,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
     @Override
     public void caseExitMonitorStmt(ExitMonitorStmt stmt) {
         if(stmt.containsArrayRef()) {
-            Logger.debug("Checking " + stmt.toString());
+            Logger.debug("caseExitMonitorStmt caseExitMonitorStmt Checking " + stmt.toString());
             check_index(stmt);
         }
     }
@@ -89,7 +130,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
     @Override
     public void caseGotoStmt(GotoStmt stmt) {
         if(stmt.containsArrayRef()) {
-            Logger.debug("Checking " + stmt.toString());
+            Logger.debug("caseGotoStmt Checking " + stmt.toString());
             check_index(stmt);
         }
     }
@@ -98,7 +139,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
     public void caseIfStmt(IfStmt stmt) {
 
         if(stmt.containsArrayRef()) {
-            Logger.debug("Checking " + stmt.toString());
+            Logger.debug("caseIfStmt Checking " + stmt.toString());
             check_index(stmt);
         }
     }
@@ -106,7 +147,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
     @Override
     public void caseLookupSwitchStmt(LookupSwitchStmt stmt) {
         if(stmt.containsArrayRef()) {
-            Logger.debug("Checking " + stmt.toString());
+            Logger.debug("caseLookupSwitchStmt Checking " + stmt.toString());
             check_index(stmt);
         }
     }
@@ -114,7 +155,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
     @Override
     public void caseNopStmt(NopStmt stmt) {
         if(stmt.containsArrayRef()) {
-            Logger.debug("Checking " + stmt.toString());
+            Logger.debug("caseNopStmt Checking " + stmt.toString());
             check_index(stmt);
         }
     }
@@ -122,7 +163,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
     @Override
     public void caseRetStmt(RetStmt stmt) {
         if(stmt.containsArrayRef()) {
-            Logger.debug("Checking " + stmt.toString());
+            Logger.debug("caseRetStmt Checking " + stmt.toString());
             check_index(stmt);
         }
     }
@@ -130,7 +171,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
     @Override
     public void caseReturnStmt(ReturnStmt stmt) {
         if(stmt.containsArrayRef()) {
-            Logger.debug("Checking " + stmt.toString());
+            Logger.debug("caseReturnStmt Checking " + stmt.toString());
             check_index(stmt);
         }
     }
@@ -143,7 +184,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
     @Override
     public void caseTableSwitchStmt(TableSwitchStmt stmt) {
         if(stmt.containsArrayRef()) {
-            Logger.debug("Checking " + stmt.toString());
+            Logger.debug("caseTableSwitchStmt Checking " + stmt.toString());
             check_index(stmt);
         }
     }
@@ -151,7 +192,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
     @Override
     public void caseThrowStmt(ThrowStmt stmt) {
         if(stmt.containsArrayRef()) {
-            Logger.debug("Checking " + stmt.toString());
+            Logger.debug("caseThrowStmt Checking " + stmt.toString());
             check_index(stmt);
         }
     }
