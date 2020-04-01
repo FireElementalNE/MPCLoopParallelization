@@ -1,5 +1,4 @@
 import org.tinylog.Logger;
-import soot.ValueBox;
 import soot.jimple.*;
 import soot.jimple.internal.JNewArrayExpr;
 
@@ -10,6 +9,7 @@ import java.util.stream.Collectors;
 public class ArrayVariableVisitor extends AbstractStmtSwitch {
     private Map<String, ArrayVersion> vars;
     private ArrayDefUseGraph graph;
+    private int block_num;
 
     /**
      * Create a new array variable visitor
@@ -17,12 +17,14 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
      * def/use graph object. This mostly handles array variable versioning.
      * @param vars the current map of array variables coupled with their versions  when this visitor is called
      * @param graph the current array def/use graph when this visitor is called
+     * @param block_num the block number that is calling this visitor
      */
-    ArrayVariableVisitor(Map<String, ArrayVersion> vars, ArrayDefUseGraph graph) {
+    ArrayVariableVisitor(Map<String, ArrayVersion> vars, ArrayDefUseGraph graph, int block_num) {
         this.vars = new HashMap<>();
         this.vars =  vars.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         this.graph = new ArrayDefUseGraph(graph);
+        this.block_num = block_num;
     }
 
     /**
@@ -58,9 +60,8 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
     private void check_array_ref(Stmt stmt) {
         if(stmt.containsArrayRef()) {
             String basename = get_basename(stmt.getArrayRef());
-            ValueBox index_box = stmt.getArrayRef().getIndexBox();
             if(!vars.containsKey(basename)) {
-                vars.put(basename, new ArrayVersionSingle(1));
+                vars.put(basename, new ArrayVersionSingle(1, block_num));
             }
         }
     }
@@ -101,8 +102,9 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
         if(stmt.getRightOp() instanceof JNewArrayExpr) {
             // NOTE: ALWAYS a new array!
             Logger.info("Found a new array: " + left_op);
-            ArrayVersion av = new ArrayVersionSingle(1);
-            graph.add_node(new Node(stmt.toString(), left_op, av, new Index(), DefOrUse.DEF), true);
+            ArrayVersion av = new ArrayVersionSingle(1, block_num);
+            graph.add_node(new Node(stmt.toString(), left_op, av, new Index(), DefOrUse.DEF, stmt.getJavaSourceStartLineNumber()),
+                    true);
             vars.put(left_op, av);
         }
         if(vars.containsKey(right_op)) {

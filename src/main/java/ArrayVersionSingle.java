@@ -4,15 +4,18 @@
  */
 class ArrayVersionSingle implements ArrayVersion {
     private int version;
+    private int block;
     private boolean diff_ver_match;
 
     /**
-     * Create a new ArrayVersionSinlge
+     * Create a new ArrayVersionSingle
      * @param version create a new ArrayVersionPhi with the passed version
+     * @param block the block that created this AV
      */
-    ArrayVersionSingle(int version) {
+    ArrayVersionSingle(int version, int block) {
         this.version = version;
         this.diff_ver_match = false;
+        this.block = block;
     }
 
     /**
@@ -22,6 +25,7 @@ class ArrayVersionSingle implements ArrayVersion {
     ArrayVersionSingle(ArrayVersionSingle avs) {
         this.version = avs.version;
         this.diff_ver_match = avs.diff_ver_match;
+        this.block = avs.block;
     }
 
     /**
@@ -45,10 +49,21 @@ class ArrayVersionSingle implements ArrayVersion {
     }
 
     /**
-     * Overridden version incrementer, increases the version by 1
+     * get the last block to change this AV
+     * @return the last block to change this AV
      */
     @Override
-    public void incr_version() {
+    public int get_block() {
+        return block;
+    }
+
+    /**
+     * Overridden version incrementer, increases the version by 1
+     * @param block the block that changed it.
+     */
+    @Override
+    public void incr_version(int block) {
+        this.block = block;
         version++;
     }
 

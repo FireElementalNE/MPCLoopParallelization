@@ -13,18 +13,21 @@ public class ArrayVersionPhi implements ArrayVersion {
     private int version;
     private List<ArrayVersion> array_versions;
     private boolean diff_ver_match;
+    private int block;
 
     /**
      * create a new ArrayVersionPhi
      * @param array_versions the individual array versions that compose this phi variable
+     * @param block the block that created this AV
      */
-    ArrayVersionPhi(List<ArrayVersion> array_versions) {
+    ArrayVersionPhi(List<ArrayVersion> array_versions, int block) {
         this.version = array_versions.stream()
                 .map(ArrayVersion::get_version)
                 .reduce(Integer.MIN_VALUE, Math::max) + 1;
         this.array_versions = array_versions;
         List<Integer> versions = array_versions.stream().map(ArrayVersion::get_version).collect(Collectors.toList());
         this.diff_ver_match = versions.size() != new HashSet<>(versions).size();
+        this.block = block;
     }
 
     /**
@@ -35,6 +38,7 @@ public class ArrayVersionPhi implements ArrayVersion {
         this.version = av_phi.version;
         this.array_versions = av_phi.array_versions;
         this.diff_ver_match = av_phi.diff_ver_match;
+        this.block = av_phi.block;
     }
 
     /**
@@ -60,9 +64,11 @@ public class ArrayVersionPhi implements ArrayVersion {
 
     /**
      * Overridden version incrementer, increases the version by 1
+     * @param block the block that changed this AV
      */
     @Override
-    public void incr_version() {
+    public void incr_version(int block) {
+        this.block = block;
         version++;
     }
 
@@ -82,6 +88,15 @@ public class ArrayVersionPhi implements ArrayVersion {
     @Override
     public boolean has_diff_ver_match() {
         return diff_ver_match;
+    }
+
+    /**
+     * get the last block to change this AV
+     * @return the last block to change this AV
+     */
+    @Override
+    public int get_block() {
+        return block;
     }
 
 }

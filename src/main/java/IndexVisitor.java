@@ -22,39 +22,54 @@ public class IndexVisitor extends AbstractStmtSwitch {
     private void print_dep_box_info(ValueBox vb) {
         Value v = vb.getValue();
         if(v instanceof AbstractFloatBinopExpr) {
+            AbstractFloatBinopExpr vtmp = (AbstractFloatBinopExpr)v;
+            Value op1 = vtmp.getOp1();
+            Value op2 = vtmp.getOp2();
+            ImmutablePair<Variable, List<AssignStmt>> op1_dep_var_chain = pvc.get_var_dep_chain(op1.toString());
+            ImmutablePair<Variable, List<AssignStmt>> op2_dep_var_chain = pvc.get_var_dep_chain(op2.toString());
+            if(Utils.not_null(op1_dep_var_chain) && !Utils.not_null(op2_dep_var_chain)) {
+                Logger.info("Op1 is not null!");
+            }
+            else if(!Utils.not_null(op1_dep_var_chain) && Utils.not_null(op2_dep_var_chain)) {
+                Logger.info("Op2 is not null!");
+            }
+            else if(Utils.not_null(op1_dep_var_chain) && Utils.not_null(op2_dep_var_chain)) {
+                Logger.error("Both values are null, this is an error.");
+            } else {
+                Logger.error("Both values are NOT null, this is an error.");
+            }
             if(v instanceof JAddExpr) {
-                Logger.info("JAddExpr");
+                Logger.info("Adding " + vtmp.getOp1().toString() + " to " + vtmp.getOp2().toString());
             }
             else if(v instanceof JDivExpr) {
-                Logger.info("JDivExpr");
+                Logger.info("Dividing " + vtmp.getOp1().toString() + " from " + vtmp.getOp2().toString());
             }
             else if(v instanceof JMulExpr) {
-                Logger.info("JMulExpr");
+                Logger.info("Multiplying " + vtmp.getOp1().toString() + " with " + vtmp.getOp2().toString());
             }
             else if(v instanceof JRemExpr) {
-                Logger.info("JRemExpr");
+                Logger.info("Calculating " + vtmp.getOp1().toString() + " mod " + vtmp.getOp2().toString());
             }
             else if(v instanceof JSubExpr) {
-                Logger.info("JSubExpr");
-                JSubExpr vsub = (JSubExpr)v;
-                Logger.info("Subtracting " + vsub.getOp2().toString() + " from " + vsub.getOp1().toString());
+                Logger.info("Subtracting " + vtmp.getOp2().toString() + " from " + vtmp.getOp1().toString());
             } else {
                 Logger.error("Error: we should not get here. All classes should be caught. (inner)");
             }
-            Logger.info("AbstractFloatBinopExpr");
         }
         else if(v instanceof AbstractIntBinopExpr) {
-            Logger.info("AbstractFloatBinopExpr");
+            Logger.debug("AbstractFloatBinopExpr");
         }
         else if(v instanceof AbstractIntLongBinopExpr) {
-            Logger.info("AbstractFloatBinopExpr");
+            Logger.debug("AbstractFloatBinopExpr");
         }
-        else if(v instanceof AbstractJimpleBinopExpr){
-            Logger.info("AbstractJimpleBinopExpr");
+        else if(v instanceof AbstractJimpleBinopExpr) {
+            Logger.debug("AbstractJimpleBinopExpr");
+        }
+        else if (v instanceof JimpleLocal) {
+            Logger.debug("Jimple local, pure reassignment.");
         } else {
-            Logger.error("Error: we should not get here. All classes should be caught. (outer)");
+            Logger.debug("Error: we should not get here. All classes should be caught. (outer)");
         }
-
     }
 
     private void check_index(Stmt stmt) {
@@ -64,7 +79,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
         ArrayRef ar = stmt.getArrayRef();
         ValueBox index_box = ar.getIndexBox();
         String index_name = index_box.getValue().toString();
-        Logger.info("Printing def-chain: '" + index_name + "' in stmt '" + stmt.toString() + "'");
+        Logger.debug("Printing def-chain: '" + index_name + "' in stmt '" + stmt.toString() + "'");
         pvc.print_var_dep_chain(index_box.getValue().toString());
         ImmutablePair<Variable, List<AssignStmt>> dep_chain = pvc.get_var_dep_chain(index_name);
         if(Utils.not_null(dep_chain)) {
@@ -201,5 +216,4 @@ public class IndexVisitor extends AbstractStmtSwitch {
     public void defaultCase(Object obj) {
 
     }
-
 }

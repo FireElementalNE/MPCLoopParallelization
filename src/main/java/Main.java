@@ -164,7 +164,7 @@ public class Main {
 
 		long startTime = System.currentTimeMillis();
 		Options.v().set_whole_shimple(true);
-
+		Options.v().set_keep_line_number(true);
 		// Code hooks the Analysis then launches Soot, which traverses
 		PackManager pm = PackManager.v();
 		Pack pack = pm.getPack("stp");

@@ -2,6 +2,8 @@ import java.util.regex.Pattern;
 
 
 class Constants {
+    static final int DEF_LINE_NUM = -2;
+    static final int PHI_LINE_NUM = -1;
     static final boolean PRINT_ST = false;
     static final String RT_PATH_WINDOWS = "C:\\Program Files\\Java\\jdk1.8.0_221\\jre\\lib\\rt.jar";
     static final String JCE_PATH_WINDOWS = "C:\\Program Files\\Java\\jdk1.8.0_221\\jre\\lib\\jce.jar";
@@ -11,6 +13,8 @@ class Constants {
     static final String ARR_VER_STR = "%s_%d%s";
     static final String ARR_PHI_STR_START = "phi(";
     static final Pattern BLOCK_RE = Pattern.compile("^(Block\\s\\d+)");
+    static final Pattern BLOCK_NUM_RE = Pattern.compile("^Block\\s(\\d+)");
+    static final int BLOCK_RE_FAILED = -1;
     static final String DEFAULT_CP = "test_programs/out";
     static final String DEFAILT_RT_PATH = Utils.rt_path();
     static final String DEFAILT_JCE_PATH = Utils.jce_path();
@@ -26,6 +30,8 @@ class Constants {
     static final String EMPTY_STR = "";
     static final String Z3_PORT = "25241";
     static final String Z3_HOST = "localhost";
+    static final boolean JUST_COMPILE = false;
+
 }
 
 

@@ -11,13 +11,15 @@ class BFSVisitor extends AbstractStmtSwitch {
     private Block b;
     private DownwardExposedArrayRef daf;
     private ArrayDefUseGraph graph;
+    private int block_num;
 
-    BFSVisitor(Map<Block, DownwardExposedArrayRef> c_arr_ver, Block b, ArrayDefUseGraph graph) {
+    BFSVisitor(Map<Block, DownwardExposedArrayRef> c_arr_ver, Block b, ArrayDefUseGraph graph, int block_num) {
         this.c_arr_ver = c_arr_ver;
         this.b = b;
         assert c_arr_ver.containsKey(b); // this should always be here!
         this.daf = new DownwardExposedArrayRef(c_arr_ver.get(b));
         this.graph = new ArrayDefUseGraph(graph);
+        this.block_num = block_num;
     }
 
     Map<Block, DownwardExposedArrayRef> get_c_arr_ver() {
@@ -37,7 +39,8 @@ class BFSVisitor extends AbstractStmtSwitch {
         Logger.debug(" " + "This is a use for " + daf.get_name(basename));
         ArrayVersion av = Utils.copy_av(daf.get(basename));
         Node new_node = new Node(stmt.toString(), basename, av, new Index(index_box), DefOrUse.USE,
-                new ImmutablePair<>(basename, daf.get_name(basename)));
+                new ImmutablePair<>(basename, daf.get_name(basename)),
+                stmt.getJavaSourceStartLineNumber());
         graph.add_node(new_node, false);
         c_arr_ver.put(b, daf);
     }
@@ -62,12 +65,13 @@ class BFSVisitor extends AbstractStmtSwitch {
             if(left.getValue() instanceof ArrayRef) {
                 String basename = stmt.getArrayRef().getBaseBox().getValue().toString();
                 Logger.debug("Array write found (change needed): " + stmt.toString());
-                daf.new_ver(basename);
+                daf.new_ver(basename, block_num);
                 Logger.debug(" " + basename + " needs to be changed to " + daf.get_name(basename));
                 Logger.debug("This is a new def for " + daf.get_name(basename));
                 ArrayVersion av = Utils.copy_av(daf.get(basename));
                 graph.add_node(new Node(stmt.toString(), basename, av, new Index(stmt.getArrayRef().getIndexBox()), DefOrUse.DEF,
-                        new ImmutablePair<>(basename, daf.get_name(basename))), true);
+                        new ImmutablePair<>(basename, daf.get_name(basename)),
+                                stmt.getJavaSourceStartLineNumber()), true);
                 c_arr_ver.put(b, daf);
             } else {
                 check_array_read(stmt);

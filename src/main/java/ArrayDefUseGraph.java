@@ -36,9 +36,11 @@ class ArrayDefUseGraph {
      * @param is_def true iff the node is a def node
      */
     void add_node(Node node, boolean is_def) {
-        nodes.put(node.get_id(), node);
         if(!is_def) {
+            nodes.put(node.get_id(), node);
             add_edge(node);
+        } else {
+            nodes.put(node.get_id(), node);
         }
     }
 
@@ -75,11 +77,12 @@ class ArrayDefUseGraph {
      * @param new_stmt the new definition Statement
      */
     void array_def_rename(String old_name, ArrayVersion old_av, String new_name, ArrayVersion new_av, Stmt new_stmt) {
-        String id = Node.make_id(old_name, old_av, DefOrUse.DEF);
+        String id = Node.make_id(old_name, old_av, DefOrUse.DEF, new_stmt.getJavaSourceStartLineNumber());
         assert nodes.containsKey(id);
         Node n = nodes.remove(id);
-        String new_id = Node.make_id(new_name, new_av, DefOrUse.DEF);
-        Node new_node = new Node(new_stmt.toString(), new_name, new_av, n.get_index(), DefOrUse.DEF);
+        String new_id = Node.make_id(new_name, new_av, DefOrUse.DEF, new_stmt.getJavaSourceStartLineNumber());
+        Node new_node = new Node(new_stmt.toString(), new_name, new_av, n.get_index(), DefOrUse.DEF,
+                new_stmt.getJavaSourceStartLineNumber());
         nodes.put(new_id, new_node);
     }
 

@@ -44,12 +44,13 @@ class DownwardExposedArrayRef {
     /**
      * create a new version or an array variable
      * @param s the variable name
+     * @param block_num the block number that is making a new version
      */
-    void new_ver(String s) {
+    void new_ver(String s, int block_num) {
         // CHECKTHIS: this might need to be more explicit (i.e. new_ver(String s, int i) or something)
         if(array_ver.containsKey(s)) {
             ArrayVersion new_ver = array_ver.get(s);
-            new_ver.incr_version();
+            new_ver.incr_version(block_num);
             array_ver.put(s, new_ver);
         } else {
             Logger.error("Key " + s + " not found, cannot increment version.");

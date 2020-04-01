@@ -93,14 +93,21 @@ public class Analysis extends BodyTransformer {
 	 * @param to_blk the target block
 	 * @param is_loop true iff it is a looping edge (return to head)
 	 */
+	@SuppressWarnings("ConstantConditions")
 	private void add_flow_edge(Block from_blk, Block to_blk, boolean is_loop, boolean second_iter) {
 		if(!second_iter) {
-			guru.nidi.graphviz.model.Node from_node = node(Utils.get_block_name(from_blk));
-			guru.nidi.graphviz.model.Node to_node = node(Utils.get_block_name(to_blk));
-			if (is_loop) {
-				flow_graph.add(from_node.link(to(to_node).with(Style.DASHED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+			String from_name = Utils.get_block_name(from_blk);
+			String to_name = Utils.get_block_name(to_blk);
+			if(Utils.not_null(from_name) && Utils.not_null(to_name)) {
+				guru.nidi.graphviz.model.Node from_node = node(from_name);
+				guru.nidi.graphviz.model.Node to_node = node(to_name);
+				if (is_loop) {
+					flow_graph.add(from_node.link(to(to_node).with(Style.DASHED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+				} else {
+					flow_graph.add(from_node.link(to(to_node).with(LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+				}
 			} else {
-				flow_graph.add(from_node.link(to(to_node).with(LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+				Logger.error("Graph broke because RE broke.");
 			}
 		}
 	}
@@ -130,7 +137,7 @@ public class Analysis extends BodyTransformer {
 	private void parse_block(Block b) {
 		Logger.debug(Utils.get_block_name(b) + " head: " + b.getHead().toString());
 		for(Iterator<Unit> i = b.iterator(); i.hasNext();) {
-			ArrayVariableVisitor visitor = new ArrayVariableVisitor(array_vars, graph);
+			ArrayVariableVisitor visitor = new ArrayVariableVisitor(array_vars, graph, Utils.get_block_num(b));
 			VariableVisitor var_visitor = new VariableVisitor(phi_vars);
 			Unit u = i.next();
 			u.apply(visitor);
@@ -191,7 +198,37 @@ public class Analysis extends BodyTransformer {
 		return possible.containsAll(preds_set);
 	}
 
-	private void handle_merge(Block b) {
+	private boolean check_avs_diffs(List<ArrayVersion> avs) {
+		boolean are_the_same = true;
+		int version = avs.get(0).get_version();
+		int block_num = avs.get(0).get_block();
+		for(int i = 1; i < avs.size(); i++) {
+			are_the_same = are_the_same
+					&& ((version == avs.get(i).get_version())
+					&& (block_num == avs.get(i).get_block()));
+		}
+		return are_the_same;
+	}
+
+	private void handle_non_merge(Block b, Block pred, List<String> exits) {
+		if (!exits.contains(pred.getHead().toString())) {
+			DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
+			if (c_arr_ver.containsKey(pred)) {
+				for (Map.Entry<String, ArrayVersion> entry : array_vars.entrySet()) {
+					ArrayVersion current_s = Utils.copy_av(c_arr_ver.get(pred).get(entry.getKey()));
+					new_daf.put(entry.getKey(), current_s);
+				}
+				c_arr_ver.put(b, new_daf);
+
+			} else {
+				Logger.warn("This should already be c_arr_ver!");
+			}
+		} else {
+			Logger.warn("Pred is an exit, skipping.");
+		}
+	}
+
+	private void handle_merge(Block b, List<String> exits) {
 		List<Block> pred_blocks = b.getPreds();
 		for (Map.Entry<String, ArrayVersion> entry : array_vars.entrySet()) {
 			if (Utils.all_not_null(pred_blocks)) {
@@ -202,14 +239,22 @@ public class Analysis extends BodyTransformer {
 				}
 				// make a phi node!
 				// Indexes MUST be the same!
-				ArrayVersionPhi av_phi = new ArrayVersionPhi(avs);
-				DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
-				// TODO: branch renaming???? if we branch just call new vars a or b then for further branches aa, bb etc??
-				new_daf.put(entry.getKey(), av_phi);
-				Logger.info("We made a phi node: " + new_daf.get_name(entry.getKey()));
-				Node n = new Node(entry.getKey(), av_phi);
-				graph.add_node(n, true);
-				c_arr_ver.put(b, new_daf);
+				// ONLY make a phi node if the versions are ACTUALLY different
+				if(!check_avs_diffs(avs)) {
+					ArrayVersionPhi av_phi = new ArrayVersionPhi(avs, Utils.get_block_num(b));
+					DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
+					// TODO: branch renaming???? if we branch just call new vars a or b then for further branches aa, bb etc??
+					new_daf.put(entry.getKey(), av_phi);
+					Logger.info("We made a phi node: " + new_daf.get_name(entry.getKey()));
+					Node n = new Node(entry.getKey(), av_phi);
+					graph.add_node(n, true);
+					c_arr_ver.put(b, new_daf);
+				} else {
+					Logger.info("Branching changed nothing, not creating phi node.");
+					for(Block pred : pred_blocks) {
+						handle_non_merge(b, pred, exits);
+					}
+				}
 			} else {
 				Logger.info("False phi found!");
 				DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
@@ -221,7 +266,6 @@ public class Analysis extends BodyTransformer {
 	@SuppressWarnings("ForLoopReplaceableByForEach")
 	private void process(Block b, Block head, List<String> exits, boolean second_iter) {
 		List<Block> pred_blocks = b.getPreds();
-		Block b1 = pred_blocks.get(0);
 		if(second_iter) {
 			for (Iterator<Unit> i = b.iterator(); i.hasNext(); ) {
 				Unit u = i.next();
@@ -230,7 +274,6 @@ public class Analysis extends BodyTransformer {
 			}
 			// TODO: remove this if stmt and replace with true second iteration:
 			//       look at current index variables and how they have changed!
-			boolean nop;
 		} else {
 			if (seen_blocks.contains(b)) {
 				Logger.error("Were have seen this block: " + b.getHead().toString());
@@ -240,36 +283,22 @@ public class Analysis extends BodyTransformer {
 			Logger.info(Utils.get_block_name(b) + ": " + b.getHead().toString());
 			if (b.getPreds().size() > 1) { // we have a merge
 				if (check_c_arr_ver(b.getPreds())) {
-					handle_merge(b);
+					handle_merge(b, exits);
 				} else {
 					Logger.info("Both preds should already be in c_arr_ver!");
 					Logger.info("Skipping and adding this block to the back of worklist.");
 					worklist.addLast(b);
 					return;
 				}
-				handle_merge(b);
+				handle_merge(b, exits);
 			} else { // we do not have a merge
 				// second iter is always false here.
-				if (!exits.contains(pred_blocks.get(0).getHead().toString())) {
-					DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
-					if (c_arr_ver.containsKey(b1)) {
-						for (Map.Entry<String, ArrayVersion> entry : array_vars.entrySet()) {
-							ArrayVersion current_s = Utils.copy_av(c_arr_ver.get(b1).get(entry.getKey()));
-							new_daf.put(entry.getKey(), current_s);
-						}
-						c_arr_ver.put(b, new_daf);
-
-					} else {
-						Logger.warn("This should already be c_arr_ver!");
-					}
-				} else {
-					Logger.warn("Pred is an exit, skipping.");
-				}
+				handle_non_merge(b, pred_blocks.get(0), exits);
 			}
 			// process stmts
 			for (Iterator<Unit> i = b.iterator(); i.hasNext(); ) {
-				BFSVisitor bfs_visitor = new BFSVisitor(c_arr_ver, b, graph);
-				ArrayVariableVisitor av_visitor = new ArrayVariableVisitor(array_vars, graph);
+				BFSVisitor bfs_visitor = new BFSVisitor(c_arr_ver, b, graph, Utils.get_block_num(b));
+				ArrayVariableVisitor av_visitor = new ArrayVariableVisitor(array_vars, graph, Utils.get_block_num(b));
 				VariableVisitor var_visitor = new VariableVisitor(phi_vars);
 				Unit u = i.next();
 				u.apply(bfs_visitor);
@@ -289,7 +318,7 @@ public class Analysis extends BodyTransformer {
 					if (!seen_blocks.contains(s1)) {
 						add_flow_edge(b, s1, false, false);
 						worklist.addLast(s1);
-					} else if (Utils.get_block_name(s1).equals(Utils.get_block_name(head))) {
+					} else if (Objects.equals(Utils.get_block_name(s1), Utils.get_block_name(head))) {
 						Logger.info("We found the head!");
 						add_flow_edge(b, head, true, false);
 						// TODO: should I clear the worklist?
@@ -353,46 +382,48 @@ public class Analysis extends BodyTransformer {
 
 	@Override
 	protected void internalTransform(Body body, String phaseName, Map<String, String> options) {
-		assert body instanceof ShimpleBody;
-		for(Map.Entry<String, String> e : options.entrySet()) {
-			Logger.debug(e.getKey() + " ----> " + e.getValue());
-		}
-		find_loop_heads(body);
-		parse_blocks_start(body);
-
-		Logger.info("Node count: " + graph.get_nodes().size());
-		for(Map.Entry<String, Node> entry : graph.get_nodes().entrySet()) {
-			Logger.info(entry.getKey() + " -> " + entry.getValue().get_stmt());
-		}
-		Logger.info("Edge count: " + graph.get_edges().size());
-		for(Map.Entry<Integer, Edge> entry : graph.get_edges().entrySet()) {
-			Logger.info(entry.getKey() + ": ");
-			Logger.info(" " + entry.getValue().get_def().get_stmt());
-			Logger.info(" " + entry.getValue().get_use().get_stmt());
-		}
-		make_graph_png();
-		Utils.print_graph(flow_graph);
-		phi_vars.make_graphs();
-		List<PhiVariable> linked_pvars = phi_vars.get_looping_index_vars();
-		for(PhiVariable pv : linked_pvars) {
-			ValueBox var = pv.get_phi_def();
-			Logger.info("Checking def for looping index var: " + var.getValue().toString());
-			List<AssignStmt> assignments = pv.get_linked_stmts();
-			phi_vars.print_var_dep_chain(var.getValue().toString());
-			Logger.debug("Here are the linked assignment stmts: ");
-			for(AssignStmt stmt : assignments) {
-				String linked_var = stmt.getLeftOpBox().getValue().toString();
-				try {
-					Solver solver = new Solver(stmt, host, port);
-					String resp = "NONE"; // solver.send_recv_stmt();
-					Logger.debug("Got this from server: " + resp);
-
-				} catch (IOException e) {
-					Logger.error("Could not send '" + stmt.toString() + "' to solver.");
-				}
-				phi_vars.print_var_dep_chain(linked_var);
+		if(!Constants.JUST_COMPILE) {
+			assert body instanceof ShimpleBody;
+			for (Map.Entry<String, String> e : options.entrySet()) {
+				Logger.debug(e.getKey() + " ----> " + e.getValue());
 			}
+			find_loop_heads(body);
+			parse_blocks_start(body);
 
+			Logger.info("Node count: " + graph.get_nodes().size());
+			for (Map.Entry<String, Node> entry : graph.get_nodes().entrySet()) {
+				Logger.info(entry.getKey() + " -> " + entry.getValue().get_stmt());
+			}
+			Logger.info("Edge count: " + graph.get_edges().size());
+			for (Map.Entry<Integer, Edge> entry : graph.get_edges().entrySet()) {
+				Logger.info(entry.getKey() + ": ");
+				Logger.info(" " + entry.getValue().get_def().get_stmt());
+				Logger.info(" " + entry.getValue().get_use().get_stmt());
+			}
+			make_graph_png();
+			Utils.print_graph(flow_graph);
+			phi_vars.make_graphs();
+			List<PhiVariable> linked_pvars = phi_vars.get_looping_index_vars();
+			for (PhiVariable pv : linked_pvars) {
+				ValueBox var = pv.get_phi_def();
+				Logger.info("Checking def for looping index var: " + var.getValue().toString());
+				List<AssignStmt> assignments = pv.get_linked_stmts();
+				phi_vars.print_var_dep_chain(var.getValue().toString());
+				Logger.debug("Here are the linked assignment stmts: ");
+				for (AssignStmt stmt : assignments) {
+					String linked_var = stmt.getLeftOpBox().getValue().toString();
+					try {
+						Solver solver = new Solver(stmt, host, port);
+						String resp = solver.send_recv_stmt();
+						Logger.debug("Got this from server: " + resp);
+
+					} catch (IOException e) {
+						Logger.error("Could not send '" + stmt.toString() + "' to solver.");
+					}
+					phi_vars.print_var_dep_chain(linked_var);
+				}
+
+			}
 		}
 	}
 }

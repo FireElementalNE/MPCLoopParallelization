@@ -15,9 +15,10 @@ class Node {
     private String aug_stmt;
     private boolean is_aug;
     private boolean phi_flag;
+    private int line_num;
 
 
-    Node(String stmt, String basename, ArrayVersion av, Index index, DefOrUse type) {
+    Node(String stmt, String basename, ArrayVersion av, Index index, DefOrUse type, int line_num) {
         this.stmt = stmt;
         this.type = type;
         this.av = av;
@@ -26,9 +27,10 @@ class Node {
         this.aug_stmt = null;
         this.is_aug = false;
         this.index = index;
+        this.line_num = line_num;
     }
 
-    Node(String stmt, String basename, ArrayVersion av, Index index, DefOrUse type, ImmutablePair<String, String> replacements) {
+    Node(String stmt, String basename, ArrayVersion av, Index index, DefOrUse type, ImmutablePair<String, String> replacements, int line_num) {
         this.stmt = stmt;
         this.type = type;
         this.av = av;
@@ -37,6 +39,7 @@ class Node {
         this.basename = basename;
         this.is_aug = true;
         this.aug_stmt = stmt.replace(replacements.getLeft(), replacements.getRight());
+        this.line_num = line_num;
     }
 
     Node(String basename, ArrayVersion av) {
@@ -47,6 +50,7 @@ class Node {
         this.basename = basename;
         this.phi_flag = av.is_phi();
         this.index = new Index();
+        this.line_num = Constants.PHI_LINE_NUM;
     }
 
     Node(Node n) {
@@ -58,6 +62,7 @@ class Node {
         this.aug_stmt = n.aug_stmt;
         this.index = n.index;
         this.phi_flag = n.phi_flag;
+        this.line_num = n.line_num;
     }
 
     String get_stmt() {
@@ -70,14 +75,20 @@ class Node {
 
     String get_opposite_id() {
         DefOrUse t = Objects.equals(DefOrUse.DEF, type) ? DefOrUse.USE : DefOrUse.DEF;
-        return Node.make_id(basename, av, t);
+        if(t == DefOrUse.DEF) {
+            return Node.make_id(basename, av, t, line_num);
+        } else {
+            return Node.make_id(basename, av, t, line_num);
+        }
+
     }
 
-    static String make_id(String id, ArrayVersion av, DefOrUse t) {
+    static String make_id(String id, ArrayVersion av, DefOrUse t, int line_num) {
+        StringBuilder sb = new StringBuilder(id);
+        sb.append(Constants.UNDERSCORE);
         if(av.is_phi()) {
             ArrayVersionPhi av_phi = (ArrayVersionPhi)av;
-            StringBuilder sb = new StringBuilder(id);
-            sb.append(Constants.UNDERSCORE);
+
             Map<Integer, Integer> have_seen = new HashMap<>();
             List<Integer> versions = av_phi.get_array_versions().stream()
                     .map(ArrayVersion::get_version)
@@ -95,10 +106,17 @@ class Node {
                 sb.append(Constants.UNDERSCORE);
             }
             sb.append(t);
-            return sb.toString();
+        } else {
+            ArrayVersionSingle av_single = (ArrayVersionSingle) av;
+            sb.append(av_single.get_version());
+            sb.append(Constants.UNDERSCORE);
+            sb.append(t);
         }
-        ArrayVersionSingle av_single = (ArrayVersionSingle)av;
-        return id + "_" + av_single.get_version() + "_" + t;
+        if(t == DefOrUse.USE) {
+            sb.append(":");
+            sb.append(line_num);
+        }
+        return sb.toString();
     }
 
     ArrayVersion get_av() {
@@ -118,6 +136,10 @@ class Node {
     }
 
     String get_id() {
-        return Node.make_id(basename, av, type);
+        return Node.make_id(basename, av, type, line_num);
+    }
+
+    int get_line_num() {
+        return line_num;
     }
 }

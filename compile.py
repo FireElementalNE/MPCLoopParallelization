@@ -50,7 +50,7 @@ def main(main_args):
 
     for file in src_files:
         print('Compiling {}...'.format(file), end='')
-        cmd = ['javac', file, '-d', OUT_DIR, '-cp', OUT_DIR]
+        cmd = ['javac', file, '-g', '-d', OUT_DIR, '-cp', OUT_DIR]
         execute_cmd(cmd)
 
 

@@ -34,7 +34,18 @@ class Utils {
 		if(m.find()) {
 			return m.group(1);
 		} else {
-			return "Pattern not found.";
+			Logger.error("Pattern not found.");
+			return null;
+		}
+	}
+
+	static int get_block_num(Block b) {
+		Matcher m = Constants.BLOCK_NUM_RE.matcher(b.toString());
+		if(m.find()) {
+			return new Integer(m.group(1));
+		} else {
+			Logger.error("Pattern not found.");
+			return -1;
 		}
 	}
 
@@ -73,12 +84,15 @@ class Utils {
 		return String.format("%s_%d = %s;", s, av.get_version(), sb.toString());
 	}
 
+
+
 	static ArrayVersion rename_av(ArrayVersion av) {
 		if(av.is_phi()) {
 			ArrayVersionPhi av_phi = (ArrayVersionPhi)av;
-			return new ArrayVersionPhi(av_phi.get_array_versions());
+			return new ArrayVersionPhi(av_phi);
 		} else {
-			return new ArrayVersionSingle(av.get_version());
+			ArrayVersionSingle avs = (ArrayVersionSingle)av;
+			return new ArrayVersionSingle(avs);
 		}
 	}
 

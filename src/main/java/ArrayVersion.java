@@ -17,7 +17,7 @@ interface ArrayVersion {
     /**
      * increment the current version by 1
      */
-    void incr_version();
+    void incr_version(int block);
 
     /**
      * check if the variables in an ArrayVersionPhi have the same names
@@ -25,4 +25,10 @@ interface ArrayVersion {
      *         called on an ArrayVersionSingle, or if the names in an ArrayVersionPhi are different
      */
     boolean has_diff_ver_match();
+
+    /**
+     * get the last block to change this AV
+     * @return the last block to change this AV
+     */
+    int get_block();
 }
