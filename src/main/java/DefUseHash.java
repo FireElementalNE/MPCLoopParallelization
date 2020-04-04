@@ -1,3 +1,6 @@
+/**
+ * Hash class for Edges
+ */
 class DefUseHash {
     private String def;
     private String use;

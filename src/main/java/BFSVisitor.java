@@ -6,6 +6,9 @@ import soot.toolkits.graph.Block;
 
 import java.util.Map;
 
+/**
+ * The main visitor for the BFS algorithm.
+ */
 class BFSVisitor extends AbstractStmtSwitch {
     private Map<Block, DownwardExposedArrayRef> c_arr_ver;
     private Block b;
@@ -13,6 +16,13 @@ class BFSVisitor extends AbstractStmtSwitch {
     private ArrayDefUseGraph graph;
     private int block_num;
 
+    /**
+     * Constructor for the BFS Visitor
+     * @param c_arr_ver a Map of currently exposed array versions per block
+     * @param b the current block
+     * @param graph the current ArrayDefUseGraph
+     * @param block_num the number of the block
+     */
     BFSVisitor(Map<Block, DownwardExposedArrayRef> c_arr_ver, Block b, ArrayDefUseGraph graph, int block_num) {
         this.c_arr_ver = c_arr_ver;
         this.b = b;
@@ -22,14 +32,29 @@ class BFSVisitor extends AbstractStmtSwitch {
         this.block_num = block_num;
     }
 
+    /**
+     * getter for the c_arr_ver Map
+     * @return the c_arr_ver Map
+     */
     Map<Block, DownwardExposedArrayRef> get_c_arr_ver() {
         return c_arr_ver;
     }
 
+    /**
+     * getter for the possible change ArrayDefUseGraph
+     * @return the ArrayDefUseGraph
+     */
     ArrayDefUseGraph get_graph() {
         return graph;
     }
 
+    /**
+     * Check and an array USE and add:
+     *    1. Changed DownwardExposedArrayRef for this block
+     *    2. Usage Node
+     *    3. Possible add Edge
+     * @param stmt the current Statement
+     */
     private void check_array_read(Stmt stmt) {
         String basename = stmt.getArrayRef().getBaseBox().getValue().toString();
         ValueBox index_box = stmt.getArrayRef().getIndexBox();
@@ -45,19 +70,10 @@ class BFSVisitor extends AbstractStmtSwitch {
         c_arr_ver.put(b, daf);
     }
 
-    @Override
-    public void caseBreakpointStmt(BreakpointStmt stmt) {
-
-    }
-
-    @Override
-    public void caseInvokeStmt(InvokeStmt stmt) {
-        if(stmt.containsArrayRef()) {
-            Logger.debug("Checking " + stmt.toString());
-            check_array_read(stmt);
-        }
-    }
-
+    /**
+     * Check AssignStmt statement for possible Definitions and Usages
+     * @param stmt the statement
+     */
     @Override
     public void caseAssignStmt(AssignStmt stmt) {
         if(stmt.containsArrayRef()) {
@@ -79,6 +95,22 @@ class BFSVisitor extends AbstractStmtSwitch {
         }
     }
 
+    /**
+     * Check InvokeStmt statement
+     * @param stmt the statement
+     */
+    @Override
+    public void caseInvokeStmt(InvokeStmt stmt) {
+        if(stmt.containsArrayRef()) {
+            Logger.debug("Checking " + stmt.toString());
+            check_array_read(stmt);
+        }
+    }
+
+    /**
+     * Check IdentityStmt statement
+     * @param stmt the statement
+     */
     @Override
     public void caseIdentityStmt(IdentityStmt stmt) {
         if(stmt.containsArrayRef()) {
@@ -87,16 +119,10 @@ class BFSVisitor extends AbstractStmtSwitch {
         }
     }
 
-    @Override
-    public void caseEnterMonitorStmt(EnterMonitorStmt stmt) {
-
-    }
-
-    @Override
-    public void caseExitMonitorStmt(ExitMonitorStmt stmt) {
-
-    }
-
+    /**
+     * Check GotoStmt statement
+     * @param stmt the statement
+     */
     @Override
     public void caseGotoStmt(GotoStmt stmt) {
         if(stmt.containsArrayRef()) {
@@ -105,15 +131,22 @@ class BFSVisitor extends AbstractStmtSwitch {
         }
     }
 
+    /**
+     * Check IfStmt statement
+     * @param stmt the statement
+     */
     @Override
     public void caseIfStmt(IfStmt stmt) {
-
         if(stmt.containsArrayRef()) {
             Logger.debug("Checking " + stmt.toString());
             check_array_read(stmt);
         }
     }
 
+    /**
+     * Check LookupSwitchStmt statement
+     * @param stmt the statement
+     */
     @Override
     public void caseLookupSwitchStmt(LookupSwitchStmt stmt) {
         if(stmt.containsArrayRef()) {
@@ -122,16 +155,10 @@ class BFSVisitor extends AbstractStmtSwitch {
         }
     }
 
-    @Override
-    public void caseNopStmt(NopStmt stmt) {
-
-    }
-
-    @Override
-    public void caseRetStmt(RetStmt stmt) {
-
-    }
-
+    /**
+     * Check ReturnStmt statement
+     * @param stmt the statement
+     */
     @Override
     public void caseReturnStmt(ReturnStmt stmt) {
         if(stmt.containsArrayRef()) {
@@ -140,11 +167,10 @@ class BFSVisitor extends AbstractStmtSwitch {
         }
     }
 
-    @Override
-    public void caseReturnVoidStmt(ReturnVoidStmt stmt) {
-
-    }
-
+    /**
+     * Check TableSwitchStmt statement
+     * @param stmt the statement
+     */
     @Override
     public void caseTableSwitchStmt(TableSwitchStmt stmt) {
         if(stmt.containsArrayRef()) {
@@ -153,6 +179,10 @@ class BFSVisitor extends AbstractStmtSwitch {
         }
     }
 
+    /**
+     * Check ThrowStmt statement
+     * @param stmt the statement
+     */
     @Override
     public void caseThrowStmt(ThrowStmt stmt) {
         if(stmt.containsArrayRef()) {
@@ -161,6 +191,65 @@ class BFSVisitor extends AbstractStmtSwitch {
         }
     }
 
+    /**
+     * Check BreakpointStmt statement (NOT IMPLEMENTED)
+     * @param stmt the statement
+     */
+    @Override
+    public void caseBreakpointStmt(BreakpointStmt stmt) {
+
+    }
+
+    /**
+     * Check EnterMonitorStmt statement (NOT IMPLEMENTED)
+     * @param stmt the statement
+     */
+    @Override
+    public void caseEnterMonitorStmt(EnterMonitorStmt stmt) {
+
+    }
+
+    /**
+     * Check ExitMonitorStmt statement (NOT IMPLEMENTED)
+     * @param stmt the statement
+     */
+    @Override
+    public void caseExitMonitorStmt(ExitMonitorStmt stmt) {
+
+    }
+
+
+    /**
+     * Check NopStmt statement (NOT IMPLEMENTED)
+     * @param stmt the statement
+     */
+    @Override
+    public void caseNopStmt(NopStmt stmt) {
+
+    }
+
+    /**
+     * Check RetStmt statement (NOT IMPLEMENTED)
+     * @param stmt the statement
+     */
+    @Override
+    public void caseRetStmt(RetStmt stmt) {
+
+    }
+
+    /**
+     * Check ReturnVoidStmt statement (NOT IMPLEMENTED)
+     * @param stmt the statement
+     */
+    @Override
+    public void caseReturnVoidStmt(ReturnVoidStmt stmt) {
+
+    }
+
+    /**
+     * default case (NOT IMPLEMENTED)
+     * @param obj the object?
+     */
     @Override
     public void defaultCase(Object obj) {
 

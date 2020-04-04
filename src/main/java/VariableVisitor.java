@@ -7,6 +7,9 @@ import soot.shimple.PhiExpr;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * A visitor class that looks at possible index values
+ */
 public class VariableVisitor extends AbstractStmtSwitch {
 
     private PhiVariableContainer phi_vars;

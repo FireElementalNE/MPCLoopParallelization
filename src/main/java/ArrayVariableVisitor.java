@@ -6,6 +6,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Visitor for keeping track of array Variables
+ */
 public class ArrayVariableVisitor extends AbstractStmtSwitch {
     private Map<String, ArrayVersion> vars;
     private ArrayDefUseGraph graph;

@@ -5,9 +5,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * A def/use graph for arrays (turning into an SCC graph eventually)
+ */
 class ArrayDefUseGraph {
-    // A def use graph for arrays (turning into an SCC graph eventually)
-
     private Map<Integer, Edge> edges;
     private Map<String, Node> nodes;
 

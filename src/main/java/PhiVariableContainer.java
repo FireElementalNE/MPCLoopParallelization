@@ -8,15 +8,16 @@ import soot.jimple.AssignStmt;
 import java.util.*;
 import java.util.stream.Collectors;
 
-// TODO: possibly rename this?
+/**
+ * A  convenience class to cut down on unreadable code. It contains all of the phi variables, as well
+ * as their associated functions
+ */
 public class PhiVariableContainer {
 
     private Set<PhiVariable> phi_vars;
 
     /**
-     * create a PhiVariableContainer
-     * this is a convenience class to cut down on unreadable code. It contains all of the phi variables, as well
-     * as their associated functions
+     * Constructor for PhiVariableContainer
      */
     PhiVariableContainer() {
         this.phi_vars = new HashSet<>();

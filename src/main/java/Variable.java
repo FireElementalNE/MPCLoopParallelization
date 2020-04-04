@@ -9,6 +9,11 @@ import java.util.*;
 
 import static guru.nidi.graphviz.model.Factory.*;
 
+/**
+ * A variable object holds all variables that are linked to a phi expression
+ * It has a map _aliases_ which contains information on how every variable linked to the phi expression maps
+ * to every other variable that gets added TODO: need to explain this better
+ */
 public class Variable {
     private Map<String, Set<Alias>> aliases;
     private Value root_val;
@@ -16,9 +21,7 @@ public class Variable {
     private PhiExpr phi_expr;
 
     /**
-     * Create a new variable object. A variable object holds all variables that are linked to a phi expression
-     * It has a map _aliases_ which contains information on how every variable linked to the phi expression maps
-     * to every other variable that gets added TODO: need to explain this better
+     * Create a new variable object.
      * @param v the variable
      * @param phi_expr the phi expression
      */

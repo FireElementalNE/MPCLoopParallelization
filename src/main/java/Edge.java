@@ -1,5 +1,7 @@
+/**
+ * Very simple class that represents an edge in an ArrayDefUseGraph
+ */
 class Edge {
-    // Very simple class that represents an edge in an ArrayDefUseGraph
 
     private Node def;
     private Node use;

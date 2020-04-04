@@ -2,8 +2,11 @@ import soot.ValueBox;
 
 import java.util.Objects;
 
+/**
+ * An class representing and index that is used in an array access
+ */
 public class Index {
-    // An index that is used in an array access
+    //
 
     private ValueBox index_valuebox;
     private boolean has_index_flag;

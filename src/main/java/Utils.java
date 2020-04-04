@@ -13,6 +13,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 
+/**
+ * Generic Utility class
+ */
 class Utils {
 	/**
 	 * get the RT path depending on OS

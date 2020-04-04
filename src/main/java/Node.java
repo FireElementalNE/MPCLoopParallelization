@@ -6,10 +6,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+/**
+ * An _overly_ complex node class for ArrayDefUseGraph
+ */
 class Node {
-    /**
-     * An _overly_ complex node class.
-     */
+
     private String stmt; // the statement the node represents
     private DefOrUse type; // type of node (definition or usage)
     private ArrayVersion av; // ArrayVersion keeps track of the array version represented in the node

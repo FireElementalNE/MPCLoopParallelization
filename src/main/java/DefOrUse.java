@@ -1,3 +1,6 @@
+/**
+ * Enum representing whether a Node is a Definition Node or a Usage Node.
+ */
 public enum DefOrUse {
     DEF("DEF"),
     USE("USE");

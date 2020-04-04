@@ -8,6 +8,10 @@ import soot.toolkits.scalar.ValueUnitPair;
 
 import java.util.*;
 
+/**
+ * Class representing a phi variable. Theses variables are the only that can "change" per loop iterations
+ * Any variable based off of theses variables also can "change"
+ */
 public class PhiVariable {
     // TODO: add javadoc for these variables
     private PhiExpr phi_expr;

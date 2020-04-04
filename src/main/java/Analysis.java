@@ -22,7 +22,9 @@ import java.util.*;
 
 import static guru.nidi.graphviz.model.Factory.*;
 
-
+/**
+ * The "Main" class for the Analysis of Bodies
+ */
 public class Analysis extends BodyTransformer {
 	private Map<Block, DownwardExposedArrayRef> c_arr_ver; // current array version
 	private LinkedList<Block> worklist;
@@ -197,12 +199,22 @@ public class Analysis extends BodyTransformer {
 		}
 	}
 
+	/**
+	 * check the c_arr_ver map to see if all predecessor blocks have been visited
+	 * @param preds_list the list of predecessor blocks
+	 * @return true iff all predecessor blocks have been visited
+	 */
 	private boolean check_c_arr_ver(List<Block> preds_list) {
 		Set<Block> possible = c_arr_ver.keySet();
 		Set<Block> preds_set = new HashSet<>(preds_list);
 		return possible.containsAll(preds_set);
 	}
 
+	/**
+	 * check to see if all the array versions in a list of array versions are the same
+	 * @param avs the list of ArrayVersions
+	 * @return true iff all of the ArrayVersions have the same Version and the same Block number
+	 */
 	private boolean check_avs_diffs(List<ArrayVersion> avs) {
 		boolean are_the_same = true;
 		int version = avs.get(0).get_version();
@@ -215,6 +227,12 @@ public class Analysis extends BodyTransformer {
 		return are_the_same;
 	}
 
+	/**
+	 * Process a Non-Merge block (BFS algo)
+	 * @param b the Block
+	 * @param pred the Predecessor block
+	 * @param exits all exits for the loop
+	 */
 	private void handle_non_merge(Block b, Block pred, List<String> exits) {
 		if (!exits.contains(pred.getHead().toString())) {
 			DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
@@ -233,6 +251,11 @@ public class Analysis extends BodyTransformer {
 		}
 	}
 
+	/**
+	 * Handle a block that is a merge of two or more predecessor blocks (BFS algo).
+	 * @param b the Block
+	 * @param exits all exits for the loop
+	 */
 	private void handle_merge(Block b, List<String> exits) {
 		List<Block> pred_blocks = b.getPreds();
 		for (Map.Entry<String, ArrayVersion> entry : array_vars.entrySet()) {
@@ -268,6 +291,14 @@ public class Analysis extends BodyTransformer {
 		}
 	}
 
+	/**
+	 * Process a block in the BFS algorithm.
+	 * This can be the first or the second iterations.
+	 * @param b the Block
+	 * @param head the head Block of the current loop
+	 * @param exits all exits from the loop
+	 * @param second_iter true iff we are parsing the loop for the second time.
+	 */
 	@SuppressWarnings("ForLoopReplaceableByForEach")
 	private void process(Block b, Block head, List<String> exits, boolean second_iter) {
 		List<Block> pred_blocks = b.getPreds();
@@ -346,6 +377,10 @@ public class Analysis extends BodyTransformer {
 		}
 	}
 
+	/**
+	 * Initialize all variable for the BFS algorithm
+	 * @param b the Block
+	 */
 	private void init_BFS_vars(Block b) {
 		DownwardExposedArrayRef down_ar = new DownwardExposedArrayRef(b);
 		for (Map.Entry<String, ArrayVersion> entry : array_vars.entrySet()) {
@@ -354,6 +389,12 @@ public class Analysis extends BodyTransformer {
 		c_arr_ver.put(b, down_ar);
 	}
 
+	/**
+	 * Initialize the worklist for the BFS algorithm. The workslist represents
+	 * the Blocks that are _left_ to parse
+	 * @param head the Head Block of the Current loop
+	 * @param second_iter true iff we are parsing the loop for the second time.
+	 */
 	private void init_worklist(Block head, boolean second_iter) {
 		for(Block b : head.getSuccs()) {
 			String head_str = head.getHead().toString();
@@ -368,6 +409,12 @@ public class Analysis extends BodyTransformer {
 		}
 	}
 
+	/**
+	 * perform a full parse of the loop (first or second iteration) for the BFS algorithm
+	 * @param head the head of the currently loop
+	 * @param exits all exits for the current loop
+	 * @param second_iter true iff we are parsing the loop for the second time.
+	 */
 	private void parse_iteration(Block head, List<String> exits, boolean second_iter) {
 		init_worklist(head, second_iter);
 		// first iter
@@ -378,6 +425,11 @@ public class Analysis extends BodyTransformer {
 		Logger.info("Finished " + second_iter);
 	}
 
+	/**
+	 *  Perform the BFS algorithm on a loop
+	 * @param head the Head of the loop
+	 * @param exits all exits the current loops
+	 */
 	private void BFS(Block head, List<String> exits) {
 		Logger.info("seen_blocks size 0: " + seen_blocks.size());
 		seen_blocks.add(head);
@@ -397,6 +449,12 @@ public class Analysis extends BodyTransformer {
 		seen_blocks.addAll(loop_blocks);
 	}
 
+	/**
+	 * Overridden Soot method that parsed Code Bodies
+	 * @param body the Current Code body
+	 * @param phaseName the name of the Current Phase
+	 * @param options The soot options
+	 */
 	@Override
 	protected void internalTransform(Body body, String phaseName, Map<String, String> options) {
 		if(!Constants.JUST_COMPILE) {

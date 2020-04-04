@@ -1,6 +1,8 @@
 import java.util.regex.Pattern;
 
-
+/**
+ * Constants class
+ */
 class Constants {
     static final int DEF_LINE_NUM = -2;
     static final int PHI_LINE_NUM = -1;

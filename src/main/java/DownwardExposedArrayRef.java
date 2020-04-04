@@ -4,6 +4,10 @@ import soot.toolkits.graph.Block;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Class representing the downward exposed array versions for a given block.
+ * A block only knows the versions that are passed to it by predecessor blocks (Part of BFS)
+ */
 class DownwardExposedArrayRef {
 
     private Block b;

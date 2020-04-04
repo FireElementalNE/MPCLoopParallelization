@@ -7,6 +7,9 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Class that solves constraints via SMT
+ */
 public class Solver {
 
     // TODO: this will be the solver class!
