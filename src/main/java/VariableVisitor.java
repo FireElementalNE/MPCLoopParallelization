@@ -4,10 +4,13 @@ import soot.jimple.AbstractStmtSwitch;
 import soot.jimple.AssignStmt;
 import soot.shimple.PhiExpr;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class VariableVisitor extends AbstractStmtSwitch {
 
     private PhiVariableContainer phi_vars;
-
+    private Set<String> top_phi_var_names;
     /**
      * create new VariableVisitor
      * this class is looks for possible index values and tracks them
@@ -16,9 +19,12 @@ public class VariableVisitor extends AbstractStmtSwitch {
      *   2. Have a Phi variable somewhere in their def chain
      * @param phi_vars a container containing all phi_variables that have been seen up to this point
      *                 (along with the aliases of those PhiVariables
+     * @param top_phi_var_names This is a convenience set to keep track of the original phi variable names,
+     *                          this is used when parsing the second iteration.
      */
-    VariableVisitor(PhiVariableContainer phi_vars) {
+    VariableVisitor(PhiVariableContainer phi_vars, Set<String> top_phi_var_names) {
         this.phi_vars = new PhiVariableContainer(phi_vars);
+        this.top_phi_var_names = new HashSet<>(top_phi_var_names);
     }
 
     /**
@@ -27,6 +33,14 @@ public class VariableVisitor extends AbstractStmtSwitch {
      */
     PhiVariableContainer get_phi_vars() {
         return new PhiVariableContainer(phi_vars);
+    }
+
+    /**
+     * getter for the top level phi variable names used in the second
+     * @return the set of top level phi variable names;
+     */
+    Set<String> get_top_phi_var_names() {
+        return new HashSet<>(top_phi_var_names);
     }
 
     /**
@@ -41,6 +55,7 @@ public class VariableVisitor extends AbstractStmtSwitch {
             // getting a brand new phi variable
             Logger.debug("We found a phi node: " + stmt.toString());
             phi_vars.add(new PhiVariable(stmt));
+            top_phi_var_names.add(stmt.getLeftOp().toString());
         } else {
             Logger.debug("Not a phi node, looking for links: " + stmt.toString());
             Logger.debug("Checking phi_vars");

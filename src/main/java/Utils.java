@@ -14,7 +14,10 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 
 class Utils {
-
+	/**
+	 * get the RT path depending on OS
+	 * @return get the default path to rt.jar
+	 */
 	static String rt_path() {
 		if (SystemUtils.IS_OS_WINDOWS) {
 			return Constants.RT_PATH_WINDOWS;
@@ -22,6 +25,10 @@ class Utils {
 		return Constants.RT_PATH_UNIX;
 	}
 
+	/**
+	 * get the JCE path depending on OS
+	 * @return get the default path to jce.jar
+	 */
 	static String jce_path() {
 		if (SystemUtils.IS_OS_WINDOWS) {
 			return Constants.JCE_PATH_WINDOWS;
@@ -29,6 +36,11 @@ class Utils {
 		return Constants.JCE_PATH_UNIX;
 	}
 
+	/**
+	 * For convenience... get the name of a block!
+	 * @param b the Block
+	 * @return the name of the block (in the form 'Block 1')
+	 */
 	static String get_block_name(Block b) {
 		Matcher m = Constants.BLOCK_RE.matcher(b.toString());
 		if(m.find()) {
@@ -39,6 +51,11 @@ class Utils {
 		}
 	}
 
+	/**
+	 * For convenience... get the number of a block!
+	 * @param b the Block
+	 * @return the number of the block
+	 */
 	static int get_block_num(Block b) {
 		Matcher m = Constants.BLOCK_NUM_RE.matcher(b.toString());
 		if(m.find()) {
@@ -49,6 +66,11 @@ class Utils {
 		}
 	}
 
+	/**
+	 * copy an ArrayVersion
+	 * @param av the ArrayVersion
+	 * @return a (hopefully) deep copy the passed ArrayVersion
+	 */
 	static ArrayVersion copy_av(ArrayVersion av) {
 		if(av.is_phi()) {
 			return new ArrayVersionPhi((ArrayVersionPhi)av);
@@ -57,7 +79,14 @@ class Utils {
 		}
 	}
 
-	static String create_phi_stmt(String s, ArrayVersion av) {
+	/**
+	 * Create String representation of a Phi statement for arrays
+	 * If the array versions are the same adds letters to differentiate
+	 * @param basename the basename of the phi statement
+	 * @param av the array version
+	 * @return a String representation of the array version
+	 */
+	static String create_phi_stmt(String basename, ArrayVersion av) {
 		assert av instanceof ArrayVersionPhi;
 		ArrayVersionPhi av_phi = (ArrayVersionPhi)av;
 		StringBuilder sb = new StringBuilder();
@@ -74,18 +103,22 @@ class Utils {
 				}
 				aug = String.valueOf(Constants.ALPHABET_ARRAY[have_seen.get(versions[i].get_version())]);
 			}
-			sb.append(String.format(Constants.ARR_VER_STR, s, versions[i].get_version(), aug));
+			sb.append(String.format(Constants.ARR_VER_STR, basename, versions[i].get_version(), aug));
 			if(i + 1 < versions.length) {
 				sb.append(", ");
 			} else {
 				sb.append(")");
 			}
 		}
-		return String.format("%s_%d = %s;", s, av.get_version(), sb.toString());
+		return String.format("%s_%d = %s;", basename, av.get_version(), sb.toString());
 	}
 
 
-
+	/**
+	 * rename an ArrayVersion
+	 * @param av the ArrayVersion
+	 * @return the ArrayVersion renamed
+	 */
 	static ArrayVersion rename_av(ArrayVersion av) {
 		if(av.is_phi()) {
 			ArrayVersionPhi av_phi = (ArrayVersionPhi)av;
@@ -96,23 +129,43 @@ class Utils {
 		}
 	}
 
+	/**
+	 * create the name of a dot graph
+	 * @param basename the basename for the graph
+	 * @return the name of the graph with the required constants added
+	 */
 	static String make_graph_name(String basename) {
 		return String.format("%s%s%s%s", Constants.GRAPH_DIR, File.separator, basename, Constants.GRAPH_EXT);
 	}
 
+	/**
+	 * AMAZING universal checker to determine if every element of a list is not null
+	 * @param lst the list
+	 * @return true iff no member of the list is null
+	 */
 	static boolean all_not_null(List<?> lst) {
 		return lst.stream()
 				.map(Utils::not_null)
 				.reduce(true, Boolean::logicalAnd);
 	}
 
+	/**
+	 * AMAZING universal checker to determine if something is null
+	 * @param o the something
+	 * @param <T> the type of the something
+	 * @return true iff the something is null
+	 */
 	static <T> boolean not_null(T o) {
 		return !Objects.equals(o, null);
 	}
 
+	/**
+	 * Write a Mutable GraphViz to disk
+	 * @param graph the graph
+	 */
 	static void print_graph(MutableGraph graph) {
 		try {
-			Graphviz.fromGraph(graph).width(Constants.GRAPHVIZ_WIDTH).render(Format.PNG)
+			Graphviz.fromGraph(graph).render(Format.PNG)
 					.toFile(new File(Utils.make_graph_name(graph.name().toString())));
 		} catch (IOException | java.awt.AWTError | java.lang.NoClassDefFoundError e) {
 			Logger.error("Caught " + e.getClass().getSimpleName() + ": " + e.getMessage());

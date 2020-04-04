@@ -104,7 +104,7 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
             Logger.info("Found a new array: " + left_op);
             ArrayVersion av = new ArrayVersionSingle(1, block_num);
             graph.add_node(new Node(stmt.toString(), left_op, av, new Index(), DefOrUse.DEF, stmt.getJavaSourceStartLineNumber()),
-                    true);
+                    true, false);
             vars.put(left_op, av);
         }
         if(vars.containsKey(right_op)) {

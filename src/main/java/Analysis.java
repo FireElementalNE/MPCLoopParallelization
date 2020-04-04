@@ -30,7 +30,9 @@ public class Analysis extends BodyTransformer {
 	private Set<Block> loop_blocks;
 	private Set<ImmutablePair<String, String>> loop_head_exits;
 	private Map<String, ArrayVersion> array_vars;
+	private Set<String> second_iter_def_vars;
 	private PhiVariableContainer phi_vars;
+	private Set<String> top_phi_var_names;
 	private ArrayDefUseGraph graph;
 	private MutableGraph final_graph;
 	private MutableGraph flow_graph;
@@ -51,6 +53,8 @@ public class Analysis extends BodyTransformer {
 		phi_vars = new PhiVariableContainer();
 		loop_head_exits = new HashSet<>();
 		array_vars = new HashMap<>();
+		top_phi_var_names = new HashSet<>();
+		second_iter_def_vars = new HashSet<>();
 		graph = new ArrayDefUseGraph();
 		loop_blocks = new HashSet<>();
 		this.host = host;
@@ -138,13 +142,14 @@ public class Analysis extends BodyTransformer {
 		Logger.debug(Utils.get_block_name(b) + " head: " + b.getHead().toString());
 		for(Iterator<Unit> i = b.iterator(); i.hasNext();) {
 			ArrayVariableVisitor visitor = new ArrayVariableVisitor(array_vars, graph, Utils.get_block_num(b));
-			VariableVisitor var_visitor = new VariableVisitor(phi_vars);
+			VariableVisitor var_visitor = new VariableVisitor(phi_vars, top_phi_var_names);
 			Unit u = i.next();
 			u.apply(visitor);
 			u.apply(var_visitor);
 			this.array_vars = visitor.get_vars();
 			this.graph = visitor.get_graph();
 			this.phi_vars = var_visitor.get_phi_vars();
+			this.top_phi_var_names = var_visitor.get_top_phi_var_names();
 		}
 		if(is_loop_head(b.getHead())) {
 			if(!seen_blocks.contains(b)) {
@@ -247,7 +252,7 @@ public class Analysis extends BodyTransformer {
 					new_daf.put(entry.getKey(), av_phi);
 					Logger.info("We made a phi node: " + new_daf.get_name(entry.getKey()));
 					Node n = new Node(entry.getKey(), av_phi);
-					graph.add_node(n, true);
+					graph.add_node(n, true, false);
 					c_arr_ver.put(b, new_daf);
 				} else {
 					Logger.info("Branching changed nothing, not creating phi node.");
@@ -267,11 +272,20 @@ public class Analysis extends BodyTransformer {
 	private void process(Block b, Block head, List<String> exits, boolean second_iter) {
 		List<Block> pred_blocks = b.getPreds();
 		if(second_iter) {
+			if (seen_blocks.contains(b)) {
+				Logger.error("Were have seen this block on the second iter: " + b.getHead().toString());
+				return;
+			}
 			for (Iterator<Unit> i = b.iterator(); i.hasNext(); ) {
 				Unit u = i.next();
-				IndexVisitor iv = new IndexVisitor(phi_vars);
+				IndexVisitor iv = new IndexVisitor(phi_vars, second_iter_def_vars,
+						top_phi_var_names, graph);
 				u.apply(iv);
+				second_iter_def_vars = iv.get_second_iter_def_vars();
+				graph = iv.get_graph();
 			}
+			seen_blocks.add(b);
+			worklist.addAll(b.getSuccs());
 			// TODO: remove this if stmt and replace with true second iteration:
 			//       look at current index variables and how they have changed!
 		} else {
@@ -299,7 +313,7 @@ public class Analysis extends BodyTransformer {
 			for (Iterator<Unit> i = b.iterator(); i.hasNext(); ) {
 				BFSVisitor bfs_visitor = new BFSVisitor(c_arr_ver, b, graph, Utils.get_block_num(b));
 				ArrayVariableVisitor av_visitor = new ArrayVariableVisitor(array_vars, graph, Utils.get_block_num(b));
-				VariableVisitor var_visitor = new VariableVisitor(phi_vars);
+				VariableVisitor var_visitor = new VariableVisitor(phi_vars, top_phi_var_names);
 				Unit u = i.next();
 				u.apply(bfs_visitor);
 				u.apply(av_visitor);
@@ -308,10 +322,12 @@ public class Analysis extends BodyTransformer {
 				c_arr_ver = bfs_visitor.get_c_arr_ver();
 				graph = bfs_visitor.get_graph();
 				phi_vars = var_visitor.get_phi_vars();
+				top_phi_var_names = var_visitor.get_top_phi_var_names();
 			}
 			List<Block> succ_blocks = b.getSuccs();
 			Logger.debug("We found " + succ_blocks.size() + " successor blocks.");
 			if (loop_head_exits.contains(new ImmutablePair<>(head.toString(), b.toString()))) {
+				// TODO: this does nothing.
 				Logger.info("We found an exit, stopping.");
 			} else {
 				for (Block s1 : succ_blocks) {
@@ -373,6 +389,7 @@ public class Analysis extends BodyTransformer {
 		Logger.info("Entering second iteration!");
 		// Empty worklist
 		worklist = new LinkedList<>();
+		worklist.add(head);
 		Logger.info("seen_blocks size 1: " + seen_blocks.size());
 		seen_blocks.removeAll(loop_blocks);
 		Logger.info("seen_blocks size 2: " + seen_blocks.size());
