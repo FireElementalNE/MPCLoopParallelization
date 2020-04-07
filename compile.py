@@ -2,6 +2,7 @@ import argparse
 import os
 import shutil
 import subprocess
+import sys
 
 BASE_DIR = 'test_programs'
 OUT_DIR = os.path.join(BASE_DIR, 'out')
@@ -12,7 +13,7 @@ def execute_cmd(cmd):
     (outs, errs) = execute_cmd_helper(cmd)
     if errs:
         print('ERROR.')
-        print(errs)
+        print(errs, file=sys.stderr)
     else:
         print('Done.')
 

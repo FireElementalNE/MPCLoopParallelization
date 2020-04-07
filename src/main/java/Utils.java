@@ -1,10 +1,18 @@
+import guru.nidi.graphviz.attribute.ForGraph;
+import guru.nidi.graphviz.engine.Engine;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
+import guru.nidi.graphviz.engine.Rasterizer;
+import guru.nidi.graphviz.model.MutableAttributed;
 import guru.nidi.graphviz.model.MutableGraph;
 import org.apache.commons.lang3.SystemUtils;
 import org.tinylog.Logger;
+import soot.jimple.ArrayRef;
+import soot.jimple.AssignStmt;
+import soot.jimple.Stmt;
 import soot.toolkits.graph.Block;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -167,15 +175,44 @@ class Utils {
 	 * @param graph the graph
 	 */
 	static void print_graph(MutableGraph graph) {
+		MutableAttributed<MutableGraph, ForGraph> z = graph.graphAttrs();
+		String name = String.format("%s%s%s", Constants.GRAPH_DIR, File.separator, graph.name());
 		try {
-			Graphviz.fromGraph(graph).render(Format.PNG)
-					.toFile(new File(Utils.make_graph_name(graph.name().toString())));
+			Graphviz viz = Graphviz.fromGraph(graph);
+//			viz.width(200).render(Format.SVG).toFile(new File(name + ".svg"));
+			viz.rasterize(Rasterizer.BATIK).toFile(new File(name + "1.png"));
+//			viz.height(1000).width(200).rasterize(Rasterizer.SALAMANDER).toFile(new File(name + "2.png"));
+//			viz.width(200).rasterize(Rasterizer.builtIn("pdf")).toFile(new File("ex5p"));
+			String dot = viz.render(Format.DOT).toString();
+			String json = viz.engine(Engine.NEATO).render(Format.JSON).toString();
+			BufferedImage image = viz.render(Format.PNG).toImage();
+//			.render(Format.PNG)
+//					.toFile(new File(Utils.make_graph_name(graph.name().toString())));
 		} catch (IOException | java.awt.AWTError | java.lang.NoClassDefFoundError e) {
 			Logger.error("Caught " + e.getClass().getSimpleName() + ": " + e.getMessage());
 			if(Constants.PRINT_ST) {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	/**
+	 * check to see if an assignment statement contains an array ref, if it does then checks if the array ref is
+	 * on the left hand side (is a def)
+	 * @param stmt the statement
+	 * @return true iff the assignment stmt contains an array reference and the reference is on the left hand side
+	 */
+	static boolean is_def(Stmt stmt) {
+		if(!(stmt instanceof AssignStmt)) {
+			// TODO: not sure how to handle other atm. In index visitor we pass all types of statements
+			//       but it only matters if it is an AssignStmt
+			return false;
+		}
+		AssignStmt astmt = (AssignStmt)stmt;
+		if(!stmt.containsArrayRef()) {
+			return false;
+		}
+		return astmt.getLeftOp() instanceof ArrayRef;
 	}
 
 }

@@ -1,7 +1,6 @@
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import soot.Value;
 import soot.ValueBox;
-import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
 import soot.shimple.PhiExpr;
 import soot.toolkits.scalar.ValueUnitPair;
@@ -93,7 +92,7 @@ public class PhiVariable {
                 Value v = entry.getValue().getLeft().getValue();
                 if (Objects.equals(vb.getValue().toString(), v.toString())) {
                     // array writes can never be indexes...
-                    if (!(left_box.getValue() instanceof ArrayRef)) {
+                    if (!Utils.is_def(stmt)) {
                         values.add(new ImmutablePair<>(vb.getValue(), left_box.getValue()));
                     }
                 }
@@ -179,7 +178,7 @@ public class PhiVariable {
      * @return a pair consisting of the variable and the list of assignment statements (if it exists)
      *   otherwise null.
      */
-    ImmutablePair<Variable, List<AssignStmt>> get_var_dep_chain(String v) {
+    ImmutablePair<Variable, Set<AssignStmt>> get_var_dep_chain(String v) {
         for(Variable var : var_links) {
             if(var.has_ever_been(v)) {
                 return new ImmutablePair<>(var, var.get_def_lst(v));

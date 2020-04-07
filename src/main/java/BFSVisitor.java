@@ -78,7 +78,7 @@ class BFSVisitor extends AbstractStmtSwitch {
     public void caseAssignStmt(AssignStmt stmt) {
         if(stmt.containsArrayRef()) {
             ValueBox left = stmt.getLeftOpBox();
-            if(left.getValue() instanceof ArrayRef) {
+            if(Utils.is_def(stmt)) {
                 String basename = stmt.getArrayRef().getBaseBox().getValue().toString();
                 Logger.debug("Array write found (change needed): " + stmt.toString());
                 daf.new_ver(basename, block_num);

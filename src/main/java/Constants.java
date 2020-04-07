@@ -4,6 +4,7 @@ import java.util.regex.Pattern;
  * Constants class
  */
 class Constants {
+    static final String DIFF_ITER_TAG = "DIFFERENT_ITER";
     static final int DEF_LINE_NUM = -2;
     static final int PHI_LINE_NUM = -1;
     static final boolean PRINT_ST = false;
@@ -33,7 +34,7 @@ class Constants {
     static final String Z3_PORT = "25241";
     static final String Z3_HOST = "localhost";
     static final boolean JUST_COMPILE = false;
-
+    static final String DEFAULT_COMPILE_CMD = "python compile.py -c %s";
 }
 
 

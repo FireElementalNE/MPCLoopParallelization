@@ -13,13 +13,15 @@ public class IndexVisitor extends AbstractStmtSwitch {
     private Set<String> second_iter_def_vars;
     private Set<String> top_phi_var_names;
     private ArrayDefUseGraph graph;
+    private Set<String> constants;
 
     IndexVisitor(PhiVariableContainer pvc, Set<String> second_iter_def_vars,
-                 Set<String> top_phi_var_names, ArrayDefUseGraph graph) {
+                 Set<String> top_phi_var_names, Set<String> constants, ArrayDefUseGraph graph) {
         this.pvc = new PhiVariableContainer(pvc);
         this.second_iter_def_vars = new HashSet<>(second_iter_def_vars);
         this.top_phi_var_names = new HashSet<>(top_phi_var_names);
         this.graph = new ArrayDefUseGraph(graph);
+        this.constants = constants;
     }
 
     Set<String> get_second_iter_def_vars() {
@@ -40,11 +42,6 @@ public class IndexVisitor extends AbstractStmtSwitch {
         return new PhiVariableContainer(pvc);
     }
 
-
-    private void print_dep_box_info(ValueBox vb) {
-
-    }
-
     private void check_index(Stmt stmt) {
         // TODO:
         //   Just check the stmt on the _right_ if it is an operation if any kind
@@ -52,13 +49,15 @@ public class IndexVisitor extends AbstractStmtSwitch {
         ArrayRef ar = stmt.getArrayRef();
         ValueBox index_box = ar.getIndexBox();
         String index_name = index_box.getValue().toString();
+        // now that we have all of the possible constants we should be OK.
+        // only break if it is a DEF!!!
         if(!second_iter_def_vars.contains(index_name)
-                && !top_phi_var_names.contains(index_name)) {
+                && !top_phi_var_names.contains(index_name)
+                && !constants.contains(index_name)) {
             Logger.debug("Printing def-chain: '" + index_name + "' in stmt '" + stmt.toString() + "'");
             pvc.print_var_dep_chain(index_box.getValue().toString());
             ImmutablePair<Variable, List<AssignStmt>> dep_chain = pvc.get_var_dep_chain(index_name);
-            // Node(String stmt, String basename, ArrayVersion av, Index index, DefOrUse type, int line_num) {
-            StringBuilder stmt_str = new StringBuilder();
+            StringBuilder stmt_str = new StringBuilder(stmt.toString()).append(" >>> ");
             if (Utils.not_null(dep_chain)) {
                 if(!dep_chain.getRight().isEmpty()) {
                     Logger.debug("Dep chain for " + index_name + ":");
@@ -73,16 +72,26 @@ public class IndexVisitor extends AbstractStmtSwitch {
                 } else {
                     Logger.debug("Dep chain for " + index_name + " is empty (is it a phi var?).");
                 }
-                stmt_str.append(" >>> ").append(stmt.toString());
                 graph.add_node(new Node(stmt_str.toString(), ar.getBaseBox().getValue().toString(),
                         new ArrayVersionSingle(-1, -1), new Index(index_box), DefOrUse.USE,
                         stmt.getJavaSourceStartLineNumber()), false, true);
             } else {
                 Logger.error("dep chain for " + index_box.getValue().toString() + " is null.");
             }
-            second_iter_def_vars.add(index_name);
+            // only add if it is a def!
+            if(Utils.is_def(stmt)) {
+                // this must be an assign stmt at this point
+                assert stmt instanceof AssignStmt;
+                AssignStmt astmt = (AssignStmt)stmt;
+                second_iter_def_vars.add(astmt.getLeftOp().toString());
+            }
         } else {
             Logger.debug("Variable '" + index_name + "' is has been defined already.");
+            Logger.debug("\t!second_iter_def_vars.contains(index_name) = " + !second_iter_def_vars.contains(index_name));
+            Logger.debug("\t!top_phi_var_names.contains(index_name) = " + !top_phi_var_names.contains(index_name));
+            Logger.debug("\t!constants.contains(index_name) = " + !constants.contains(index_name));
+            Logger.debug("\t!Utils.is_def(stmt) = " +  !Utils.is_def(stmt));
+
         }
     }
 

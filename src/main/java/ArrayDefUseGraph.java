@@ -55,7 +55,7 @@ class ArrayDefUseGraph {
      */
     private void add_edge(Node use_node, boolean links_to_prev_iter) {
         if(links_to_prev_iter) {
-            Edge edge = new Edge(new Node("PREV_ITER", use_node.get_index().to_str()), use_node);
+            Edge edge = new Edge(new Node(Constants.DIFF_ITER_TAG, use_node.get_index().to_str()), use_node);
             edges.put(edge.hashCode(), edge);
         } else {
             assert nodes.containsKey(use_node.get_opposite_id());

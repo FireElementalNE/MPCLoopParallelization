@@ -13,6 +13,9 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
     private Map<String, ArrayVersion> vars;
     private ArrayDefUseGraph graph;
     private int block_num;
+    // flag that is used by VariableVisitor to check for constants. If we are dealing with an array
+    // it is not a constant we are interested in.
+    private boolean is_array;
 
     /**
      * Create a new array variable visitor
@@ -28,6 +31,7 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         this.graph = new ArrayDefUseGraph(graph);
         this.block_num = block_num;
+        this.is_array = false;
     }
 
     /**
@@ -48,6 +52,14 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
     }
 
     /**
+     * return is array field
+     * @return true iff we are dealing with an array.
+     */
+    boolean get_is_array() {
+        return is_array;
+    }
+
+    /**
      * get tje basename pf an array ref (just to make code easier to read)
      * @param aref the array reference
      * @return the basename of the array reference
@@ -62,6 +74,7 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
      */
     private void check_array_ref(Stmt stmt) {
         if(stmt.containsArrayRef()) {
+            is_array = true;
             String basename = get_basename(stmt.getArrayRef());
             if(!vars.containsKey(basename)) {
                 vars.put(basename, new ArrayVersionSingle(1, block_num));
@@ -109,6 +122,7 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
             graph.add_node(new Node(stmt.toString(), left_op, av, new Index(), DefOrUse.DEF, stmt.getJavaSourceStartLineNumber()),
                     true, false);
             vars.put(left_op, av);
+            is_array = true;
         }
         if(vars.containsKey(right_op)) {
             // NOTE: PURE array renaming!
@@ -119,6 +133,7 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
             graph.array_def_rename(right_op, vars.get(right_op), left_op, new_av, stmt);
             vars.remove(right_op);
             Logger.debug("An array got renamed...");
+            is_array = true;
         }
     }
 

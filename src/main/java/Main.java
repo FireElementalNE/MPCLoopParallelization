@@ -6,7 +6,10 @@ import soot.PackManager;
 import soot.Transform;
 import soot.options.Options;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryType;
@@ -18,6 +21,33 @@ public class Main {
 
 	private static String RT_PATH = Utils.rt_path();
 	private static String JCE_PATH = Utils.jce_path();
+
+	private static void compile_program(String classname) {
+		boolean errors_found = false;
+		try {
+			String cmd = String.format(Constants.DEFAULT_COMPILE_CMD, classname);
+			Process p = Runtime.getRuntime().exec(cmd);
+			BufferedReader stdError = new BufferedReader(new
+					InputStreamReader(p.getErrorStream()));
+			BufferedReader stdInput = new BufferedReader(new
+					InputStreamReader(p.getInputStream()));
+			String s;
+			while ((s = stdInput.readLine()) != null) {
+				Logger.debug(s);
+			}
+			while((s = stdError.readLine()) != null) {
+				Logger.error(s);
+				errors_found = true;
+			}
+
+		} catch (IOException e) {
+			Logger.error("Caught exception: " + e.getMessage());
+		}
+		if(errors_found) {
+			Logger.error("Errors in compilation. Exiting.");
+			System.exit(0);
+		}
+	}
 
 	// Found here:
 	// https://javarevisited.blogspot.com/2015/03/how-to-delete-directory-in-java-with-files.html
@@ -142,7 +172,7 @@ public class Main {
 			Logger.info( "Running on unix-like OS.");
 		}
 		classpath = classpath + File.pathSeparator + rtpath + File.pathSeparator + jcepath;
-
+		compile_program(klass);
 		Logger.debug(String.format("CLASSPATH: %s", classpath));
 		Logger.debug(String.format("CLASS: %s", klass));
 

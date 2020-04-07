@@ -14,6 +14,9 @@ public class VariableVisitor extends AbstractStmtSwitch {
 
     private PhiVariableContainer phi_vars;
     private Set<String> top_phi_var_names;
+    private boolean is_array;
+    private boolean in_loop;
+    private Set<String> constants;
     /**
      * create new VariableVisitor
      * this class is looks for possible index values and tracks them
@@ -24,10 +27,17 @@ public class VariableVisitor extends AbstractStmtSwitch {
      *                 (along with the aliases of those PhiVariables
      * @param top_phi_var_names This is a convenience set to keep track of the original phi variable names,
      *                          this is used when parsing the second iteration.
+     * @param constants a set of constants seen in non-loop blocks
+     * @param is_array used to find constants when we are _outside_ of a loop body
+     * @param in_loop true iff this is called when processing inside of a loop
      */
-    VariableVisitor(PhiVariableContainer phi_vars, Set<String> top_phi_var_names) {
+    VariableVisitor(PhiVariableContainer phi_vars, Set<String> top_phi_var_names, Set<String> constants,
+                    boolean is_array, boolean in_loop) {
         this.phi_vars = new PhiVariableContainer(phi_vars);
         this.top_phi_var_names = new HashSet<>(top_phi_var_names);
+        this.is_array = is_array;
+        this.in_loop = in_loop;
+        this.constants = new HashSet<>(constants);
     }
 
     /**
@@ -47,6 +57,15 @@ public class VariableVisitor extends AbstractStmtSwitch {
     }
 
     /**
+     * get possible changed constants list (only used when not in a loop)
+     * @return the set of constants
+     */
+    Set<String> get_constants() {
+        assert !in_loop;
+        return new HashSet<>(constants);
+    }
+
+    /**
      * Visitor ran across an assignment statement, overriding def in AbstractStmtSwitch
      * This is the main method that parses variables
      * @param stmt the assignment statement
@@ -63,7 +82,11 @@ public class VariableVisitor extends AbstractStmtSwitch {
             Logger.debug("Not a phi node, looking for links: " + stmt.toString());
             Logger.debug("Checking phi_vars");
             // loop through phi variables
-            phi_vars.process_assignment(stmt);
+            boolean found_link = phi_vars.process_assignment(stmt);
+            if(!found_link && !stmt.containsArrayRef() && !is_array && !in_loop) {
+                Logger.debug("'" + stmt.toString() + "' appears to deal with a constant");
+                constants.add(stmt.getLeftOp().toString());
+            }
         }
         /* TODO:
         From here we need to do something like the following.

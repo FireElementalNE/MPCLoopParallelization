@@ -26,18 +26,36 @@ import static guru.nidi.graphviz.model.Factory.*;
  * The "Main" class for the Analysis of Bodies
  */
 public class Analysis extends BodyTransformer {
+	// Map that represents the current array versions that I block presents to a successor block
 	private Map<Block, DownwardExposedArrayRef> c_arr_ver; // current array version
+	// A worklist containing the block left to process
 	private LinkedList<Block> worklist;
+	// a list of blocks that have been seen
 	private Set<Block> seen_blocks;
+	// a list of blocks that have been seen IN THE CURRENT BFS execution
+	// This is a bit more complex, these blocks are removed when the second iteration is parsed
+	// Then they are added back.
 	private Set<Block> loop_blocks;
+	// A Set containing pairs of loop heads and exits (this will be important for nested loops)
 	private Set<ImmutablePair<String, String>> loop_head_exits;
+	// A Map that maps an array to an array version
 	private Map<String, ArrayVersion> array_vars;
+	// A list of variables that have been defined in the second iteration, this is needed so we do not
+	// confuse mark a variable as having an intra-loop dependency when it was defined earlier in the
+	// loop (it is contained in array_vars but has been defined)
 	private Set<String> second_iter_def_vars;
+	// The container class for all array ssa phi variables
 	private PhiVariableContainer phi_vars;
+	// A set of possible constants gathered from non-loop blocks
+	private Set<String> constants;
+	// A list of the _original_ phi variables that is queried on the second iteration
 	private Set<String> top_phi_var_names;
+	// The final DefUse Graph
 	private ArrayDefUseGraph graph;
+	// Dot graphs (for printing)
 	private MutableGraph final_graph;
 	private MutableGraph flow_graph;
+	// server information
 	private int port;
 	private String host;
 	// TODO: finish documenting.
@@ -59,6 +77,7 @@ public class Analysis extends BodyTransformer {
 		second_iter_def_vars = new HashSet<>();
 		graph = new ArrayDefUseGraph();
 		loop_blocks = new HashSet<>();
+		constants = new HashSet<>();
 		this.host = host;
 		this.port = port;
 	}
@@ -73,7 +92,7 @@ public class Analysis extends BodyTransformer {
 			Node use = e.get_use();
 			guru.nidi.graphviz.model.Node def_node = node(def.get_stmt());
 			guru.nidi.graphviz.model.Node use_node = node(use.get_stmt());
-			final_graph.add(def_node.link(to(use_node).with(LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+			final_graph.add(def_node.link(to(use_node).with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
 		}
 		Utils.print_graph(final_graph);
 	}
@@ -143,15 +162,18 @@ public class Analysis extends BodyTransformer {
 	private void parse_block(Block b) {
 		Logger.debug(Utils.get_block_name(b) + " head: " + b.getHead().toString());
 		for(Iterator<Unit> i = b.iterator(); i.hasNext();) {
-			ArrayVariableVisitor visitor = new ArrayVariableVisitor(array_vars, graph, Utils.get_block_num(b));
-			VariableVisitor var_visitor = new VariableVisitor(phi_vars, top_phi_var_names);
 			Unit u = i.next();
+			ArrayVariableVisitor visitor = new ArrayVariableVisitor(array_vars, graph, Utils.get_block_num(b));
 			u.apply(visitor);
+			boolean is_array = visitor.get_is_array();
+			VariableVisitor var_visitor =
+					new VariableVisitor(phi_vars, top_phi_var_names, constants, is_array, false);
 			u.apply(var_visitor);
-			this.array_vars = visitor.get_vars();
-			this.graph = visitor.get_graph();
-			this.phi_vars = var_visitor.get_phi_vars();
-			this.top_phi_var_names = var_visitor.get_top_phi_var_names();
+			array_vars = visitor.get_vars();
+			graph = visitor.get_graph();
+			phi_vars = var_visitor.get_phi_vars();
+			top_phi_var_names = var_visitor.get_top_phi_var_names();
+			constants = var_visitor.get_constants();
 		}
 		if(is_loop_head(b.getHead())) {
 			if(!seen_blocks.contains(b)) {
@@ -299,7 +321,7 @@ public class Analysis extends BodyTransformer {
 	 * @param exits all exits from the loop
 	 * @param second_iter true iff we are parsing the loop for the second time.
 	 */
-	@SuppressWarnings("ForLoopReplaceableByForEach")
+	@SuppressWarnings({"ForLoopReplaceableByForEach", "DuplicatedCode"})
 	private void process(Block b, Block head, List<String> exits, boolean second_iter) {
 		List<Block> pred_blocks = b.getPreds();
 		if(second_iter) {
@@ -310,7 +332,7 @@ public class Analysis extends BodyTransformer {
 			for (Iterator<Unit> i = b.iterator(); i.hasNext(); ) {
 				Unit u = i.next();
 				IndexVisitor iv = new IndexVisitor(phi_vars, second_iter_def_vars,
-						top_phi_var_names, graph);
+						top_phi_var_names, constants, graph);
 				u.apply(iv);
 				second_iter_def_vars = iv.get_second_iter_def_vars();
 				graph = iv.get_graph();
@@ -343,17 +365,20 @@ public class Analysis extends BodyTransformer {
 			// process stmts
 			for (Iterator<Unit> i = b.iterator(); i.hasNext(); ) {
 				BFSVisitor bfs_visitor = new BFSVisitor(c_arr_ver, b, graph, Utils.get_block_num(b));
-				ArrayVariableVisitor av_visitor = new ArrayVariableVisitor(array_vars, graph, Utils.get_block_num(b));
-				VariableVisitor var_visitor = new VariableVisitor(phi_vars, top_phi_var_names);
 				Unit u = i.next();
-				u.apply(bfs_visitor);
+				ArrayVariableVisitor av_visitor = new ArrayVariableVisitor(array_vars, graph, Utils.get_block_num(b));
 				u.apply(av_visitor);
+				boolean is_array = av_visitor.get_is_array();
+				VariableVisitor var_visitor =
+						new VariableVisitor(phi_vars, top_phi_var_names, constants, is_array, true);
+				u.apply(bfs_visitor);
 				u.apply(var_visitor);
 				array_vars = av_visitor.get_vars();
 				c_arr_ver = bfs_visitor.get_c_arr_ver();
 				graph = bfs_visitor.get_graph();
 				phi_vars = var_visitor.get_phi_vars();
 				top_phi_var_names = var_visitor.get_top_phi_var_names();
+				constants = var_visitor.get_constants();
 			}
 			List<Block> succ_blocks = b.getSuccs();
 			Logger.debug("We found " + succ_blocks.size() + " successor blocks.");

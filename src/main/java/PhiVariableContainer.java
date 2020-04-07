@@ -15,12 +15,14 @@ import java.util.stream.Collectors;
 public class PhiVariableContainer {
 
     private Set<PhiVariable> phi_vars;
+    private Set<ValueBox> constant_vars;
 
     /**
      * Constructor for PhiVariableContainer
      */
     PhiVariableContainer() {
         this.phi_vars = new HashSet<>();
+        this.constant_vars = new HashSet<>();
     }
 
     /**
@@ -29,6 +31,7 @@ public class PhiVariableContainer {
      */
     PhiVariableContainer(PhiVariableContainer pvc) {
         this.phi_vars = pvc.phi_vars.stream().map(PhiVariable::new).collect(Collectors.toSet());
+        this.constant_vars = new HashSet<>(pvc.constant_vars);
     }
 
     /**
@@ -40,25 +43,37 @@ public class PhiVariableContainer {
     }
 
     /**
+     * add a constant to the constant set
+     * @param vb the constant
+     */
+    void add_constant(ValueBox vb) {
+        constant_vars.add(vb);
+    }
+
+    /**
      * process an assignment statement, finding:
      * 1. new looping statements
      * 2. new aliases
      * @param stmt the assignment being analyzed
+     * @return true iff a link was found
      */
-    void process_assignment(AssignStmt stmt) {
+    boolean process_assignment(AssignStmt stmt) {
+        boolean found_link = false;
         ValueBox left = stmt.getLeftOpBox();
         for(PhiVariable pv : phi_vars) {
             List<ImmutablePair<Value, Value>> values = pv.get_phi_var_uses(stmt);
             // if we are REDEFINING a phi variable it is a looping stmt.
             if(pv.defines_phi_var(stmt) && !values.isEmpty()) {
+                found_link = true;
                 Logger.debug("Found that stmt '" + stmt.toString()  + "' links to phi stmt '" + pv.toString() + "'.");
                 Logger.debug("This is most likely a Looping stmt, also needs to be used as an index to be useful.");
                 pv.add_linked_stmt(stmt);
                 // TODO: not sure if this is correct...
                 pv.add_alias(left, stmt, values);
             }
-            else if(!values.isEmpty() && !(left.getValue() instanceof ArrayRef)) {
+            else if(!values.isEmpty() && !Utils.is_def(stmt)) {
                 // if we we are not DEFINING a phi var but we are using one
+                found_link = true;
                 Logger.debug("Found that stmt '" + stmt.toString() + "' uses phi vars:");
                 Logger.debug("\toriginal phi: " + pv.toString());
                 for(ImmutablePair<Value, Value> v_pair : values) {
@@ -71,10 +86,12 @@ public class PhiVariableContainer {
                 String index_name = ar.getIndexBox().getValue().toString();
                 if(Objects.equals(pv.get_phi_def().getValue().toString(), index_name)) {
                     Logger.debug("PhiVar " + index_name + " used as an index, needs to also have a link");
+                    found_link = true;
                     pv.set_used_as_index(true);
                 }
             }
         }
+        return found_link;
     }
 
     /**
@@ -112,7 +129,9 @@ public class PhiVariableContainer {
     ImmutablePair<Variable, List<AssignStmt>> get_var_dep_chain(String v) {
         for(PhiVariable pv : phi_vars) {
             if(pv.has_ever_been(v)) {
-                return pv.get_var_dep_chain(v);
+                ImmutablePair<Variable, Set<AssignStmt>> ans = pv.get_var_dep_chain(v);
+                // TODO: this now comes out unordered... fix this
+                return new ImmutablePair<>(ans.getLeft(), new ArrayList<>(ans.getRight()));
             }
         }
         return null;

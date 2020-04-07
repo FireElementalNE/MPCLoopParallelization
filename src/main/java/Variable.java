@@ -143,19 +143,20 @@ public class Variable {
     }
 
     /**
-     * get the 'parent' of a given variable (what is this aliasing?)
+     * get the 'parents' of a given variable
      * @param child the name of the child variable
      * @return a pair containing the parent name and the Alias that set it to the child if it exits otherwise null
      */
-    ImmutablePair<String, Alias> get_parent(String child) {
+    List<ImmutablePair<String, Alias>> get_parents(String child) {
+        List<ImmutablePair<String, Alias>> parents = new ArrayList<>();
         for(Map.Entry<String, Set<Alias>> entry : aliases.entrySet()) {
             if(alias_set_contains(entry.getValue(), child)) {
                 Alias a = get_alias(entry.getValue(), child);
                 assert Utils.not_null(a) : "Should NEVER get here";
-                return new ImmutablePair<>(entry.getKey(), a);
+                parents.add(new ImmutablePair<>(entry.getKey(), a));
             }
         }
-        return null;
+        return parents;
     }
 
     /**
@@ -165,14 +166,22 @@ public class Variable {
      * @return the def/use string
      */
     private String get_parse_node_str(String current_var) {
-        ImmutablePair<String, Alias> p_pair = get_parent(current_var);
-        if(Utils.not_null(p_pair)) {
+        List<ImmutablePair<String, Alias>> p_pairs = get_parents(current_var);
+        assert p_pairs.size() == 1 || p_pairs.size() == 2 || p_pairs.isEmpty();
+        if(p_pairs.size() == 1) {
+            ImmutablePair<String, Alias> p_pair = p_pairs.get(0);
             return current_var + " (" + p_pair.getRight().get_stmt().getRightOp().toString() +
-                    ") -> " + get_parse_node_str(p_pair.getLeft());
-        } else {
-            // if it has no parent it must be a root node!
-            return current_var + " (" + phi_expr.toString() + ").";
+                        ") -> " + get_parse_node_str(p_pair.getLeft());
         }
+        else if(p_pairs.size() == 2){
+            ImmutablePair<String, Alias> p_pair1 = p_pairs.get(0);
+            ImmutablePair<String, Alias> p_pair2 = p_pairs.get(1);
+            return current_var + " [(" + p_pair1.getRight().get_stmt().getRightOp().toString() +
+                    ") -> " + get_parse_node_str(p_pair1.getLeft()) + "]" +
+                    "[(" + p_pair2.getRight().get_stmt().getRightOp().toString() +
+                    ") -> " + get_parse_node_str(p_pair2.getLeft()) + "]";
+        }
+        return "(" + phi_expr.toString() + ")";
     }
 
     /**
@@ -190,20 +199,29 @@ public class Variable {
 
     /**
      * Recursive function to get the def/use chain of from the passed variable to the root variable
-     * represented as a list.
+     * represented as a set.
      * @param current_var the variable name
      * @param def_lst the list of assignment statements
-     * @return the list of assignment statements
+     * @return the set of assignment statements
      */
-    List<AssignStmt> get_parse_node_lst(String current_var, List<AssignStmt> def_lst) {
-        ImmutablePair<String, Alias> p_pair = get_parent(current_var);
-        if(Utils.not_null(p_pair)) {
+    Set<AssignStmt> get_parse_node_lst(String current_var, Set<AssignStmt> def_lst) {
+        // parents can only be of size 0, 1, or 2
+        List<ImmutablePair<String, Alias>> p_pairs = get_parents(current_var);
+        assert p_pairs.size() == 1 || p_pairs.size() == 2 || p_pairs.isEmpty();
+        if(p_pairs.size() == 1) {
+            ImmutablePair<String, Alias> p_pair = p_pairs.get(0);
             def_lst.add(p_pair.getRight().get_stmt());
             return get_parse_node_lst(p_pair.getLeft(), def_lst);
-        } else {
-            // if it has no parent it must be a root node!
-            return def_lst;
         }
+        else if(p_pairs.size() == 2) {
+            ImmutablePair<String, Alias> p_pair1 = p_pairs.get(0);
+            ImmutablePair<String, Alias> p_pair2 = p_pairs.get(1);
+            def_lst.add(p_pair1.getRight().get_stmt());
+            def_lst = get_parse_node_lst(p_pair1.getLeft(), def_lst);
+            def_lst.add(p_pair2.getRight().get_stmt());
+            return get_parse_node_lst(p_pair2.getLeft(), def_lst);
+        }
+        return def_lst;
     }
 
     /**
@@ -211,8 +229,8 @@ public class Variable {
      * @param v a variable name
      * @return the def/use chain of from the passed variable to the root variable represented as a list.
      */
-    List<AssignStmt> get_def_lst(String v) {
-        List<AssignStmt> def_lst = new ArrayList<>();
+    Set<AssignStmt> get_def_lst(String v) {
+        Set<AssignStmt> def_lst = new HashSet<>();
         if(aliases.containsKey(v)) {
             return get_parse_node_lst(v, def_lst);
         }
