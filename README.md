@@ -4,10 +4,16 @@ Loop Parallelization for MPC
 
 Currently working:
 
-* [BFS algorithm](https://github.com/FireElementalNE/MPCLoopParallelization/blob/master/src/main/java/Analysis.java#L285-L304) to create array SSA links
-* [Phi variable parsing](https://github.com/FireElementalNE/MPCLoopParallelization/blob/master/src/main/java/VariableVisitor.java)
+* BFS algorithm
+* Finding SCC for intra-loop dependencies
+* Phi variable parsing
 * Maven packaging system (see below)
 * Graph creation
+
+Working on:
+
+* Designing algorithm for multiple loops
+* Adding more tests
 
 ## Building
 
@@ -42,7 +48,7 @@ usage: utility-name
 
 * There are two loggers, one is a file set to DEBUG the other is a console logger set to DEBUG both can be configured in [tinylog.properties](https://github.com/FireElementalNE/MPCLoopParallelization/blob/master/src/main/resources/tinylog.properties).
 
-* a folder that holds the graphs is [deleted (if it exists) and recreated at runtime](https://github.com/FireElementalNE/MPCLoopParallelization/blob/master/src/main/java/Main.java#L21-L53).
+* a folder that holds the graphs is deleted (if it exists) and recreated at runtime.
 
 * the default **-j** and **-r** arguments change depending on operating system.
 
