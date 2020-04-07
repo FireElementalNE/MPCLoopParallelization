@@ -53,5 +53,6 @@ usage: utility-name
     * [graphviz-java 0.15.1](https://mvnrepository.com/artifact/guru.nidi/graphviz-java/0.15.1)
     * [commons-lang3 3.9](https://mvnrepository.com/artifact/org.apache.commons/commons-lang3/3.9)
     * [commons-cli 1.4](https://mvnrepository.com/artifact/commons-cli/commons-cli/1.4)
+    * [batik-rasterizer 1.12](https://mvnrepository.com/artifact/org.apache.xmlgraphics/batik-rasterizer/1.12)
 
 Again though, the **mvn package** step should download and set all that up.
