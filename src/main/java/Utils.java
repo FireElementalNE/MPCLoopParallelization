@@ -1,6 +1,4 @@
 import guru.nidi.graphviz.attribute.ForGraph;
-import guru.nidi.graphviz.engine.Engine;
-import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
 import guru.nidi.graphviz.engine.Rasterizer;
 import guru.nidi.graphviz.model.MutableAttributed;
@@ -12,7 +10,6 @@ import soot.jimple.AssignStmt;
 import soot.jimple.Stmt;
 import soot.toolkits.graph.Block;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -176,16 +173,10 @@ class Utils {
 	 */
 	static void print_graph(MutableGraph graph) {
 		MutableAttributed<MutableGraph, ForGraph> z = graph.graphAttrs();
-		String name = String.format("%s%s%s", Constants.GRAPH_DIR, File.separator, graph.name());
 		try {
 			Graphviz viz = Graphviz.fromGraph(graph);
-//			viz.width(200).render(Format.SVG).toFile(new File(name + ".svg"));
-			viz.rasterize(Rasterizer.BATIK).toFile(new File(name + "1.png"));
-//			viz.height(1000).width(200).rasterize(Rasterizer.SALAMANDER).toFile(new File(name + "2.png"));
-//			viz.width(200).rasterize(Rasterizer.builtIn("pdf")).toFile(new File("ex5p"));
-			String dot = viz.render(Format.DOT).toString();
-			String json = viz.engine(Engine.NEATO).render(Format.JSON).toString();
-			BufferedImage image = viz.render(Format.PNG).toImage();
+//			viz.render(Format.PNG);
+			viz.rasterize(Rasterizer.BATIK).toFile(new File(Utils.make_graph_name(graph.name().toString())));
 //			.render(Format.PNG)
 //					.toFile(new File(Utils.make_graph_name(graph.name().toString())));
 		} catch (IOException | java.awt.AWTError | java.lang.NoClassDefFoundError e) {
