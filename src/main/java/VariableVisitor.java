@@ -5,7 +5,9 @@ import soot.jimple.AssignStmt;
 import soot.shimple.PhiExpr;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A visitor class that looks at possible index values
@@ -66,6 +68,23 @@ public class VariableVisitor extends AbstractStmtSwitch {
     }
 
     /**
+     * function to check a statement (within a loop) to see if it is composed of _only_ constants
+     * if it is add all of the uses and the def to the constant set
+     * @param stmt the statement
+     */
+    void check_constants(AssignStmt stmt) {
+        List<String> uses = stmt.getUseBoxes().stream()
+                .map(i -> i.getValue().toString()).collect(Collectors.toList());
+        uses.remove(stmt.getRightOp().toString());
+        boolean all_constants = constants.containsAll(uses);;
+        if(all_constants) {
+            constants.addAll(uses);
+            constants.add(stmt.getLeftOp().toString());
+        }
+    }
+
+
+    /**
      * Visitor ran across an assignment statement, overriding def in AbstractStmtSwitch
      * This is the main method that parses variables
      * @param stmt the assignment statement
@@ -83,9 +102,13 @@ public class VariableVisitor extends AbstractStmtSwitch {
             Logger.debug("Checking phi_vars");
             // loop through phi variables
             boolean found_link = phi_vars.process_assignment(stmt);
-            if(!found_link && !stmt.containsArrayRef() && !is_array && !in_loop) {
-                Logger.debug("'" + stmt.toString() + "' appears to deal with a constant");
-                constants.add(stmt.getLeftOp().toString());
+            if(!found_link && !stmt.containsArrayRef() && !is_array) {
+                if(!in_loop) {
+                    Logger.debug("'" + stmt.toString() + "' appears to deal with a constant");
+                    constants.add(stmt.getLeftOp().toString());
+                } else {
+                    check_constants(stmt);
+                }
             }
         }
         /* TODO:

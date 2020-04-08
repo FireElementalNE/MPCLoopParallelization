@@ -101,6 +101,9 @@ public class PhiVariable {
         return values;
     }
 
+
+
+
     /**
      * Check if assigment statement defines a phi variable
      * @param stmt the assignment statement
@@ -157,31 +160,46 @@ public class PhiVariable {
 
     /**
      * create a def/use string for a given variable
+     * @param constants a list of variables that are constants (phi values do not effect them at all)
      * @param v the variable name
      * @return a def/use string iff this PhiVariable contains a Variable that has been the passed variable at
      *         at some point, otherwise null
      */
-    String get_var_dep_chain_str(String v) {
+    String get_var_dep_chain_str(Set<String> constants, String v) {
         for(Variable var : var_links) {
             if(var.has_ever_been(v)) {
-                return var.get_defs_str(v);
+                return var.get_var_dep_chain_str(constants, v);
             }
         }
         return null;
     }
 
     /**
+     * Make a def graph for a given variable (based on this phi variable)
+     * @param constants a list of variables that are constants (phi values do not effect them at all)
+     * @param v the variable name
+     */
+    void make_var_dep_chain_graph(Set<String> constants, String v) {
+        for(Variable var : var_links) {
+            if(var.has_ever_been(v)) {
+                var.make_var_dep_chain_graph(constants, v);
+            }
+        }
+    }
+
+    /**
      * get a pair that consists of:
      *   1. a variable
      *   2. the dep chain of that variable
+     * @param constants a list of variables that are constants (phi values do not effect them at all)
      * @param v the variable name
      * @return a pair consisting of the variable and the list of assignment statements (if it exists)
      *   otherwise null.
      */
-    ImmutablePair<Variable, Set<AssignStmt>> get_var_dep_chain(String v) {
+    ImmutablePair<Variable, Set<AssignStmt>> get_var_dep_chain(Set<String> constants, String v) {
         for(Variable var : var_links) {
             if(var.has_ever_been(v)) {
-                return new ImmutablePair<>(var, var.get_def_lst(v));
+                return new ImmutablePair<>(var, var.get_var_dep_chain(constants, v));
             }
         }
         return null;

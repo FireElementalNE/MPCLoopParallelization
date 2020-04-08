@@ -55,24 +55,20 @@ public class IndexVisitor extends AbstractStmtSwitch {
                 && !top_phi_var_names.contains(index_name)
                 && !constants.contains(index_name)) {
             Logger.debug("Printing def-chain: '" + index_name + "' in stmt '" + stmt.toString() + "'");
-            pvc.print_var_dep_chain(index_box.getValue().toString());
-            ImmutablePair<Variable, List<AssignStmt>> dep_chain = pvc.get_var_dep_chain(index_name);
-            StringBuilder stmt_str = new StringBuilder(stmt.toString()).append(" >>> ");
+            pvc.print_var_dep_chain(constants, index_box.getValue().toString());
+            ImmutablePair<Variable, List<AssignStmt>> dep_chain = pvc.get_var_dep_chain(constants, index_name);
             if (Utils.not_null(dep_chain)) {
+                pvc.make_var_dep_chain_graph(constants, index_name);
                 if(!dep_chain.getRight().isEmpty()) {
                     Logger.debug("Dep chain for " + index_name + ":");
                     for (int i = 0; i < dep_chain.getRight().size(); i++) {
                         AssignStmt a = dep_chain.getRight().get(i);
-                        stmt_str.append(a.toString());
-                        if (i != dep_chain.getRight().size() - 1) {
-                            stmt_str.append(" >>> ");
-                        }
                         Logger.debug("\t" + a.toString());
                     }
                 } else {
                     Logger.debug("Dep chain for " + index_name + " is empty (is it a phi var?).");
                 }
-                graph.add_node(new Node(stmt_str.toString(), ar.getBaseBox().getValue().toString(),
+                graph.add_node(new Node(stmt.toString(), ar.getBaseBox().getValue().toString(),
                         new ArrayVersionSingle(-1, -1), new Index(index_box), DefOrUse.USE,
                         stmt.getJavaSourceStartLineNumber()), false, true);
             } else {

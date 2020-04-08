@@ -508,7 +508,7 @@ public class Analysis extends BodyTransformer {
 				ValueBox var = pv.get_phi_def();
 				Logger.info("Checking def for looping index var: " + var.getValue().toString());
 				List<AssignStmt> assignments = pv.get_linked_stmts();
-				phi_vars.print_var_dep_chain(var.getValue().toString());
+				phi_vars.print_var_dep_chain(constants, var.getValue().toString());
 				Logger.debug("Here are the linked assignment stmts: ");
 				for (AssignStmt stmt : assignments) {
 					String linked_var = stmt.getLeftOpBox().getValue().toString();
@@ -520,7 +520,7 @@ public class Analysis extends BodyTransformer {
 					} catch (IOException e) {
 						Logger.error("Could not send '" + stmt.toString() + "' to solver.");
 					}
-					phi_vars.print_var_dep_chain(linked_var);
+					phi_vars.print_var_dep_chain(constants, linked_var);
 				}
 
 			}

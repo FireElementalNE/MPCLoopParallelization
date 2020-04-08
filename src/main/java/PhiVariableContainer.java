@@ -15,14 +15,12 @@ import java.util.stream.Collectors;
 public class PhiVariableContainer {
 
     private Set<PhiVariable> phi_vars;
-    private Set<ValueBox> constant_vars;
 
     /**
      * Constructor for PhiVariableContainer
      */
     PhiVariableContainer() {
         this.phi_vars = new HashSet<>();
-        this.constant_vars = new HashSet<>();
     }
 
     /**
@@ -31,7 +29,6 @@ public class PhiVariableContainer {
      */
     PhiVariableContainer(PhiVariableContainer pvc) {
         this.phi_vars = pvc.phi_vars.stream().map(PhiVariable::new).collect(Collectors.toSet());
-        this.constant_vars = new HashSet<>(pvc.constant_vars);
     }
 
     /**
@@ -40,14 +37,6 @@ public class PhiVariableContainer {
      */
     void add(PhiVariable pv) {
         phi_vars.add(new PhiVariable(pv));
-    }
-
-    /**
-     * add a constant to the constant set
-     * @param vb the constant
-     */
-    void add_constant(ValueBox vb) {
-        constant_vars.add(vb);
     }
 
     /**
@@ -105,13 +94,14 @@ public class PhiVariableContainer {
 
     /**
      * print a def/use string for a given variable
+     * @param constants a list of variables that are constants (phi values do not effect them at all)
      * @param v the variable name
      */
-    void print_var_dep_chain(String v) {
+    void print_var_dep_chain(Set<String> constants, String v) {
         // TODO: this is a proof of concept function
         for(PhiVariable pv : phi_vars) {
             if(pv.has_ever_been(v)) {
-                String s = pv.get_var_dep_chain_str(v);
+                String s = pv.get_var_dep_chain_str(constants, v);
                 if(Utils.not_null(s)) {
                     // make sure it is not null!
                     Logger.info(s);
@@ -121,15 +111,29 @@ public class PhiVariableContainer {
     }
 
     /**
+     * make a variable dependency graph for the passed variable
+     * @param constants a list of variables that are constants (phi values do not effect them at all)
+     * @param v the variable name
+     */
+    void make_var_dep_chain_graph(Set<String> constants, String v) {
+        for(PhiVariable pv : phi_vars) {
+            if(pv.has_ever_been(v)) {
+               pv.make_var_dep_chain_graph(constants, v);
+            }
+        }
+    }
+
+    /**
      * get the actual list of assignments for the passed variable
+     * @param constants a list of variables that are constants (phi values do not effect them at all)
      * @param v the variable name
      * @return a pair consisting of the variable and the list of assignment statements (if it exists)
      *   otherwise null.
      */
-    ImmutablePair<Variable, List<AssignStmt>> get_var_dep_chain(String v) {
+    ImmutablePair<Variable, List<AssignStmt>> get_var_dep_chain(Set<String> constants, String v) {
         for(PhiVariable pv : phi_vars) {
             if(pv.has_ever_been(v)) {
-                ImmutablePair<Variable, Set<AssignStmt>> ans = pv.get_var_dep_chain(v);
+                ImmutablePair<Variable, Set<AssignStmt>> ans = pv.get_var_dep_chain(constants, v);
                 // TODO: this now comes out unordered... fix this
                 return new ImmutablePair<>(ans.getLeft(), new ArrayList<>(ans.getRight()));
             }
