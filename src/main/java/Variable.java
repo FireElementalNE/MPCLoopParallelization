@@ -2,6 +2,7 @@ import guru.nidi.graphviz.attribute.Color;
 import guru.nidi.graphviz.attribute.LinkAttr;
 import guru.nidi.graphviz.model.MutableGraph;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.tinylog.Logger;
 import soot.Value;
 import soot.jimple.AssignStmt;
 import soot.shimple.PhiExpr;
@@ -107,14 +108,18 @@ public class Variable {
     }
 
     /**
-     * make a graphviz graph for the variable
+     * make a GraphViz graph for the variable (if it has more than one alias)
      * @param phi_name the name of the phi node
      */
     void make_graph(String phi_name) {
         String graph_name = String.format("%s_%S", phi_name, root_val.toString());
-        this.var_graph = mutGraph(graph_name).setDirected(true);
-        parse_node_graph(root_val.toString());
-        Utils.print_graph(var_graph);
+        if(aliases.size() > 1) {
+            this.var_graph = mutGraph(graph_name).setDirected(true);
+            parse_node_graph(root_val.toString());
+            Utils.print_graph(var_graph);
+        } else {
+            Logger.info(root_val.toString() + " only has one alias, itself. Not making graph.");
+        }
     }
 
     /**

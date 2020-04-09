@@ -34,8 +34,8 @@ public class PhiVariable {
         this.all_values.put(counter, new ImmutablePair<>(stmt.getLeftOpBox(), stmt));
         this.var_links = new ArrayList<>();
         var_links.add(new Variable(phi_def.getValue(), phi_expr));
-        for(ValueUnitPair vup : phi_expr.getArgs()) {
-            var_links.add(new Variable(vup.getValue(), phi_expr));
+        for(Value v : phi_expr.getValues()) {
+            var_links.add(new Variable(v, phi_expr));
         }
     }
 
@@ -66,7 +66,7 @@ public class PhiVariable {
     }
 
     /**
-     * make a graphviz graph of the PhiVariable
+     * try and make a GraphViz graph of the PhiVariable
      * TODO: need to fix, the arrows are incorrect. Each element has a specific path back to the
      *   original phi stmt
      */

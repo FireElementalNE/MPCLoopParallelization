@@ -2,6 +2,8 @@
 
 Loop Parallelization for MPC
 
+HYCC examples are [here](https://gitlab.com/securityengineering/HyCC/-/tree/master/examples).
+
 Currently working:
 
 * BFS algorithm
@@ -9,11 +11,12 @@ Currently working:
 * Phi variable parsing
 * Maven packaging system (see below)
 * Graph creation
+* Added tons of HYCC tests.
 
-Working on:
+In progress:
 
 * Designing algorithm for multiple loops
-* Adding more tests
+
 
 ## Building
 

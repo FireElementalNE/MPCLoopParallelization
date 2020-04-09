@@ -33,7 +33,7 @@ public class Main {
 					InputStreamReader(p.getInputStream()));
 			String s;
 			while ((s = stdInput.readLine()) != null) {
-				Logger.debug(s);
+				Logger.info(s);
 			}
 			while((s = stdError.readLine()) != null) {
 				Logger.error(s);

@@ -115,6 +115,7 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
         if(stmt.containsArrayRef()) {
             check_array_ref(stmt);
         }
+        // TODO: many more ways to create new arrays, see DB_JOIN3.java...
         if(stmt.getRightOp() instanceof JNewArrayExpr) {
             // NOTE: ALWAYS a new array!
             Logger.info("Found a new array: " + left_op);
