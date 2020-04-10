@@ -14,14 +14,19 @@ public class IndexVisitor extends AbstractStmtSwitch {
     private Set<String> top_phi_var_names;
     private ArrayDefUseGraph graph;
     private Set<String> constants;
+    private String host;
+    private int port;
 
     IndexVisitor(PhiVariableContainer pvc, Set<String> second_iter_def_vars,
-                 Set<String> top_phi_var_names, Set<String> constants, ArrayDefUseGraph graph) {
+                 Set<String> top_phi_var_names, Set<String> constants, ArrayDefUseGraph graph,
+                 String host, int port) {
         this.pvc = new PhiVariableContainer(pvc);
         this.second_iter_def_vars = new HashSet<>(second_iter_def_vars);
         this.top_phi_var_names = new HashSet<>(top_phi_var_names);
         this.graph = new ArrayDefUseGraph(graph);
         this.constants = constants;
+        this.host = host;
+        this.port = port;
     }
 
     Set<String> get_second_iter_def_vars() {
@@ -65,6 +70,16 @@ public class IndexVisitor extends AbstractStmtSwitch {
                         AssignStmt a = dep_chain.getRight().get(i);
                         Logger.debug("\t" + a.toString());
                     }
+                    Solver solver = new Solver(index_name, dep_chain, constants, host, port);
+                    Logger.info("Resolved dep chain: " + solver.get_resoved_eq());
+//                    try {
+//
+//                        String resp = solver.send_recv_stmt();
+//                        Logger.debug("Got this from server: " + resp);
+//
+//                    } catch (IOException e) {
+//                        Logger.error("Could not send '" + stmt.toString() + "' to solver.");
+//                    }
                 } else {
                     Logger.debug("Dep chain for " + index_name + " is empty (is it a phi var?).");
                 }

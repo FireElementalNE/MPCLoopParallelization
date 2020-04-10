@@ -17,7 +17,6 @@ import soot.toolkits.graph.Block;
 import soot.toolkits.graph.BlockGraph;
 import soot.toolkits.graph.ExceptionalBlockGraph;
 
-import java.io.IOException;
 import java.util.*;
 
 import static guru.nidi.graphviz.model.Factory.*;
@@ -332,7 +331,7 @@ public class Analysis extends BodyTransformer {
 			for (Iterator<Unit> i = b.iterator(); i.hasNext(); ) {
 				Unit u = i.next();
 				IndexVisitor iv = new IndexVisitor(phi_vars, second_iter_def_vars,
-						top_phi_var_names, constants, graph);
+						top_phi_var_names, constants, graph, host, port);
 				u.apply(iv);
 				second_iter_def_vars = iv.get_second_iter_def_vars();
 				graph = iv.get_graph();
@@ -512,17 +511,8 @@ public class Analysis extends BodyTransformer {
 				Logger.debug("Here are the linked assignment stmts: ");
 				for (AssignStmt stmt : assignments) {
 					String linked_var = stmt.getLeftOpBox().getValue().toString();
-					try {
-						Solver solver = new Solver(stmt, host, port);
-						String resp = solver.send_recv_stmt();
-						Logger.debug("Got this from server: " + resp);
-
-					} catch (IOException e) {
-						Logger.error("Could not send '" + stmt.toString() + "' to solver.");
-					}
 					phi_vars.print_var_dep_chain(constants, linked_var);
 				}
-
 			}
 		}
 	}

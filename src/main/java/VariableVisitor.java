@@ -1,3 +1,4 @@
+import org.apache.commons.lang3.math.NumberUtils;
 import org.tinylog.Logger;
 import soot.ValueBox;
 import soot.jimple.AbstractStmtSwitch;
@@ -75,7 +76,9 @@ public class VariableVisitor extends AbstractStmtSwitch {
     void check_constants(AssignStmt stmt) {
         List<String> uses = stmt.getUseBoxes().stream()
                 .map(i -> i.getValue().toString()).collect(Collectors.toList());
+        List<String> prims =  uses.stream().filter(NumberUtils::isCreatable).collect(Collectors.toList());
         uses.remove(stmt.getRightOp().toString());
+        uses.removeAll(prims);
         boolean all_constants = constants.containsAll(uses);;
         if(all_constants) {
             constants.addAll(uses);
