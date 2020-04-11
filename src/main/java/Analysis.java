@@ -30,13 +30,13 @@ public class Analysis extends BodyTransformer {
 	// A worklist containing the block left to process
 	private LinkedList<Block> worklist;
 	// a list of blocks that have been seen
-	private Set<Block> seen_blocks;
+	private final Set<Block> seen_blocks;
 	// a list of blocks that have been seen IN THE CURRENT BFS execution
 	// This is a bit more complex, these blocks are removed when the second iteration is parsed
 	// Then they are added back.
-	private Set<Block> loop_blocks;
+	private final Set<Block> loop_blocks;
 	// A Set containing pairs of loop heads and exits (this will be important for nested loops)
-	private Set<ImmutablePair<String, String>> loop_head_exits;
+	private final Set<ImmutablePair<String, String>> loop_head_exits;
 	// A Map that maps an array to an array version
 	private Map<String, ArrayVersion> array_vars;
 	// A list of variables that have been defined in the second iteration, this is needed so we do not
@@ -52,11 +52,12 @@ public class Analysis extends BodyTransformer {
 	// The final DefUse Graph
 	private ArrayDefUseGraph graph;
 	// Dot graphs (for printing)
-	private MutableGraph final_graph;
-	private MutableGraph flow_graph;
+	private final MutableGraph final_graph;
+	private final MutableGraph flow_graph;
+	private final MutableGraph phi_var_links;
 	// server information
-	private int port;
-	private String host;
+	private final int port;
+	private final String host;
 	// TODO: finish documenting.
 
 	/**
@@ -66,6 +67,7 @@ public class Analysis extends BodyTransformer {
 	public Analysis(String class_name, String host, int port) {
 		final_graph = mutGraph(class_name + "_final").setDirected(true);
 		flow_graph = mutGraph(class_name + "_flow").setDirected(true);
+		phi_var_links = mutGraph("PHI_LINKS").setDirected(true);
 		seen_blocks = new HashSet<>();
 		c_arr_ver = new HashMap<>();
 		worklist = new LinkedList<>();
@@ -514,6 +516,20 @@ public class Analysis extends BodyTransformer {
 					phi_vars.print_var_dep_chain(constants, linked_var);
 				}
 			}
+			Logger.info("Linking non index phi vars");
+			List<PhiVariable> non_index = phi_vars.get_non_index_vars();
+			for (PhiVariable pv : non_index) {
+				String var = pv.get_phi_def().getValue().toString();
+				guru.nidi.graphviz.model.Node cur_node = node(var);
+				List<String> uses = pv.get_uses();
+				for(String s : uses) {
+					if(!Objects.equals(s, var)) {
+						guru.nidi.graphviz.model.Node src_node = node(s);
+						phi_var_links.add(cur_node.link(to(src_node).with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+					}
+				}
+			}
+			Utils.print_graph(phi_var_links);
 		}
 	}
 }

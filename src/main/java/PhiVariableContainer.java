@@ -73,9 +73,11 @@ public class PhiVariableContainer {
             if(stmt.containsArrayRef()) {
                 ArrayRef ar = stmt.getArrayRef();
                 String index_name = ar.getIndexBox().getValue().toString();
-                if(Objects.equals(pv.get_phi_def().getValue().toString(), index_name)) {
+                // Logger.info(pv.toString() + " has been " + index_name + ": " + );
+                if(Objects.equals(pv.get_phi_def().getValue().toString(), index_name)
+                        || pv.has_ever_been(index_name)) {
                     Logger.debug("PhiVar " + index_name + " used as an index, needs to also have a link");
-                    found_link = true;
+//                    found_link = true;
                     pv.set_used_as_index(true);
                 }
             }
@@ -155,5 +157,13 @@ public class PhiVariableContainer {
             }
         }
         return pv_lst;
+    }
+
+    /**
+     * get all phi variables that are NOT index variables (used for SCC)
+     * @return the list of phi variables that are NOT index variables
+     */
+    List<PhiVariable> get_non_index_vars() {
+        return phi_vars.stream().filter(pv -> !pv.is_used_as_index()).collect(Collectors.toList());
     }
 }

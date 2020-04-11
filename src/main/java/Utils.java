@@ -8,6 +8,7 @@ import org.tinylog.Logger;
 import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
 import soot.jimple.Stmt;
+import soot.shimple.PhiExpr;
 import soot.toolkits.graph.Block;
 
 import java.io.File;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 /**
  * Generic Utility class
@@ -205,6 +207,16 @@ class Utils {
 			return false;
 		}
 		return astmt.getLeftOp() instanceof ArrayRef;
+	}
+
+	/**
+	 * get the uses of a PhiExpr (not including the entire statement)
+	 * @param pexpr the PhiExpr
+	 * @return a list of PhiExr uses (as strings)
+	 */
+	static List<String> get_phi_var_uses_as_str(PhiExpr pexpr) {
+		// TODO: this is wacky, it always adds the full expression as the first thing. might need to fix this
+		return pexpr.getValues().stream().map(Object::toString).collect(Collectors.toList());
 	}
 
 }

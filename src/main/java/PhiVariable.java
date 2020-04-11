@@ -269,5 +269,12 @@ public class PhiVariable {
         this.used_as_index = used_as_index;
     }
 
+    /**
+     * get all uses from the phi expr
+     * @return all the phi expr uses
+     */
+    List<String> get_uses() {
+        return Utils.get_phi_var_uses_as_str(phi_expr);
+    }
 
 }
