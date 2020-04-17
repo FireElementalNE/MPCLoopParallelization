@@ -9,6 +9,7 @@ import java.util.Map;
 /**
  * The main visitor for the BFS algorithm.
  */
+@SuppressWarnings("FieldMayBeFinal")
 class BFSVisitor extends AbstractStmtSwitch {
     private Map<Block, DownwardExposedArrayRef> c_arr_ver;
     private Block b;
@@ -77,7 +78,7 @@ class BFSVisitor extends AbstractStmtSwitch {
     @Override
     public void caseAssignStmt(AssignStmt stmt) {
         if(stmt.containsArrayRef()) {
-            ValueBox left = stmt.getLeftOpBox();
+//            ValueBox left = stmt.getLeftOpBox();
             if(Utils.is_def(stmt)) {
                 String basename = stmt.getArrayRef().getBaseBox().getValue().toString();
                 Logger.debug("Array write found (change needed): " + stmt.toString());

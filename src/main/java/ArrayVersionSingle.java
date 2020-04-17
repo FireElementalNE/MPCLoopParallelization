@@ -2,10 +2,12 @@
  * Subclass of the ArrayVersion interface
  * Defines logic for non-phi array variables.
  */
+@SuppressWarnings("FieldMayBeFinal")
 class ArrayVersionSingle implements ArrayVersion {
     private int version;
     private int block;
     private boolean diff_ver_match;
+    private boolean has_been_written_to;
 
     /**
      * Create a new ArrayVersionSingle
@@ -16,6 +18,7 @@ class ArrayVersionSingle implements ArrayVersion {
         this.version = version;
         this.diff_ver_match = false;
         this.block = block;
+        has_been_written_to = false;
     }
 
     /**
@@ -26,6 +29,7 @@ class ArrayVersionSingle implements ArrayVersion {
         this.version = avs.version;
         this.diff_ver_match = avs.diff_ver_match;
         this.block = avs.block;
+        has_been_written_to = avs.has_been_written_to;
     }
 
     /**
@@ -75,4 +79,22 @@ class ArrayVersionSingle implements ArrayVersion {
     public int get_version() {
         return version;
     }
+
+    /**
+     * getter returning whether array has been written to
+     * @return true iff the array var has been written to
+     */
+    @Override
+    public boolean has_been_written_to() {
+        return has_been_written_to;
+    }
+
+    /**
+     * setter to set the has been written to flag
+     */
+    @Override
+    public void toggle_written() {
+        has_been_written_to = true;
+    }
+
 }

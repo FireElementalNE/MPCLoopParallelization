@@ -22,6 +22,10 @@ public class Main {
 	private static String RT_PATH = Utils.rt_path();
 	private static String JCE_PATH = Utils.jce_path();
 
+	/**
+	 * compile a java program
+	 * @param classname the program name
+	 */
 	private static void compile_program(String classname) {
 		boolean errors_found = false;
 		try {
@@ -49,6 +53,11 @@ public class Main {
 		}
 	}
 
+	/**
+	 * delete the graph director
+	 * @param dir the graph directory
+	 * @return true iff the director was deleted successfully
+	 */
 	// Found here:
 	// https://javarevisited.blogspot.com/2015/03/how-to-delete-directory-in-java-with-files.html
 	// Thanks!
@@ -67,6 +76,10 @@ public class Main {
 		return dir.delete();
 	}
 
+	/**
+	 * main method
+	 * @param argv arguments
+	 */
 	public static void main(String[] argv) {
 		// needed fix...
 

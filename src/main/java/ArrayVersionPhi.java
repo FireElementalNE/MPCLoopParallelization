@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
  * Subclass of the ArrayVersion interface
  * Defines logic for phi array variables.
  */
+@SuppressWarnings("FieldMayBeFinal")
 public class ArrayVersionPhi implements ArrayVersion {
 
 
@@ -14,6 +15,7 @@ public class ArrayVersionPhi implements ArrayVersion {
     private List<ArrayVersion> array_versions;
     private boolean diff_ver_match;
     private int block;
+    private boolean has_been_written_to;
 
     /**
      * create a new ArrayVersionPhi
@@ -28,6 +30,7 @@ public class ArrayVersionPhi implements ArrayVersion {
         List<Integer> versions = array_versions.stream().map(ArrayVersion::get_version).collect(Collectors.toList());
         this.diff_ver_match = versions.size() != new HashSet<>(versions).size();
         this.block = block;
+        this.has_been_written_to = false;
     }
 
     /**
@@ -39,6 +42,7 @@ public class ArrayVersionPhi implements ArrayVersion {
         this.array_versions = av_phi.array_versions;
         this.diff_ver_match = av_phi.diff_ver_match;
         this.block = av_phi.block;
+        this.has_been_written_to = av_phi.has_been_written_to;
     }
 
     /**
@@ -97,6 +101,23 @@ public class ArrayVersionPhi implements ArrayVersion {
     @Override
     public int get_block() {
         return block;
+    }
+
+    /**
+     * getter returning whether array has been written to
+     * @return true iff the array var has been written to
+     */
+    @Override
+    public boolean has_been_written_to() {
+        return false;
+    }
+
+    /**
+     * setter to set the has been written to flag
+     */
+    @Override
+    public void toggle_written() {
+        this.has_been_written_to = true;
     }
 
 }

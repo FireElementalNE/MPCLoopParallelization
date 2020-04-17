@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 /**
  * A def/use graph for arrays (turning into an SCC graph eventually)
  */
+@SuppressWarnings("ALL")
 class ArrayDefUseGraph {
     private Map<Integer, Edge> edges;
     private Map<String, Node> nodes;

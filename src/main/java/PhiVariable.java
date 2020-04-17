@@ -11,6 +11,7 @@ import java.util.*;
  * Class representing a phi variable. Theses variables are the only that can "change" per loop iterations
  * Any variable based off of theses variables also can "change"
  */
+@SuppressWarnings("FieldMayBeFinal")
 public class PhiVariable {
     // TODO: add javadoc for these variables
     private PhiExpr phi_expr;
@@ -218,7 +219,7 @@ public class PhiVariable {
      * @return true iff the variable is a looping variable that is also used as an index.
      */
     boolean is_looping_index_var() {
-        return has_link() && used_as_index;
+        return has_links() && used_as_index;
     }
 
     /**
@@ -249,7 +250,7 @@ public class PhiVariable {
      * method for determining if this phi variable has links
      * @return true iff this phi variable has links (is most likely a looping var)
      */
-    boolean has_link() {
+    boolean has_links() {
         return !linked_stmts.isEmpty();
     }
 
@@ -265,6 +266,7 @@ public class PhiVariable {
      * setter for used as index, set the variable to passed value
      * @param used_as_index passed used as index value
      */
+    @SuppressWarnings("SameParameterValue")
     void set_used_as_index(boolean used_as_index) {
         this.used_as_index = used_as_index;
     }
@@ -277,4 +279,37 @@ public class PhiVariable {
         return Utils.get_phi_var_uses_as_str(phi_expr);
     }
 
+    /**
+     * test to determine if this phi variable has a linked statement that
+     * defines the passed var
+     * @param var the variable
+     * @return true iff linked statements field contains a definition for
+     *         the passed variable
+     */
+    boolean has_linked_var_def(String var) {
+        for(AssignStmt stmt : this.linked_stmts) {
+            String left_name = stmt.getLeftOp().toString();
+            if(Objects.equals(var, left_name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * getter for linked statement that defines the passed var
+     * @param var the variable
+     * @return the assigment statement that defines the passed var (from linked_statements)
+     *         if it does not contain it null.
+     */
+    AssignStmt get_linked_var_def(String var) {
+        assert has_linked_var_def(var);
+        for(AssignStmt stmt : this.linked_stmts) {
+            String left_name = stmt.getLeftOp().toString();
+            if(Objects.equals(var, left_name)) {
+                return stmt;
+            }
+        }
+        return null;
+    }
 }

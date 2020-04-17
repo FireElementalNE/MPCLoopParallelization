@@ -2,15 +2,14 @@ import org.tinylog.Logger;
 import soot.jimple.*;
 import soot.jimple.internal.JNewArrayExpr;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 /**
  * Visitor for keeping track of array Variables
  */
+@SuppressWarnings("FieldMayBeFinal")
 public class ArrayVariableVisitor extends AbstractStmtSwitch {
-    private Map<String, ArrayVersion> vars;
+    private ArrayVariables vars;
     private ArrayDefUseGraph graph;
     private int block_num;
     // flag that is used by VariableVisitor to check for constants. If we are dealing with an array
@@ -22,25 +21,23 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
      * This class searches for array definitions and uses, tracks them and adds them to the
      * def/use graph object. This mostly handles array variable versioning.
      * @param vars the current map of array variables coupled with their versions  when this visitor is called
+     *             this is wrapped in the ArrayVariables class
      * @param graph the current array def/use graph when this visitor is called
      * @param block_num the block number that is calling this visitor
      */
-    ArrayVariableVisitor(Map<String, ArrayVersion> vars, ArrayDefUseGraph graph, int block_num) {
-        this.vars = new HashMap<>();
-        this.vars =  vars.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    ArrayVariableVisitor(ArrayVariables vars, ArrayDefUseGraph graph, int block_num) {
+        this.vars = new ArrayVariables(vars);
         this.graph = new ArrayDefUseGraph(graph);
         this.block_num = block_num;
         this.is_array = false;
     }
 
     /**
-     * get a list of the list of array variables (this is called after everything has finished)
-     * @return the map of array variables and versions
+     * get the  array variables (this is called after everything has finished)
+     * @return the wrapper class for the map of array variables and versions
      */
-    Map<String, ArrayVersion> get_vars() {
-        return vars.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    ArrayVariables get_vars() {
+        return new ArrayVariables(vars);
     }
 
     /**
@@ -76,7 +73,7 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
         if(stmt.containsArrayRef()) {
             is_array = true;
             String basename = get_basename(stmt.getArrayRef());
-            if(!vars.containsKey(basename)) {
+            if(!vars.contains_key(basename)) {
                 vars.put(basename, new ArrayVersionSingle(1, block_num));
             }
         }
@@ -125,7 +122,7 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
             vars.put(left_op, av);
             is_array = true;
         }
-        if(vars.containsKey(right_op)) {
+        else if(vars.contains_key(right_op)) {
             // NOTE: PURE array renaming!
             assert !stmt.containsArrayRef();
             ArrayVersion av = vars.get(right_op);
@@ -135,6 +132,12 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
             vars.remove(right_op);
             Logger.debug("An array got renamed...");
             is_array = true;
+        }
+        else if(stmt.containsArrayRef()
+                && Objects.equals(left_op, stmt.getArrayRef().toString())
+                && vars.contains_key(get_basename(stmt.getArrayRef()))) {
+            Logger.debug("Array " + get_basename(stmt.getArrayRef()) + " got written to.");
+            vars.toggle_written(get_basename(stmt.getArrayRef()));
         }
     }
 

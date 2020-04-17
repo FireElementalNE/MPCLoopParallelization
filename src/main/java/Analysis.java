@@ -1,6 +1,8 @@
+import guru.nidi.graphviz.attribute.Color;
 import guru.nidi.graphviz.attribute.LinkAttr;
 import guru.nidi.graphviz.attribute.Style;
 import guru.nidi.graphviz.model.MutableGraph;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.tinylog.Logger;
 import soot.Body;
@@ -12,6 +14,7 @@ import soot.jimple.IfStmt;
 import soot.jimple.Stmt;
 import soot.jimple.toolkits.annotation.logic.Loop;
 import soot.jimple.toolkits.annotation.logic.LoopFinder;
+import soot.shimple.PhiExpr;
 import soot.shimple.ShimpleBody;
 import soot.toolkits.graph.Block;
 import soot.toolkits.graph.BlockGraph;
@@ -24,21 +27,22 @@ import static guru.nidi.graphviz.model.Factory.*;
 /**
  * The "Main" class for the Analysis of Bodies
  */
+@SuppressWarnings("FieldMayBeFinal")
 public class Analysis extends BodyTransformer {
 	// Map that represents the current array versions that I block presents to a successor block
 	private Map<Block, DownwardExposedArrayRef> c_arr_ver; // current array version
 	// A worklist containing the block left to process
 	private LinkedList<Block> worklist;
 	// a list of blocks that have been seen
-	private final Set<Block> seen_blocks;
+	private Set<Block> seen_blocks;
 	// a list of blocks that have been seen IN THE CURRENT BFS execution
 	// This is a bit more complex, these blocks are removed when the second iteration is parsed
 	// Then they are added back.
-	private final Set<Block> loop_blocks;
+	private Set<Block> loop_blocks;
 	// A Set containing pairs of loop heads and exits (this will be important for nested loops)
-	private final Set<ImmutablePair<String, String>> loop_head_exits;
-	// A Map that maps an array to an array version
-	private Map<String, ArrayVersion> array_vars;
+	private Set<ImmutablePair<String, String>> loop_head_exits;
+	// A wrapper class that contains a Map for all array variables to  array version
+	private ArrayVariables array_vars;
 	// A list of variables that have been defined in the second iteration, this is needed so we do not
 	// confuse mark a variable as having an intra-loop dependency when it was defined earlier in the
 	// loop (it is contained in array_vars but has been defined)
@@ -52,33 +56,37 @@ public class Analysis extends BodyTransformer {
 	// The final DefUse Graph
 	private ArrayDefUseGraph graph;
 	// Dot graphs (for printing)
-	private final MutableGraph final_graph;
-	private final MutableGraph flow_graph;
-	private final MutableGraph phi_var_links;
+	private MutableGraph final_graph;
+	private MutableGraph flow_graph;
+	private MutableGraph phi_var_links;
+	// for printing phi link graph
+	private Set<String> parsed_phi_vars;
 	// server information
-	private final int port;
-	private final String host;
-	// TODO: finish documenting.
+	private int port;
+	private String host;
 
 	/**
 	 * Create an analysis object
 	 * @param class_name the class that is being analyzed
+	 * @param host the hose of the server
+	 * @param port the port of the server
 	 */
 	public Analysis(String class_name, String host, int port) {
 		final_graph = mutGraph(class_name + "_final").setDirected(true);
 		flow_graph = mutGraph(class_name + "_flow").setDirected(true);
-		phi_var_links = mutGraph("PHI_LINKS").setDirected(true);
+		phi_var_links = mutGraph(class_name + "_phi_links").setDirected(true);
 		seen_blocks = new HashSet<>();
 		c_arr_ver = new HashMap<>();
 		worklist = new LinkedList<>();
 		phi_vars = new PhiVariableContainer();
 		loop_head_exits = new HashSet<>();
-		array_vars = new HashMap<>();
+		array_vars = new ArrayVariables();
 		top_phi_var_names = new HashSet<>();
 		second_iter_def_vars = new HashSet<>();
 		graph = new ArrayDefUseGraph();
 		loop_blocks = new HashSet<>();
 		constants = new HashSet<>();
+		parsed_phi_vars = new HashSet<>();
 		this.host = host;
 		this.port = port;
 	}
@@ -118,6 +126,7 @@ public class Analysis extends BodyTransformer {
 	 * @param from_blk the source block
 	 * @param to_blk the target block
 	 * @param is_loop true iff it is a looping edge (return to head)
+	 * @param second_iter true iff we are parsing on the second iteration
 	 */
 	@SuppressWarnings("ConstantConditions")
 	private void add_flow_edge(Block from_blk, Block to_blk, boolean is_loop, boolean second_iter) {
@@ -260,7 +269,7 @@ public class Analysis extends BodyTransformer {
 		if (!exits.contains(pred.getHead().toString())) {
 			DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
 			if (c_arr_ver.containsKey(pred)) {
-				for (Map.Entry<String, ArrayVersion> entry : array_vars.entrySet()) {
+				for (Map.Entry<String, ArrayVersion> entry : array_vars.entry_set()) {
 					ArrayVersion current_s = Utils.copy_av(c_arr_ver.get(pred).get(entry.getKey()));
 					new_daf.put(entry.getKey(), current_s);
 				}
@@ -281,7 +290,7 @@ public class Analysis extends BodyTransformer {
 	 */
 	private void handle_merge(Block b, List<String> exits) {
 		List<Block> pred_blocks = b.getPreds();
-		for (Map.Entry<String, ArrayVersion> entry : array_vars.entrySet()) {
+		for (Map.Entry<String, ArrayVersion> entry : array_vars.entry_set()) {
 			if (Utils.all_not_null(pred_blocks)) {
 				List<ArrayVersion> avs = new ArrayList<>();
 				for(Block blk : pred_blocks) {
@@ -409,7 +418,7 @@ public class Analysis extends BodyTransformer {
 	 */
 	private void init_BFS_vars(Block b) {
 		DownwardExposedArrayRef down_ar = new DownwardExposedArrayRef(b);
-		for (Map.Entry<String, ArrayVersion> entry : array_vars.entrySet()) {
+		for (Map.Entry<String, ArrayVersion> entry : array_vars.entry_set()) {
 			down_ar.put(entry.getKey(), Utils.copy_av(entry.getValue()));
 		}
 		c_arr_ver.put(b, down_ar);
@@ -476,6 +485,105 @@ public class Analysis extends BodyTransformer {
 	}
 
 	/**
+	 * helper function to make the phi_link graph, this is for finding variables that change according to
+	 * phi variables (i.e. they change every loop iteration). This handles actual phi variables
+	 * @param cur_node the current node being parsed
+	 * @param phi_expr the phi expression of the node
+	 */
+	void handle_phi_var(guru.nidi.graphviz.model.Node cur_node, PhiExpr phi_expr) {
+		String var = cur_node.name().toString();
+		guru.nidi.graphviz.model.Node src_node;
+		cur_node = node(var);
+		cur_node = cur_node.with(Color.GREEN);
+		src_node = node(var + " = " + phi_expr.toString()).with(Color.BROWN);
+		phi_var_links.add(cur_node.link(to(src_node).with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+		List<String> phi_expr_uses = Utils.get_phi_var_uses_as_str(phi_expr);
+		for (String s : phi_expr_uses) {
+			guru.nidi.graphviz.model.Node use_node = node(s);
+			boolean is_not_constant = false;
+			if(constants.contains(s)) {
+				use_node = use_node.with(Color.RED);
+			} else {
+				is_not_constant = true;
+				use_node = use_node.with(Color.GREEN);
+			}
+			phi_var_links.add(src_node.link(to(use_node).with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+			if(is_not_constant) {
+				add_phi_links_node(use_node);
+			}
+		}
+	}
+
+	/**
+	 * helper function to make the phi_link graph, this is for finding variables that change according to
+	 * phi variables (i.e. they change every loop iteration). This handles non-phi variables
+	 * @param cur_node the current node being parsed
+	 */
+	void handle_non_phi_var(guru.nidi.graphviz.model.Node cur_node) {
+		String var = cur_node.name().toString();
+		guru.nidi.graphviz.model.Node src_node;
+		ImmutablePair<Variable, List<AssignStmt>> dep_chain = phi_vars.get_var_dep_chain(constants, var);
+		if (Utils.not_null(dep_chain)) {
+			for (AssignStmt stmt : dep_chain.getRight()) {
+				List<String> uses = Utils.get_assignment_uses_as_str(stmt);
+				boolean complex_var = false;
+				for (String use : uses) {
+					src_node = node(use);
+					if (constants.contains(use)) {
+						src_node = src_node.with(Color.RED);
+					} else if (array_vars.contains_key(use)) {
+						src_node = src_node.with(Color.BLUE);
+					} else if (NumberUtils.isCreatable(use)) {
+						src_node = src_node.with(Color.ORANGE);
+					} else {
+						if(phi_vars.is_used_in_phi(use)) {
+							src_node = src_node.with(Color.DARKGREEN);
+						}
+						complex_var = true;
+					}
+					phi_var_links.add(cur_node.link(to(src_node).with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+					if(complex_var) {
+						add_phi_links_node(src_node);
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * helper function to make the phi_link graph, this is for finding variables that change according to
+	 * phi variables (i.e. they change every loop iteration). This handles all variables and splits
+	 * them between phi variables and non-phi variables
+	 * @param cur_node the current node being parsed
+	 */
+	void add_phi_links_node(guru.nidi.graphviz.model.Node cur_node) {
+		String var = cur_node.name().toString();
+		if(!parsed_phi_vars.contains(var)) {
+			parsed_phi_vars.add(var);
+			PhiExpr phi_expr = phi_vars.get_phi_expr(cur_node.name().toString());
+			if (Utils.not_null(phi_expr)) {
+				handle_phi_var(cur_node, phi_expr);
+			} else {
+				handle_non_phi_var(cur_node);
+			}
+		}
+	}
+
+	/**
+	 * the start of the recursive function to make the phi links graph
+	 */
+	void make_phi_links_graph() {
+		List<PhiVariable> non_index = phi_vars.get_non_index_vars();
+		for (PhiVariable pv : non_index) {
+			String var = pv.get_phi_def().getValue().toString();
+			guru.nidi.graphviz.model.Node cur_node = node(var);
+			add_phi_links_node(cur_node);
+		}
+		Utils.print_graph(phi_var_links);
+	}
+
+
+	/**
 	 * Overridden Soot method that parsed Code Bodies
 	 * @param body the Current Code body
 	 * @param phaseName the name of the Current Phase
@@ -490,7 +598,6 @@ public class Analysis extends BodyTransformer {
 			}
 			find_loop_heads(body);
 			parse_blocks_start(body);
-
 			Logger.info("Node count: " + graph.get_nodes().size());
 			for (Map.Entry<String, Node> entry : graph.get_nodes().entrySet()) {
 				Logger.info(entry.getKey() + " -> " + entry.getValue().get_stmt());
@@ -501,8 +608,6 @@ public class Analysis extends BodyTransformer {
 				Logger.info(" " + entry.getValue().get_def().get_stmt());
 				Logger.info(" " + entry.getValue().get_use().get_stmt());
 			}
-			make_graph_png();
-			Utils.print_graph(flow_graph);
 			phi_vars.make_graphs();
 			List<PhiVariable> linked_pvars = phi_vars.get_looping_index_vars();
 			for (PhiVariable pv : linked_pvars) {
@@ -516,20 +621,10 @@ public class Analysis extends BodyTransformer {
 					phi_vars.print_var_dep_chain(constants, linked_var);
 				}
 			}
+			make_graph_png();
+			Utils.print_graph(flow_graph);
 			Logger.info("Linking non index phi vars");
-			List<PhiVariable> non_index = phi_vars.get_non_index_vars();
-			for (PhiVariable pv : non_index) {
-				String var = pv.get_phi_def().getValue().toString();
-				guru.nidi.graphviz.model.Node cur_node = node(var);
-				List<String> uses = pv.get_uses();
-				for(String s : uses) {
-					if(!Objects.equals(s, var)) {
-						guru.nidi.graphviz.model.Node src_node = node(s);
-						phi_var_links.add(cur_node.link(to(src_node).with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
-					}
-				}
-			}
-			Utils.print_graph(phi_var_links);
+			make_phi_links_graph();
 		}
 	}
 }

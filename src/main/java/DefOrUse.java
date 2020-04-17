@@ -6,6 +6,10 @@ public enum DefOrUse {
     USE("USE");
 
     private final String text;
+
+    /**
+     * @param text convert to string
+     */
     DefOrUse(final String text) {
         this.text = text;
     }

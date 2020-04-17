@@ -175,11 +175,15 @@ class Utils {
 	 * @param graph the graph
 	 */
 	static void print_graph(MutableGraph graph) {
+		String graph_name = graph.name().toString();
 		MutableAttributed<MutableGraph, ForGraph> z = graph.graphAttrs();
+		Logger.debug(graph_name + ":");
+		Logger.debug("\tNodes: " + graph.nodes().size());
+		Logger.debug("\tEdges: " + graph.edges().size());
 		try {
 			Graphviz viz = Graphviz.fromGraph(graph);
 //			viz.render(Format.PNG);
-			viz.rasterize(Rasterizer.BATIK).toFile(new File(Utils.make_graph_name(graph.name().toString())));
+			viz.rasterize(Rasterizer.BATIK).toFile(new File(Utils.make_graph_name(graph_name)));
 //			.render(Format.PNG)
 //					.toFile(new File(Utils.make_graph_name(graph.name().toString())));
 		} catch (IOException | java.awt.AWTError | java.lang.NoClassDefFoundError e) {
@@ -217,6 +221,17 @@ class Utils {
 	static List<String> get_phi_var_uses_as_str(PhiExpr pexpr) {
 		// TODO: this is wacky, it always adds the full expression as the first thing. might need to fix this
 		return pexpr.getValues().stream().map(Object::toString).collect(Collectors.toList());
+	}
+
+	/**
+	 * get the uses of an Assignment statement  (not including the entire statement)
+	 * @param stmt the AssignStmt
+	 * @return a list of AssignStmt uses (as strings)
+	 */
+	static List<String> get_assignment_uses_as_str(AssignStmt stmt) {
+		// TODO: this is wacky, it always adds the full expression as the first thing. might need to fix this
+		return stmt.getUseBoxes().stream().map(el -> el.getValue().toString())
+				.filter(el -> !Objects.equals(el, stmt.getRightOp().toString())).collect(Collectors.toList());
 	}
 
 }

@@ -4,6 +4,7 @@ import soot.Value;
 import soot.ValueBox;
 import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
+import soot.shimple.PhiExpr;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -165,5 +166,72 @@ public class PhiVariableContainer {
      */
     List<PhiVariable> get_non_index_vars() {
         return phi_vars.stream().filter(pv -> !pv.is_used_as_index()).collect(Collectors.toList());
+    }
+
+    /**
+     * get the list of phi variables
+     * @return the list of phi variables
+     */
+    Set<PhiVariable> get_phi_vars() {
+        return phi_vars;
+    }
+
+    /**
+     * get a phi variable that has a link that defines the passed variable
+     * @param link the passed variable
+     * @return either null (if no phi variable contains the definition) or the phi variable containing the def
+     */
+    PhiVariable get_phi_var_with_link_def(String link) {
+        List<PhiVariable> pv = this.phi_vars.stream()
+                .filter(el -> el.has_linked_var_def(link)).collect(Collectors.toList());
+        if(pv.size() == 1) {
+            return pv.get(0);
+        } else {
+            Logger.debug("This value should be 1: " + pv.size());
+            return null;
+        }
+    }
+
+    /**
+     * get a phi variable if it is in the container
+     * @param def the definition name of the variable
+     * @return the phi variable if it is in the container. If not returns null
+     */
+    PhiVariable get_phi_var(String def) {
+        for(PhiVariable pv : phi_vars) {
+            if(Objects.equals(pv.get_phi_def().getValue().toString(), def)) {
+                return pv;
+            }
+        }
+        return null;
+    }
+
+
+    /**
+     * get the phi expression associated with a phi variable
+     * @param var the variable
+     * @return the phi expression iff there is a var defines a phi function otherwise null
+     */
+    PhiExpr get_phi_expr(String var) {
+        for(PhiVariable pv : phi_vars) {
+            if(Objects.equals(var, pv.get_phi_def().getValue().toString())) {
+                return pv.get_phi_expr();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * true iff there is a phi variable that uses this variable in it's definition
+     * @param var the variable in question
+     * @return true iff there is a phi variable that uses this variable in it's definition
+     */
+    boolean is_used_in_phi(String var) {
+        for(PhiVariable pv : phi_vars) {
+            if(pv.get_uses().contains(var)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

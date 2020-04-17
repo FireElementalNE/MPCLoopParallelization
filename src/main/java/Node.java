@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 /**
  * An _overly_ complex node class for ArrayDefUseGraph
  */
+@SuppressWarnings("FieldMayBeFinal")
 class Node {
 
     private String stmt; // the statement the node represents
@@ -19,7 +20,7 @@ class Node {
     private String aug_stmt; // the augmented statement based on any new definitions
     private boolean is_aug; // this node has been augmented
     private boolean phi_flag; // this is a phi node (special)
-    private boolean is_prev_loop_dummy; // this node is a dummmy node representing the entire previous iteration
+    private boolean is_prev_loop_dummy; // this node is a dummy node representing the entire previous iteration
     private int line_num; // the line number of the statement
 
     /**
@@ -116,6 +117,10 @@ class Node {
         this.is_prev_loop_dummy = n.is_prev_loop_dummy;
     }
 
+    /**
+     * get the node statement (might be augmented)
+     * @return the possibly augmented node statement
+     */
     String get_stmt() {
         if(is_aug) {
             return aug_stmt;
@@ -124,16 +129,24 @@ class Node {
         }
     }
 
+    /**
+     * get the opposite id of the node (if DEF then USE and vice versa)
+     * @return the opposite id
+     */
     String get_opposite_id() {
         DefOrUse t = Objects.equals(DefOrUse.DEF, type) ? DefOrUse.USE : DefOrUse.DEF;
-        if(t == DefOrUse.DEF) {
-            return Node.make_id(basename, av, t, line_num);
-        } else {
-            return Node.make_id(basename, av, t, line_num);
-        }
+        return Node.make_id(basename, av, t, line_num);
 
     }
 
+    /**
+     * make an id for a node
+     * @param id the id of the node
+     * @param av the array version of the node
+     * @param t the type of the node
+     * @param line_num the line number of the statement
+     * @return a node id as a string
+     */
     static String make_id(String id, ArrayVersion av, DefOrUse t, int line_num) {
         StringBuilder sb = new StringBuilder(id);
         sb.append(Constants.UNDERSCORE);
@@ -156,13 +169,12 @@ class Node {
                 }
                 sb.append(Constants.UNDERSCORE);
             }
-            sb.append(t);
         } else {
             ArrayVersionSingle av_single = (ArrayVersionSingle) av;
             sb.append(av_single.get_version());
             sb.append(Constants.UNDERSCORE);
-            sb.append(t);
         }
+        sb.append(t);
         if(t == DefOrUse.USE) {
             sb.append(":");
             sb.append(line_num);
@@ -170,26 +182,50 @@ class Node {
         return sb.toString();
     }
 
+    /**
+     * getter for array version
+     * @return the array version of the node
+     */
     ArrayVersion get_av() {
         return av;
     }
 
+    /**
+     * the getter for the augmented flag
+     * @return the augmented flag
+     */
     boolean is_aug() {
         return is_aug;
     }
 
+    /**
+     * the getter for the phi flag
+     * @return the phi flag
+     */
     boolean is_phi() {
         return phi_flag;
     }
 
+    /**
+     * the getter for the index
+     * @return the index
+     */
     Index get_index() {
         return index;
     }
 
+    /**
+     * get the ID of this node
+     * @return  the ID of this node
+     */
     String get_id() {
         return Node.make_id(basename, av, type, line_num);
     }
 
+    /**
+     * getter for the line number of this statement
+     * @return the line number for this statment
+     */
     int get_line_num() {
         return line_num;
     }

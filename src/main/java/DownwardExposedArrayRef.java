@@ -1,7 +1,6 @@
 import org.tinylog.Logger;
 import soot.toolkits.graph.Block;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -11,7 +10,7 @@ import java.util.Map;
 class DownwardExposedArrayRef {
 
     private Block b;
-    private Map<String, ArrayVersion> array_ver;
+    private ArrayVariables array_vars;
 
     /**
      * create a new downward exposed array reference
@@ -21,7 +20,7 @@ class DownwardExposedArrayRef {
      */
     DownwardExposedArrayRef(Block b) {
         this.b = b;
-        this.array_ver = new HashMap<>();
+        this.array_vars = new ArrayVariables();
     }
 
     /**
@@ -30,9 +29,9 @@ class DownwardExposedArrayRef {
      */
     DownwardExposedArrayRef(DownwardExposedArrayRef daf) {
         this.b = daf.b;
-        this.array_ver = new HashMap<>();
-        for(Map.Entry<String, ArrayVersion> entry : daf.array_ver.entrySet()) {
-            this.array_ver.put(entry.getKey(), Utils.copy_av(entry.getValue()));
+        this.array_vars = new ArrayVariables(daf.array_vars);
+        for(Map.Entry<String, ArrayVersion> entry : daf.array_vars.entry_set()) {
+            this.array_vars.put(entry.getKey(), Utils.copy_av(entry.getValue()));
         }
     }
 
@@ -42,7 +41,7 @@ class DownwardExposedArrayRef {
      * @return the version of the variable or a constant indicating it was not found.
      */
     ArrayVersion get(String s) {
-        return array_ver.getOrDefault(s, Constants.VAR_NOT_FOUND);
+        return array_vars.get(s);
     }
 
     /**
@@ -51,11 +50,10 @@ class DownwardExposedArrayRef {
      * @param block_num the block number that is making a new version
      */
     void new_ver(String s, int block_num) {
-        // CHECKTHIS: this might need to be more explicit (i.e. new_ver(String s, int i) or something)
-        if(array_ver.containsKey(s)) {
-            ArrayVersion new_ver = array_ver.get(s);
+        if(array_vars.contains_key(s)) {
+            ArrayVersion new_ver = array_vars.get(s);
             new_ver.incr_version(block_num);
-            array_ver.put(s, new_ver);
+            array_vars.put(s, new_ver);
         } else {
             Logger.error("Key " + s + " not found, cannot increment version.");
         }
@@ -67,7 +65,7 @@ class DownwardExposedArrayRef {
      * @param av the variable version object
      */
     void put(String s, ArrayVersion av) {
-        array_ver.put(s, av);
+        array_vars.put(s, av);
     }
 
     /**
@@ -77,7 +75,7 @@ class DownwardExposedArrayRef {
      */
     @SuppressWarnings("unused")
     boolean contains_var(String s) {
-        return array_ver.containsKey(s);
+        return array_vars.contains_key(s);
     }
 
     /**
@@ -86,8 +84,8 @@ class DownwardExposedArrayRef {
      * @return the variable/version name iff it is in the name is in the key set otherwise null
      */
     String get_name(String s) {
-        if(array_ver.containsKey(s)) {
-            return String.format(Constants.ARR_VER_STR, s, array_ver.get(s).get_version(), Constants.EMPTY_STR);
+        if(array_vars.contains_key(s)) {
+            return String.format(Constants.ARR_VER_STR, s, array_vars.get(s).get_version(), Constants.EMPTY_STR);
         } else {
             Logger.error("Key " + s + " not found.");
             return null;
