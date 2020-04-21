@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 /**
  * A visitor class that looks at possible index values
  */
+@SuppressWarnings("FieldMayBeFinal")
 public class VariableVisitor extends AbstractStmtSwitch {
 
     private PhiVariableContainer phi_vars;
@@ -79,7 +80,7 @@ public class VariableVisitor extends AbstractStmtSwitch {
         List<String> prims =  uses.stream().filter(NumberUtils::isCreatable).collect(Collectors.toList());
         uses.remove(stmt.getRightOp().toString());
         uses.removeAll(prims);
-        boolean all_constants = constants.containsAll(uses);;
+        boolean all_constants = constants.containsAll(uses);
         if(all_constants) {
             constants.addAll(uses);
             constants.add(stmt.getLeftOp().toString());

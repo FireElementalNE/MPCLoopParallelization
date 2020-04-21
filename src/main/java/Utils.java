@@ -1,7 +1,5 @@
-import guru.nidi.graphviz.attribute.ForGraph;
 import guru.nidi.graphviz.engine.Graphviz;
 import guru.nidi.graphviz.engine.Rasterizer;
-import guru.nidi.graphviz.model.MutableAttributed;
 import guru.nidi.graphviz.model.MutableGraph;
 import org.apache.commons.lang3.SystemUtils;
 import org.tinylog.Logger;
@@ -176,7 +174,6 @@ class Utils {
 	 */
 	static void print_graph(MutableGraph graph) {
 		String graph_name = graph.name().toString();
-		MutableAttributed<MutableGraph, ForGraph> z = graph.graphAttrs();
 		Logger.debug(graph_name + ":");
 		Logger.debug("\tNodes: " + graph.nodes().size());
 		Logger.debug("\tEdges: " + graph.edges().size());

@@ -74,7 +74,7 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
             is_array = true;
             String basename = get_basename(stmt.getArrayRef());
             if(!vars.contains_key(basename)) {
-                vars.put(basename, new ArrayVersionSingle(1, block_num));
+                vars.put(basename, new ArrayVersionSingle(1, block_num, stmt));
             }
         }
     }
@@ -116,7 +116,7 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
         if(stmt.getRightOp() instanceof JNewArrayExpr) {
             // NOTE: ALWAYS a new array!
             Logger.info("Found a new array: " + left_op);
-            ArrayVersion av = new ArrayVersionSingle(1, block_num);
+            ArrayVersion av = new ArrayVersionSingle(1, block_num, stmt);
             graph.add_node(new Node(stmt.toString(), left_op, av, new Index(), DefOrUse.DEF, stmt.getJavaSourceStartLineNumber()),
                     true, false);
             vars.put(left_op, av);

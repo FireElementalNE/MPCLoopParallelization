@@ -1,3 +1,7 @@
+import soot.jimple.Stmt;
+
+import java.util.Map;
+
 /**
  * interface for ArrayVersions (Phi and Single)
  */
@@ -17,8 +21,9 @@ interface ArrayVersion {
     /**
      * increment the current version by 1
      * @param block the block that is being parsed
+     * @param stmt the statement that changed the versioning
      */
-    void incr_version(int block);
+    void incr_version(int block, Stmt stmt);
 
     /**
      * check if the variables in an ArrayVersionPhi have the same names
@@ -43,4 +48,10 @@ interface ArrayVersion {
      * setter to set the has been written to flag
      */
     void toggle_written();
+
+    /**
+     * get the versions map
+     * @return the versions map
+     */
+    Map<Integer, Stmt> get_versions();
 }

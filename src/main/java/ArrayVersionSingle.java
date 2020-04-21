@@ -1,3 +1,8 @@
+import soot.jimple.Stmt;
+
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Subclass of the ArrayVersion interface
  * Defines logic for non-phi array variables.
@@ -8,17 +13,21 @@ class ArrayVersionSingle implements ArrayVersion {
     private int block;
     private boolean diff_ver_match;
     private boolean has_been_written_to;
+    private Map<Integer, Stmt> versions;
 
     /**
      * Create a new ArrayVersionSingle
      * @param version create a new ArrayVersionPhi with the passed version
      * @param block the block that created this AV
+     * @param stmt the  statement changing this version
      */
-    ArrayVersionSingle(int version, int block) {
+    ArrayVersionSingle(int version, int block, Stmt stmt) {
         this.version = version;
         this.diff_ver_match = false;
         this.block = block;
         has_been_written_to = false;
+        this.versions = new HashMap<>();
+        versions.put(version, stmt);
     }
 
     /**
@@ -30,6 +39,7 @@ class ArrayVersionSingle implements ArrayVersion {
         this.diff_ver_match = avs.diff_ver_match;
         this.block = avs.block;
         has_been_written_to = avs.has_been_written_to;
+        this.versions = new HashMap<>(avs.versions);
     }
 
     /**
@@ -64,11 +74,13 @@ class ArrayVersionSingle implements ArrayVersion {
     /**
      * Overridden version incrementer, increases the version by 1
      * @param block the block that changed it.
+     * @param stmt the assignment statement that changed the versioning
      */
     @Override
-    public void incr_version(int block) {
+    public void incr_version(int block, Stmt stmt) {
         this.block = block;
         version++;
+        versions.put(version, stmt);
     }
 
     /**
@@ -95,6 +107,11 @@ class ArrayVersionSingle implements ArrayVersion {
     @Override
     public void toggle_written() {
         has_been_written_to = true;
+    }
+
+    @Override
+    public Map<Integer, Stmt> get_versions() {
+        return new HashMap<>(versions);
     }
 
 }

@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@SuppressWarnings("FieldMayBeFinal")
 public class IndexVisitor extends AbstractStmtSwitch {
 
     private PhiVariableContainer pvc;
@@ -84,7 +85,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
                     Logger.debug("Dep chain for " + index_name + " is empty (is it a phi var?).");
                 }
                 graph.add_node(new Node(stmt.toString(), ar.getBaseBox().getValue().toString(),
-                        new ArrayVersionSingle(-1, -1), new Index(index_box), DefOrUse.USE,
+                        new ArrayVersionSingle(-1, -1, stmt), new Index(index_box), DefOrUse.USE,
                         stmt.getJavaSourceStartLineNumber()), false, true);
             } else {
                 Logger.error("dep chain for " + index_box.getValue().toString() + " is null.");

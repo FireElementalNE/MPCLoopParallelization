@@ -16,7 +16,7 @@ class Test14 {
             l = j - z;
             D[l] = 100;
             A[i] = B[i];
-            B[i] = A[i] * D[l];
+            B[i] = A[i] * D[l + 13];
             C[i] = A[i] * D[l];
             D[i] = B[i] * C[i];
         }

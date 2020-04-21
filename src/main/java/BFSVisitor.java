@@ -15,6 +15,7 @@ class BFSVisitor extends AbstractStmtSwitch {
     private Block b;
     private DownwardExposedArrayRef daf;
     private ArrayDefUseGraph graph;
+    private ArrayVariables array_vars;
     private int block_num;
 
     /**
@@ -22,15 +23,18 @@ class BFSVisitor extends AbstractStmtSwitch {
      * @param c_arr_ver a Map of currently exposed array versions per block
      * @param b the current block
      * @param graph the current ArrayDefUseGraph
+     * @param array_vars the array variables
      * @param block_num the number of the block
      */
-    BFSVisitor(Map<Block, DownwardExposedArrayRef> c_arr_ver, Block b, ArrayDefUseGraph graph, int block_num) {
+    BFSVisitor(Map<Block, DownwardExposedArrayRef> c_arr_ver, Block b, ArrayDefUseGraph graph,
+               ArrayVariables array_vars, int block_num) {
         this.c_arr_ver = c_arr_ver;
         this.b = b;
         assert c_arr_ver.containsKey(b); // this should always be here!
         this.daf = new DownwardExposedArrayRef(c_arr_ver.get(b));
         this.graph = new ArrayDefUseGraph(graph);
         this.block_num = block_num;
+        this.array_vars = new ArrayVariables(array_vars);
     }
 
     /**
@@ -47,6 +51,14 @@ class BFSVisitor extends AbstractStmtSwitch {
      */
     ArrayDefUseGraph get_graph() {
         return graph;
+    }
+
+    /**
+     * return the possibly changed array vars
+     * @return the array vars
+     */
+    ArrayVariables get_vars() {
+        return new ArrayVariables(array_vars);
     }
 
     /**
@@ -82,10 +94,11 @@ class BFSVisitor extends AbstractStmtSwitch {
             if(Utils.is_def(stmt)) {
                 String basename = stmt.getArrayRef().getBaseBox().getValue().toString();
                 Logger.debug("Array write found (change needed): " + stmt.toString());
-                daf.new_ver(basename, block_num);
+                daf.new_ver(basename, block_num, stmt);
                 Logger.debug(" " + basename + " needs to be changed to " + daf.get_name(basename));
                 Logger.debug("This is a new def for " + daf.get_name(basename));
                 ArrayVersion av = Utils.copy_av(daf.get(basename));
+                array_vars.put(basename, av);
                 graph.add_node(new Node(stmt.toString(), basename, av, new Index(stmt.getArrayRef().getIndexBox()), DefOrUse.DEF,
                         new ImmutablePair<>(basename, daf.get_name(basename)),
                                 stmt.getJavaSourceStartLineNumber()), true, false);

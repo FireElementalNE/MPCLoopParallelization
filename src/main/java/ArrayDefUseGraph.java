@@ -1,9 +1,14 @@
+import guru.nidi.graphviz.attribute.LinkAttr;
+import guru.nidi.graphviz.attribute.Style;
+import guru.nidi.graphviz.model.MutableGraph;
 import org.tinylog.Logger;
 import soot.jimple.Stmt;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static guru.nidi.graphviz.model.Factory.*;
 
 /**
  * A def/use graph for arrays (turning into an SCC graph eventually)
@@ -12,13 +17,16 @@ import java.util.stream.Collectors;
 class ArrayDefUseGraph {
     private Map<Integer, Edge> edges;
     private Map<String, Node> nodes;
+    private MutableGraph final_graph;
 
     /**
      * constructor for ArrayDefUseGraph
+     * @param class_name the name of the class being analyzed
      */
-    ArrayDefUseGraph() {
+    ArrayDefUseGraph(String class_name) {
         edges = new HashMap<>();
         nodes = new HashMap<>();
+        final_graph = mutGraph(class_name + "_final").setDirected(true);
     }
 
     /**
@@ -30,6 +38,7 @@ class ArrayDefUseGraph {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         this.nodes =  a_graph.nodes.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        this.final_graph = a_graph.final_graph;
     }
 
     /**
@@ -118,5 +127,20 @@ class ArrayDefUseGraph {
      */
     Map<String, Node> get_nodes() {
         return nodes;
+    }
+
+    /**
+     * Make a pretty graph of the defuse graph
+     */
+    void make_graph_png() {
+        for(Map.Entry<Integer, Edge> entry: edges.entrySet()) {
+            Edge e = entry.getValue();
+            Node def = e.get_def();
+            Node use = e.get_use();
+            guru.nidi.graphviz.model.Node def_node = node(def.get_stmt());
+            guru.nidi.graphviz.model.Node use_node = node(use.get_stmt());
+            final_graph.add(def_node.link(to(use_node).with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+        }
+        Utils.print_graph(final_graph);
     }
 }

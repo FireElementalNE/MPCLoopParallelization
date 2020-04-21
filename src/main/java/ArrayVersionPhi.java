@@ -1,6 +1,6 @@
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import soot.jimple.Stmt;
+
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -16,6 +16,7 @@ public class ArrayVersionPhi implements ArrayVersion {
     private boolean diff_ver_match;
     private int block;
     private boolean has_been_written_to;
+    private Map<Integer, Stmt> versions;
 
     /**
      * create a new ArrayVersionPhi
@@ -31,6 +32,8 @@ public class ArrayVersionPhi implements ArrayVersion {
         this.diff_ver_match = versions.size() != new HashSet<>(versions).size();
         this.block = block;
         this.has_been_written_to = false;
+        this.versions = new HashMap<>();
+
     }
 
     /**
@@ -43,6 +46,7 @@ public class ArrayVersionPhi implements ArrayVersion {
         this.diff_ver_match = av_phi.diff_ver_match;
         this.block = av_phi.block;
         this.has_been_written_to = av_phi.has_been_written_to;
+        this.versions = new HashMap<>(av_phi.versions);
     }
 
     /**
@@ -69,11 +73,13 @@ public class ArrayVersionPhi implements ArrayVersion {
     /**
      * Overridden version incrementer, increases the version by 1
      * @param block the block that changed this AV
+     * @param stmt the statement that changed the versioning
      */
     @Override
-    public void incr_version(int block) {
+    public void incr_version(int block, Stmt stmt) {
         this.block = block;
         version++;
+        versions.put(version, stmt);
     }
 
     /**
@@ -118,6 +124,11 @@ public class ArrayVersionPhi implements ArrayVersion {
     @Override
     public void toggle_written() {
         this.has_been_written_to = true;
+    }
+
+    @Override
+    public Map<Integer, Stmt> get_versions() {
+        return new HashMap<>(versions);
     }
 
 }

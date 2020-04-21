@@ -5,6 +5,7 @@ import java.util.Objects;
 /**
  * An class representing and index that is used in an array access
  */
+@SuppressWarnings("FieldMayBeFinal")
 public class Index {
     //
 
@@ -59,7 +60,7 @@ public class Index {
     }
 
     /**
-     * custom (non overriden) equal function
+     * custom (non overridden) equal function
      * @param i the Index that is being tested for equality
      * @return true iff the passed index is equal to this one
      */

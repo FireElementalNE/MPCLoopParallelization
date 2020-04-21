@@ -1,12 +1,13 @@
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import soot.jimple.AssignStmt;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -52,12 +53,40 @@ public class Solver {
         this.index_name = index_name;
         this.dep_chain = dep_chain;
         this.resoved_eq = resolver();
+        write_solver();
     }
 
     Solver(AssignStmt stmt, String host, int port) throws IOException {
         this.stmt = stmt;
         this.host = host;
         this.port = port;
+    }
+
+    private void write_solver() {
+        Path path = Paths.get("solver_z3_test_" + index_name + ".py");
+        try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+            String res_eq_flat = resoved_eq.replace(" ", "");
+            res_eq_flat = res_eq_flat.replace("$", "");
+            writer.write("from z3 import *\n");
+            writer.write("# "  + resoved_eq + "\n");
+            String left = res_eq_flat.split("=")[0];
+            String rem = res_eq_flat.split("=")[1];
+            // TODO: more split options
+            writer.write(String.format("%s = Int('%s')\n", left, left));
+            Set<String> vars = new HashSet<>(Arrays.asList(rem.split("\\+|-|/|\\*|\\^|\\||%|&|~|>>|<<|>>>")));
+            for(String v : vars) {
+                if(!NumberUtils.isCreatable(v)) {
+                    writer.write(String.format("%s = Int('%s')\n", v, v));
+                }
+            }
+            writer.write("s = Solver()\n");
+            writer.write( String.format("s.add(%s)\n", resoved_eq.replace("$", "").replace("=", "==")));
+            writer.write("print(s.check())\n");
+            writer.write("print(s.model())\n");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @SuppressWarnings("ConstantConditions")

@@ -1,6 +1,7 @@
 /**
  * Very simple class that represents an edge in an ArrayDefUseGraph
  */
+@SuppressWarnings("FieldMayBeFinal")
 class Edge {
 
     private Node def;

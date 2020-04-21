@@ -1,4 +1,5 @@
 import org.tinylog.Logger;
+import soot.jimple.Stmt;
 import soot.toolkits.graph.Block;
 
 import java.util.Map;
@@ -7,6 +8,7 @@ import java.util.Map;
  * Class representing the downward exposed array versions for a given block.
  * A block only knows the versions that are passed to it by predecessor blocks (Part of BFS)
  */
+@SuppressWarnings("FieldMayBeFinal")
 class DownwardExposedArrayRef {
 
     private Block b;
@@ -48,11 +50,12 @@ class DownwardExposedArrayRef {
      * create a new version or an array variable
      * @param s the variable name
      * @param block_num the block number that is making a new version
+     * @param stmt the statement that changed the versioning
      */
-    void new_ver(String s, int block_num) {
+    void new_ver(String s, int block_num, Stmt stmt) {
         if(array_vars.contains_key(s)) {
             ArrayVersion new_ver = array_vars.get(s);
-            new_ver.incr_version(block_num);
+            new_ver.incr_version(block_num, stmt);
             array_vars.put(s, new_ver);
         } else {
             Logger.error("Key " + s + " not found, cannot increment version.");
