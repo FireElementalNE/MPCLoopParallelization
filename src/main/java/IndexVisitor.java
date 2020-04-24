@@ -71,8 +71,9 @@ public class IndexVisitor extends AbstractStmtSwitch {
                         AssignStmt a = dep_chain.getRight().get(i);
                         Logger.debug("\t" + a.toString());
                     }
-                    Solver solver = new Solver(index_name, dep_chain, constants, host, port);
+                    Solver solver = new Solver(index_name, dep_chain, pvc, host, port);
                     Logger.info("Resolved dep chain: " + solver.get_resoved_eq());
+                    solver.solve();
 //                    try {
 //
 //                        String resp = solver.send_recv_stmt();

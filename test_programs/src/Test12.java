@@ -21,7 +21,7 @@ class Test12 {
                     } else {
                         a[i-1] = p - 23;
                     }
-                    z = z + a[i];
+                    z = z + a[i - z];
                 } else {
                     a[k] = p * 30;
                 }

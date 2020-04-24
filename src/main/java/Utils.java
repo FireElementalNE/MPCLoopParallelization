@@ -9,12 +9,11 @@ import soot.jimple.Stmt;
 import soot.shimple.PhiExpr;
 import soot.toolkits.graph.Block;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.io.InputStreamReader;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
@@ -22,6 +21,117 @@ import java.util.stream.Collectors;
  * Generic Utility class
  */
 class Utils {
+
+	/**
+	 * delete a directory
+	 * @param dir a directory as a File object
+	 * @return true iff the directory was deleted successfully
+	 */
+	// Found here:
+	// https://javarevisited.blogspot.com/2015/03/how-to-delete-directory-in-java-with-files.html
+	// Thanks!
+	static boolean deleteDirectory(File dir) {
+		if (dir.isDirectory()) {
+			File[] children = dir.listFiles();
+			assert children != null;
+			for (File child : children) {
+				boolean success = deleteDirectory(child);
+				if (!success) {
+					return false;
+				}
+			}
+		}
+		Logger.debug("removing file or directory : " + dir.getName());
+		return dir.delete();
+	}
+
+	/**
+	 * refresh (delete if exists) directory
+	 * @param dir_name the name of the directory
+	 */
+	static void refresh_dir(String dir_name) {
+		File dir = new File(dir_name);
+		boolean rc;
+		if(dir.exists()) {
+			rc = Utils.deleteDirectory(dir);
+			if (!rc) {
+				Logger.error(dir.getName() + " could not be deleted, exiting.");
+				System.exit(0);
+			}
+		}
+		rc = dir.mkdir();
+		if(!rc) {
+			Logger.error(dir.getName() + " could not be created, exiting.");
+			System.exit(0);
+		}
+	}
+
+	/**
+	 * execute a command on the cl and get the stdout
+	 * @param cmd the command
+	 * @return the stdout of the command
+	 */
+	static List<String> execute_cmd_ret(String cmd) {
+		List<String> stdouts = new ArrayList<>();
+		boolean errors_found = false;
+		try {
+			Process p = Runtime.getRuntime().exec(cmd);
+			p.waitFor();
+			BufferedReader stdError = new BufferedReader(new
+					InputStreamReader(p.getErrorStream()));
+			BufferedReader stdInput = new BufferedReader(new
+					InputStreamReader(p.getInputStream()));
+			String s;
+			while ((s = stdInput.readLine()) != null) {
+				stdouts.add(s);
+			}
+			while((s = stdError.readLine()) != null) {
+				Logger.error(s);
+				errors_found = true;
+			}
+		} catch (IOException | InterruptedException e) {
+			Logger.error("Caught exception: " + e.getMessage());
+			System.exit(0);
+		}
+		if(errors_found) {
+			Logger.error("Errors found. Exiting.");
+			System.exit(0);
+		}
+		return stdouts;
+	}
+
+	/**
+	 * execute a command on the cl
+	 * @param cmd the command
+	 */
+	static void execute_cmd(String cmd) {
+		boolean errors_found = false;
+		try {
+			Process p = Runtime.getRuntime().exec(cmd);
+
+			BufferedReader stdError = new BufferedReader(new
+					InputStreamReader(p.getErrorStream()));
+			BufferedReader stdInput = new BufferedReader(new
+					InputStreamReader(p.getInputStream()));
+			String s;
+			while ((s = stdInput.readLine()) != null) {
+				Logger.info(s);
+			}
+			while((s = stdError.readLine()) != null) {
+				Logger.error(s);
+				errors_found = true;
+			}
+		} catch (IOException e) {
+			Logger.error("Caught exception: " + e.getMessage());
+			System.exit(0);
+		}
+		if(errors_found) {
+			Logger.error("Errors found. Exiting.");
+			System.exit(0);
+		}
+	}
+
+
 	/**
 	 * get the RT path depending on OS
 	 * @return get the default path to rt.jar

@@ -1,4 +1,8 @@
+import guru.nidi.graphviz.attribute.LinkAttr;
+import guru.nidi.graphviz.attribute.Style;
+import guru.nidi.graphviz.model.MutableGraph;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.tinylog.Logger;
 import soot.Value;
 import soot.ValueBox;
 import soot.jimple.AssignStmt;
@@ -6,6 +10,8 @@ import soot.shimple.PhiExpr;
 import soot.toolkits.scalar.ValueUnitPair;
 
 import java.util.*;
+
+import static guru.nidi.graphviz.model.Factory.*;
 
 /**
  * Class representing a phi variable. Theses variables are the only that can "change" per loop iterations
@@ -21,6 +27,8 @@ public class PhiVariable {
     private List<Variable> var_links;
     private int counter;
     private boolean used_as_index;
+    private MutableGraph non_index_graph;
+
 
     /**
      * create a new PhiVariable
@@ -52,6 +60,7 @@ public class PhiVariable {
         this.linked_stmts = new ArrayList<>(pv.linked_stmts);
         this.var_links = new ArrayList<>(pv.var_links);
         this.used_as_index = pv.used_as_index;
+        this.non_index_graph = pv.non_index_graph;
     }
 
     /**
@@ -311,5 +320,33 @@ public class PhiVariable {
             }
         }
         return null;
+    }
+
+    /**
+     * write a graph for non-index phi variables showing all the versions in order.
+     */
+    void write_non_index_graph() {
+        if(!used_as_index) {
+            this.non_index_graph = mutGraph("NonIndex-" + phi_def.getValue().toString()).setDirected(true);
+            guru.nidi.graphviz.model.Node cur_node = node(phi_def.getValue().toString());
+            for(int i = 1; i <= counter; i++) {
+                ImmutablePair<ValueBox, AssignStmt> value = all_values.get(i);
+                guru.nidi.graphviz.model.Node tmp =
+                        node(value.getLeft().getValue().toString() + " -> " + value.getRight().toString());
+                non_index_graph.add(cur_node.link(to(tmp).with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+                cur_node = tmp;
+            }
+            Utils.print_graph(non_index_graph);
+        } else {
+            Logger.warn("Cannot make graph for '" + this.toString() + "' as it is an index.");
+        }
+    }
+
+    /**
+     * getter for the counter variable
+     * @return the counter variable
+     */
+    int get_counter() {
+        return counter;
     }
 }

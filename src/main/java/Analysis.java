@@ -334,7 +334,7 @@ public class Analysis extends BodyTransformer {
 			//       look at current index variables and how they have changed!
 		} else {
 			if (seen_blocks.contains(b)) {
-				Logger.error("Were have seen this block: " + b.getHead().toString());
+				Logger.warn("Were have seen this block: " + b.getHead().toString());
 				return;
 			}
 			// TODO: update indexes!
@@ -511,6 +511,7 @@ public class Analysis extends BodyTransformer {
 			Logger.info("Linking non index phi vars");
 			phi_vars.make_phi_links_graph(array_vars, constants);
 			array_vars.make_array_var_graph(constants);
+			phi_vars.make_non_index_graphs();
 		}
 	}
 }

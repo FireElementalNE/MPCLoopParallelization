@@ -29,13 +29,19 @@ class Constants {
     static final int GRAPHVIZ_EDGE_WEIGHT = 8;
     static final int GRAPHVIZ_WIDTH = 700;
     static final String GRAPH_DIR = "graphs";
+    static final String Z3_DIR = "z3_python";
     static final String GRAPH_EXT =  ".png";
     static final String EMPTY_STR = "";
     static final String Z3_PORT = "25241";
     static final String Z3_HOST = "localhost";
     static final boolean JUST_COMPILE = false;
     static final String DEFAULT_COMPILE_CMD = "python compile.py -c %s";
+    static final String RUN_SOLVER_CMD = "python %s";
+    static final String ZERO_TEST_PY_STR = "%s != 0";
+    static final String SAT = "sat";
+
 }
+
 
 
 

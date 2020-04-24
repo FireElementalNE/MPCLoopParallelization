@@ -29,3 +29,4 @@ test_programs/out/*
 out/*
 target/*
 graphs/*
+z3_python/*

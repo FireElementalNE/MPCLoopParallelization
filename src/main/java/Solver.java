@@ -1,5 +1,6 @@
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.tinylog.Logger;
 import soot.jimple.AssignStmt;
 
 import java.io.*;
@@ -45,48 +46,89 @@ public class Solver {
     private ImmutablePair<Variable, List<AssignStmt>> dep_chain;
     private String index_name;
     private String resoved_eq;
+    private PhiVariableContainer phi_vars;
+    private List<String> results;
 
     Solver(String index_name, ImmutablePair<Variable, List<AssignStmt>> dep_chain,
-           Set<String> constants, String host, int port) {
+           PhiVariableContainer phi_vars, String host, int port) {
         this.host = host;
         this.port = port;
         this.index_name = index_name;
         this.dep_chain = dep_chain;
+        this.phi_vars = phi_vars;
         this.resoved_eq = resolver();
-        write_solver();
     }
 
-    Solver(AssignStmt stmt, String host, int port) throws IOException {
-        this.stmt = stmt;
-        this.host = host;
-        this.port = port;
-    }
-
-    private void write_solver() {
-        Path path = Paths.get("solver_z3_test_" + index_name + ".py");
+    void solve() {
+        String filename = Constants.Z3_DIR + File.separator + "solver_z3_test_" + index_name + ".py";
+        Path path = Paths.get(filename);
         try (BufferedWriter writer = Files.newBufferedWriter(path)) {
             String res_eq_flat = resoved_eq.replace(" ", "");
             res_eq_flat = res_eq_flat.replace("$", "");
             writer.write("from z3 import *\n");
-            writer.write("# "  + resoved_eq + "\n");
+            writer.write("# " + resoved_eq + "\n");
             String left = res_eq_flat.split("=")[0];
             String rem = res_eq_flat.split("=")[1];
             // TODO: more split options
-            writer.write(String.format("%s = Int('%s')\n", left, left));
             Set<String> vars = new HashSet<>(Arrays.asList(rem.split("\\+|-|/|\\*|\\^|\\||%|&|~|>>|<<|>>>")));
-            for(String v : vars) {
-                if(!NumberUtils.isCreatable(v)) {
+            List<String> zero_neg_list = new ArrayList<>();
+            writer.write(String.format("%s = Int('%s')\n", left, left));
+            zero_neg_list.add(String.format(Constants.ZERO_TEST_PY_STR, left));
+            for (String v : vars) {
+                if (!NumberUtils.isCreatable(v)) {
                     writer.write(String.format("%s = Int('%s')\n", v, v));
+                    zero_neg_list.add(String.format(Constants.ZERO_TEST_PY_STR, v));
                 }
             }
+            String zero_neg_str = String.join(", ", zero_neg_list);
+            writer.write("F = [" + zero_neg_str + "]\n");
             writer.write("s = Solver()\n");
-            writer.write( String.format("s.add(%s)\n", resoved_eq.replace("$", "").replace("=", "==")));
+            writer.write("s.add(F)\n");
+            writer.write(String.format("s.add(%s)\n", resoved_eq.replace("$", "").replace("=", "==")));
             writer.write("print(s.check())\n");
-            writer.write("print(s.model())\n");
-
+//            writer.write("print(s.model())\n");
+            writer.write("m = s.model()\n");
+            writer.write("for el in m:\n");
+            writer.write("    print(el, m[el])\n");
+            writer.close();
+            // run command
+            List<String> results = Utils.execute_cmd_ret(String.format(Constants.RUN_SOLVER_CMD, filename));
+            List<ImmutablePair<String, Integer>> phi_var_vals = new ArrayList<>();
+            ImmutablePair<String, Integer> lhs = null;
+            boolean set_lhs = false;
+            if (!Objects.equals(results.get(0), Constants.SAT)) {
+                Logger.error("Z3 did not return sat: " + results.get(0));
+                System.exit(0);
+            } else {
+                Logger.info("Z3 returned SAT.");
+                for (int i = 1; i < results.size(); i++) {
+                    String[] split_val = results.get(i).split(" ");
+                    if (phi_vars.is_used_in_phi(split_val[0]) || phi_vars.is_phi_def(split_val[0])) {
+                        phi_var_vals.add(new ImmutablePair<>(split_val[0], Integer.parseInt(split_val[1])));
+                    } else if (!set_lhs && Objects.equals(split_val[0], left)) {
+                        lhs = new ImmutablePair<>(split_val[0], Integer.parseInt(split_val[1]));
+                        set_lhs = true;
+                    }
+                    // TODO: the following DOES NOT trigger in debug but triggers in RUN???
+//                else {
+//                    Logger.error("Error: found non phi, non lhs var -> " + results.get(i));
+//                    System.exit(0);
+//                }
+                }
+                if (set_lhs) {
+                    for (ImmutablePair<String, Integer> phi_val : phi_var_vals) {
+                        Logger.info(String.format("d value between %s and %s: %d", lhs.getLeft(), phi_val.getLeft(),
+                                Math.abs(lhs.getRight() - phi_val.getRight())));
+                    }
+                } else {
+                    Logger.error("What? We never set lhs.");
+                    System.exit(0);
+                }
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
+
     }
 
     @SuppressWarnings("ConstantConditions")

@@ -1,15 +1,13 @@
 import socket
-import time
-from z3 import *
 
 HOST = 'localhost'  
 PORT = 25241        
 
-def split
 
 def solve(func):
     fh = open('solver_helper.py', 'w+')
     fh.write('from z3 import *')
+
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.bind((HOST, PORT))
