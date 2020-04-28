@@ -78,7 +78,7 @@ class BFSVisitor extends AbstractStmtSwitch {
         ArrayVersion av = Utils.copy_av(daf.get(basename));
         Node new_node = new Node(stmt.toString(), basename, av, new Index(index_box), DefOrUse.USE,
                 new ImmutablePair<>(basename, daf.get_name(basename)),
-                stmt.getJavaSourceStartLineNumber());
+                stmt.getJavaSourceStartLineNumber(), false);
         graph.add_node(new_node, false, false);
         c_arr_ver.put(b, daf);
     }
@@ -101,7 +101,7 @@ class BFSVisitor extends AbstractStmtSwitch {
                 array_vars.put(basename, av);
                 graph.add_node(new Node(stmt.toString(), basename, av, new Index(stmt.getArrayRef().getIndexBox()), DefOrUse.DEF,
                         new ImmutablePair<>(basename, daf.get_name(basename)),
-                                stmt.getJavaSourceStartLineNumber()), true, false);
+                                stmt.getJavaSourceStartLineNumber(), false), true, false);
                 c_arr_ver.put(b, daf);
             } else {
                 check_array_read(stmt);

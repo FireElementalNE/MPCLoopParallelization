@@ -64,6 +64,17 @@ public class PhiVariable {
     }
 
     /**
+     * test if a variable is either the def of a phi var or one of the uses
+     * @param var the variable
+     * @return true iff the variable is a def of a phi var or one of the uses.
+     */
+    boolean contains_var(String var) {
+        String def = phi_def.getValue().toString();
+        List<String> use_vars = Utils.get_phi_var_uses_as_str(phi_expr);
+        return Objects.equals(def, var) || use_vars.contains(var);
+    }
+
+    /**
      * PhiVariable toString()
      * @return a string representing the PhiVariable
      */

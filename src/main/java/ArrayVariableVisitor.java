@@ -117,7 +117,8 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
             // NOTE: ALWAYS a new array!
             Logger.info("Found a new array: " + left_op);
             ArrayVersion av = new ArrayVersionSingle(1, block_num, stmt);
-            graph.add_node(new Node(stmt.toString(), left_op, av, new Index(), DefOrUse.DEF, stmt.getJavaSourceStartLineNumber()),
+            graph.add_node(new Node(stmt.toString(), left_op, av, new Index(), DefOrUse.DEF,
+                            stmt.getJavaSourceStartLineNumber(), true),
                     true, false);
             vars.put(left_op, av);
             is_array = true;
@@ -128,7 +129,7 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
             ArrayVersion av = vars.get(right_op);
             ArrayVersion new_av = Utils.rename_av(av);
             vars.put(left_op, new_av);
-            graph.array_def_rename(right_op, vars.get(right_op), left_op, new_av, stmt);
+            graph.array_def_rename(right_op, vars.get(right_op), left_op, new_av, stmt, true);
             vars.remove(right_op);
             Logger.debug("An array got renamed...");
             is_array = true;

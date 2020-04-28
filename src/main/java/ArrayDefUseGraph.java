@@ -1,11 +1,13 @@
+import guru.nidi.graphviz.attribute.Label;
 import guru.nidi.graphviz.attribute.LinkAttr;
 import guru.nidi.graphviz.attribute.Style;
 import guru.nidi.graphviz.model.MutableGraph;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.tinylog.Logger;
+import soot.jimple.AssignStmt;
 import soot.jimple.Stmt;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static guru.nidi.graphviz.model.Factory.*;
@@ -18,6 +20,7 @@ class ArrayDefUseGraph {
     private Map<Integer, Edge> edges;
     private Map<String, Node> nodes;
     private MutableGraph final_graph;
+    private MutableGraph SCC_graph;
 
     /**
      * constructor for ArrayDefUseGraph
@@ -27,6 +30,7 @@ class ArrayDefUseGraph {
         edges = new HashMap<>();
         nodes = new HashMap<>();
         final_graph = mutGraph(class_name + "_final").setDirected(true);
+        SCC_graph = mutGraph(class_name + "_scc_final").setDirected(true);
     }
 
     /**
@@ -39,6 +43,7 @@ class ArrayDefUseGraph {
         this.nodes =  a_graph.nodes.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         this.final_graph = a_graph.final_graph;
+        this.SCC_graph = a_graph.SCC_graph;
     }
 
     /**
@@ -65,8 +70,16 @@ class ArrayDefUseGraph {
      */
     private void add_edge(Node use_node, boolean links_to_prev_iter) {
         if(links_to_prev_iter) {
-            Edge edge = new Edge(new Node(Constants.DIFF_ITER_TAG, use_node.get_index().to_str()), use_node);
-            edges.put(edge.hashCode(), edge);
+            for(Map.Entry<String, Node> entry : nodes.entrySet()) {
+                String name = entry.getKey();
+                Node n = entry.getValue();
+                if(n.get_type() == DefOrUse.DEF
+                        && Objects.equals(use_node.get_basename(), n.get_basename())
+                        && !n.is_base_def()) {
+                    Edge edge = new Edge(new Node(n), use_node, true);
+                    edges.put(edge.hashCode(), edge);
+                }
+            }
         } else {
             assert nodes.containsKey(use_node.get_opposite_id());
             Node def_node = new Node(nodes.get(use_node.get_opposite_id()));
@@ -76,7 +89,7 @@ class ArrayDefUseGraph {
                 } else {
                     Logger.info("Adding edge, indexes match.");
                 }
-                Edge edge = new Edge(nodes.get(use_node.get_opposite_id()), use_node);
+                Edge edge = new Edge(nodes.get(use_node.get_opposite_id()), use_node, false);
                 edges.put(edge.hashCode(), edge);
             } else {
                 // TODO: fix if the indexes _are_ the same but just renamed....
@@ -102,14 +115,16 @@ class ArrayDefUseGraph {
      * @param new_name the new name
      * @param new_av the new Array Version
      * @param new_stmt the new definition Statement
+     * @param base_def the base def of the old node
      */
-    void array_def_rename(String old_name, ArrayVersion old_av, String new_name, ArrayVersion new_av, Stmt new_stmt) {
+    void array_def_rename(String old_name, ArrayVersion old_av,
+                          String new_name, ArrayVersion new_av, Stmt new_stmt, boolean base_def) {
         String id = Node.make_id(old_name, old_av, DefOrUse.DEF, new_stmt.getJavaSourceStartLineNumber());
         assert nodes.containsKey(id);
         Node n = nodes.remove(id);
         String new_id = Node.make_id(new_name, new_av, DefOrUse.DEF, new_stmt.getJavaSourceStartLineNumber());
         Node new_node = new Node(new_stmt.toString(), new_name, new_av, n.get_index(), DefOrUse.DEF,
-                new_stmt.getJavaSourceStartLineNumber());
+                new_stmt.getJavaSourceStartLineNumber(), base_def);
         nodes.put(new_id, new_node);
     }
 
@@ -130,10 +145,11 @@ class ArrayDefUseGraph {
     }
 
     /**
-     * Make a pretty graph of the defuse graph
+     * Make a pretty inter loop dependency graph
      */
-    void make_graph_png() {
-        for(Map.Entry<Integer, Edge> entry: edges.entrySet()) {
+    void make_graph() {
+        Map<Integer, Edge> the_edges = edges.entrySet().stream().filter(k -> !k.getValue().is_scc_edge()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        for(Map.Entry<Integer, Edge> entry: the_edges.entrySet()) {
             Edge e = entry.getValue();
             Node def = e.get_def();
             Node use = e.get_use();
@@ -142,5 +158,46 @@ class ArrayDefUseGraph {
             final_graph.add(def_node.link(to(use_node).with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
         }
         Utils.print_graph(final_graph);
+    }
+
+    void make_scc_graph(PhiVariableContainer pvc, Set<String> constants) {
+        // TODO: add weights
+        Map<Integer, Edge> the_edges = edges.entrySet().stream().filter(k -> k.getValue().is_scc_edge()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        for(Map.Entry<Integer, Edge> entry: the_edges.entrySet()) {
+            Edge e = entry.getValue();
+            Node def = e.get_def();
+            Node use = e.get_use();
+            String def_index = def.get_index().to_str();
+            String use_index = use.get_index().to_str();
+            Logger.info("DEF INDEX DEP CHAIN: ");
+            // pvc.print_var_dep_chain(constants, def.get_index().to_str());
+            ImmutablePair<Variable, List<AssignStmt>> def_dep_chain = pvc.get_var_dep_chain(constants, def_index);
+            Solver def_solver = new Solver(def_index, def_dep_chain, pvc);
+            String def_eq = def_solver.get_resoved_eq();
+            if(def_eq.contains("=")) {
+                def_eq = def_eq.split(" = ")[1];
+            }
+            Logger.info(def_eq);
+            Logger.info("USE INDEX DEP CHAIN: ");
+            ImmutablePair<Variable, List<AssignStmt>> use_dep_chain = pvc.get_var_dep_chain(constants, use_index);
+            Solver use_solver = new Solver(use_index, use_dep_chain, pvc);
+            String use_eq = use_solver.get_resoved_eq();
+            if(use_eq.contains("=")) {
+                use_eq = use_eq.split(" = ")[1];
+            }
+            Logger.info(use_eq);
+            pvc.print_var_dep_chain(constants, use.get_index().to_str());
+            guru.nidi.graphviz.model.Node def_node = node(def.get_stmt().replace(def.get_index().to_str(), def_eq));
+            guru.nidi.graphviz.model.Node use_node = node(use.get_stmt().replace(use.get_index().to_str(), use_eq));
+            int d = use_solver.solve();
+            SCC_graph.add(def_node.link(to(use_node).with(
+                    Style.SOLID,
+                    LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+            SCC_graph.add(use_node.link(to(def_node).with(
+                    Style.DASHED,
+                    LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
+                    Label.of("d = " + d))));
+        }
+        Utils.print_graph(SCC_graph);
     }
 }

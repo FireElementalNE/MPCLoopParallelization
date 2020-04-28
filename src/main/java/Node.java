@@ -22,6 +22,7 @@ class Node {
     private boolean phi_flag; // this is a phi node (special)
     private boolean is_prev_loop_dummy; // this node is a dummy node representing the entire previous iteration
     private int line_num; // the line number of the statement
+    private boolean base_def;
 
     /**
      * Constructor for a brand NEW node. This will either have ArrayVersions of -1 (as a dummy node
@@ -32,8 +33,11 @@ class Node {
      * @param index the index of the array reference
      * @param type the type of node (definition of usage)
      * @param line_num the line number of the statement
+     * @param base_def true iff we are dealing with a base definition or a pure rename, these do NOT need
+     *                 to be included in any edges!
      */
-    Node(String stmt, String basename, ArrayVersion av, Index index, DefOrUse type, int line_num) {
+    Node(String stmt, String basename, ArrayVersion av, Index index,
+         DefOrUse type, int line_num, boolean base_def) {
         this.stmt = stmt;
         this.type = type;
         this.av = av;
@@ -44,6 +48,7 @@ class Node {
         this.index = index;
         this.line_num = line_num;
         this.is_prev_loop_dummy = false;
+        this.base_def = base_def;
     }
 
     /**
@@ -53,12 +58,15 @@ class Node {
      * @param av the array version that the old node had
      * @param index the index of the array reference
      * @param type the type of node (definition of usage)
-     * @param replacements a pair of strings that represents the old augemented name of the node (based off of the array
-     *                     OLD array version) and the new augemented name of the node. This is used to change the
+     * @param replacements a pair of strings that represents the old augmented name of the node (based off of the array
+     *                     OLD array version) and the new augmented name of the node. This is used to change the
      *                     aug_stmt
      * @param line_num the line number of the statement
+     * @param base_def true iff we are dealing with a base definition or a pure rename, these do NOT need
+     *                 to be included in any edges!
      */
-    Node(String stmt, String basename, ArrayVersion av, Index index, DefOrUse type, ImmutablePair<String, String> replacements, int line_num) {
+    Node(String stmt, String basename, ArrayVersion av, Index index,
+         DefOrUse type, ImmutablePair<String, String> replacements, int line_num, boolean base_def) {
         this.stmt = stmt;
         this.type = type;
         this.av = av;
@@ -69,6 +77,7 @@ class Node {
         this.aug_stmt = stmt.replace(replacements.getLeft(), replacements.getRight());
         this.line_num = line_num;
         this.is_prev_loop_dummy = false;
+        this.base_def = base_def;
     }
 
     /**
@@ -86,19 +95,20 @@ class Node {
         this.index = new Index();
         this.line_num = Constants.PHI_LINE_NUM;
         this.is_prev_loop_dummy = false;
+        this.base_def = false;
     }
 
-    /**
+    /*
      * Constructor for a dummy node that represents the entire previous iterations. No important info is
      * held in it.
      * @param stmt the statement that the node represents (Is always static)
      * @param basename the basename of the array reference
      */
-    Node(String stmt, String basename) {
-        this.stmt = stmt;
-        this.basename = basename;
-        this.is_prev_loop_dummy = true;
-    }
+//    Node(String stmt, String basename) {
+//        this.stmt = stmt;
+//        this.basename = basename;
+//        this.is_prev_loop_dummy = true;
+//    }
 
     /**
      * Node Copy constructor (prevent shallow copies as much as possible!)
@@ -115,6 +125,7 @@ class Node {
         this.phi_flag = n.phi_flag;
         this.line_num = n.line_num;
         this.is_prev_loop_dummy = n.is_prev_loop_dummy;
+        this.base_def = n.base_def;
     }
 
     /**
@@ -228,5 +239,30 @@ class Node {
      */
     int get_line_num() {
         return line_num;
+    }
+
+    /**
+     * get the type of node (def or use)
+     * @return the type of the node
+     */
+    DefOrUse get_type() {
+        return type;
+    }
+
+    /***
+     * get the base array name
+     * @return the base name of the array
+     */
+    String get_basename() {
+        return basename;
+    }
+
+    /**
+     * return true iff this node is a  base definition or a pure rename, these do NOT need
+     * to be included in any edges!
+     * @return base def flag
+     */
+    boolean is_base_def() {
+        return base_def;
     }
 }

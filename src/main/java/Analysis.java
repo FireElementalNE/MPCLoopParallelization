@@ -26,6 +26,13 @@ import static guru.nidi.graphviz.model.Factory.*;
  */
 @SuppressWarnings("FieldMayBeFinal")
 public class Analysis extends BodyTransformer {
+
+	// No loop carried dependencies for this! the arrays are only read only or write only.
+	// The only dependency that is carried is for the sum variable. Make a check, if an array
+	// is not read and written to it means nothing.
+	// Get loops from HPC literature
+	// FIX: need to finish SCC by next week, a lot of work.
+
 	// the name of the class being analyzed
 	@SuppressWarnings("FieldCanBeLocal")
 	private String class_name;
@@ -507,7 +514,8 @@ public class Analysis extends BodyTransformer {
 				}
 			}
 			Utils.print_graph(flow_graph);
-			graph.make_graph_png();
+			graph.make_graph();
+			graph.make_scc_graph(phi_vars, constants);
 			Logger.info("Linking non index phi vars");
 			phi_vars.make_phi_links_graph(array_vars, constants);
 			array_vars.make_array_var_graph(constants);

@@ -87,7 +87,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
                 }
                 graph.add_node(new Node(stmt.toString(), ar.getBaseBox().getValue().toString(),
                         new ArrayVersionSingle(-1, -1, stmt), new Index(index_box), DefOrUse.USE,
-                        stmt.getJavaSourceStartLineNumber()), false, true);
+                        stmt.getJavaSourceStartLineNumber(), false), false, true);
             } else {
                 Logger.error("dep chain for " + index_box.getValue().toString() + " is null.");
             }

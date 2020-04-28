@@ -37,10 +37,12 @@ class Constants {
     static final boolean JUST_COMPILE = false;
     static final String DEFAULT_COMPILE_CMD = "python compile.py -c %s";
     static final String RUN_SOLVER_CMD = "python %s";
-    static final String ZERO_TEST_PY_STR = "%s != 0";
+    static final String ZERO_TEST_PY_STR_NEG = "%s != 0";
+    static final String ZERO_TEST_PY_STR_POS = "%s == 0";
     static final String SAT = "sat";
 
 }
+
 
 
 

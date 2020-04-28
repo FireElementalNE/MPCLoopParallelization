@@ -56,10 +56,21 @@ public class Solver {
         this.index_name = index_name;
         this.dep_chain = dep_chain;
         this.phi_vars = phi_vars;
-        this.resoved_eq = resolver();
+        this.resoved_eq = resolve_dep_chain();
     }
 
-    void solve() {
+    Solver(String index_name, ImmutablePair<Variable, List<AssignStmt>> dep_chain,
+           PhiVariableContainer phi_vars) {
+        this.host = "";
+        this.port = -1;
+        this.index_name = index_name;
+        this.dep_chain = dep_chain;
+        this.phi_vars = phi_vars;
+        this.resoved_eq = resolve_dep_chain();
+    }
+
+    int solve() {
+        int d = 0;
         String filename = Constants.Z3_DIR + File.separator + "solver_z3_test_" + index_name + ".py";
         Path path = Paths.get(filename);
         try (BufferedWriter writer = Files.newBufferedWriter(path)) {
@@ -73,11 +84,11 @@ public class Solver {
             Set<String> vars = new HashSet<>(Arrays.asList(rem.split("\\+|-|/|\\*|\\^|\\||%|&|~|>>|<<|>>>")));
             List<String> zero_neg_list = new ArrayList<>();
             writer.write(String.format("%s = Int('%s')\n", left, left));
-            zero_neg_list.add(String.format(Constants.ZERO_TEST_PY_STR, left));
+            zero_neg_list.add(String.format(Constants.ZERO_TEST_PY_STR_POS, left));
             for (String v : vars) {
                 if (!NumberUtils.isCreatable(v)) {
                     writer.write(String.format("%s = Int('%s')\n", v, v));
-                    zero_neg_list.add(String.format(Constants.ZERO_TEST_PY_STR, v));
+                    zero_neg_list.add(String.format(Constants.ZERO_TEST_PY_STR_NEG, v));
                 }
             }
             String zero_neg_str = String.join(", ", zero_neg_list);
@@ -118,7 +129,8 @@ public class Solver {
                 if (set_lhs) {
                     for (ImmutablePair<String, Integer> phi_val : phi_var_vals) {
                         Logger.info(String.format("d value between %s and %s: %d", lhs.getLeft(), phi_val.getLeft(),
-                                Math.abs(lhs.getRight() - phi_val.getRight())));
+                                lhs.getRight() - phi_val.getRight()));
+                        d = lhs.getRight() - phi_val.getRight();
                     }
                 } else {
                     Logger.error("What? We never set lhs.");
@@ -128,11 +140,12 @@ public class Solver {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return d;
 
     }
 
     @SuppressWarnings("ConstantConditions")
-    private String resolver() {
+    String resolve_dep_chain() {
         LinkedList<AssignStmt> stmts = new LinkedList<>(dep_chain.getRight());
         String base_stmt = null;
         for(int i = 0; i < stmts.size(); i++) {
@@ -142,7 +155,6 @@ public class Solver {
                 break;
             }
         }
-        assert base_stmt != null;
         if(Utils.not_null(base_stmt)) {
             while(!stmts.isEmpty()) {
                 AssignStmt current_stmt = stmts.remove(0);
@@ -157,6 +169,8 @@ public class Solver {
                     stmts.addLast(current_stmt);
                 }
             }
+        } else {
+            base_stmt = index_name;
         }
         return base_stmt;
     }
