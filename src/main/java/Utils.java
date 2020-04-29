@@ -1,6 +1,7 @@
+import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
-import guru.nidi.graphviz.engine.Rasterizer;
 import guru.nidi.graphviz.model.MutableGraph;
+import guru.nidi.graphviz.model.MutableNode;
 import org.apache.commons.lang3.SystemUtils;
 import org.tinylog.Logger;
 import soot.jimple.ArrayRef;
@@ -9,10 +10,14 @@ import soot.jimple.Stmt;
 import soot.shimple.PhiExpr;
 import soot.toolkits.graph.Block;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
@@ -288,12 +293,18 @@ class Utils {
 		Logger.debug("\tNodes: " + graph.nodes().size());
 		Logger.debug("\tEdges: " + graph.edges().size());
 		try {
-			Graphviz viz = Graphviz.fromGraph(graph);
+			BufferedImage bimg = Graphviz.fromGraph(graph).render(Format.PNG).toImage();
+			File f = new File(Utils.make_graph_name(graph.name().toString()));
+			ImageIO.write(bimg, "png", f);
+			Logger.info(graph_name + " has " + graph.nodes().size() + " nodes.");
+			Logger.info(graph_name + " has " + graph.edges().size() + " edges.");
+
+//					.toFile().;
 //			viz.render(Format.PNG);
-			viz.rasterize(Rasterizer.BATIK).toFile(new File(Utils.make_graph_name(graph_name)));
+//			viz.rasterize(Rasterizer.BATIK).toFile(new File(Utils.make_graph_name(graph_name)));
 //			.render(Format.PNG)
 //					.toFile(new File(Utils.make_graph_name(graph.name().toString())));
-		} catch (IOException | java.awt.AWTError | java.lang.NoClassDefFoundError e) {
+		} catch (IOException | AWTError | NoClassDefFoundError e) {
 			Logger.error("Caught " + e.getClass().getSimpleName() + ": " + e.getMessage());
 			if(Constants.PRINT_ST) {
 				e.printStackTrace();
@@ -339,6 +350,16 @@ class Utils {
 		// TODO: this is wacky, it always adds the full expression as the first thing. might need to fix this
 		return stmt.getUseBoxes().stream().map(el -> el.getValue().toString())
 				.filter(el -> !Objects.equals(el, stmt.getRightOp().toString())).collect(Collectors.toList());
+	}
+
+	/**
+	 * test if a Mutable Graph contains a node
+	 * @param graph the graph
+	 * @param node the node name
+	 * @return true iff there is a node in the graph with the same name as the passed node
+	 */
+	static boolean contains_node(MutableGraph graph, String node) {
+		return graph.nodes().stream().map(MutableNode::toString).collect(Collectors.toList()).contains(node);
 	}
 
 }

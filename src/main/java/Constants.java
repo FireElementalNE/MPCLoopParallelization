@@ -4,6 +4,7 @@ import java.util.regex.Pattern;
  * Constants class
  */
 class Constants {
+    public static final int PARALLEL_TARGET = 10;
     static final String DIFF_ITER_TAG = "DIFFERENT_ITER";
     static final int DEF_LINE_NUM = -2;
     static final int PHI_LINE_NUM = -1;

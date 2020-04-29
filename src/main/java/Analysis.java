@@ -6,7 +6,7 @@ import org.tinylog.Logger;
 import soot.Body;
 import soot.BodyTransformer;
 import soot.Unit;
-import soot.ValueBox;
+import soot.Value;
 import soot.jimple.AssignStmt;
 import soot.jimple.IfStmt;
 import soot.jimple.Stmt;
@@ -57,6 +57,7 @@ public class Analysis extends BodyTransformer {
 	// The container class for all array ssa phi variables
 	private PhiVariableContainer phi_vars;
 	// A set of possible constants gathered from non-loop blocks
+	// TODO: HAVE TO PASS CONSTANT VALUES!!!!
 	private Set<String> constants;
 	// A list of the _original_ phi variables that is queried on the second iteration
 	private Set<String> top_phi_var_names;
@@ -330,7 +331,7 @@ public class Analysis extends BodyTransformer {
 			for (Iterator<Unit> i = b.iterator(); i.hasNext(); ) {
 				Unit u = i.next();
 				IndexVisitor iv = new IndexVisitor(phi_vars, second_iter_def_vars,
-						top_phi_var_names, constants, graph, host, port);
+						top_phi_var_names, constants, graph);
 				u.apply(iv);
 				second_iter_def_vars = iv.get_second_iter_def_vars();
 				graph = iv.get_graph();
@@ -503,10 +504,10 @@ public class Analysis extends BodyTransformer {
 			phi_vars.make_graphs();
 			List<PhiVariable> linked_pvars = phi_vars.get_looping_index_vars();
 			for (PhiVariable pv : linked_pvars) {
-				ValueBox var = pv.get_phi_def();
-				Logger.info("Checking def for looping index var: " + var.getValue().toString());
+				Value var = pv.get_phi_def();
+				Logger.info("Checking def for looping index var: " + var.toString());
 				List<AssignStmt> assignments = pv.get_linked_stmts();
-				phi_vars.print_var_dep_chain(constants, var.getValue().toString());
+				phi_vars.print_var_dep_chain(constants, var.toString());
 				Logger.debug("Here are the linked assignment stmts: ");
 				for (AssignStmt stmt : assignments) {
 					String linked_var = stmt.getLeftOpBox().getValue().toString();

@@ -3,9 +3,9 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.tinylog.Logger;
 import soot.jimple.AssignStmt;
 
-import java.io.*;
-import java.net.Socket;
-import java.nio.charset.StandardCharsets;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,7 +14,7 @@ import java.util.*;
 /**
  * Class that solves constraints via SMT
  */
-public class Solver {
+public class Solver implements Runnable{
 
     // TODO: this will be the solver class!
 
@@ -40,51 +40,38 @@ public class Solver {
 
      */
 
-    private AssignStmt stmt;
-    private String host;
-    private int port;
     private ImmutablePair<Variable, List<AssignStmt>> dep_chain;
     private String index_name;
-    private String resoved_eq;
     private PhiVariableContainer phi_vars;
     private List<String> results;
-
-    Solver(String index_name, ImmutablePair<Variable, List<AssignStmt>> dep_chain,
-           PhiVariableContainer phi_vars, String host, int port) {
-        this.host = host;
-        this.port = port;
-        this.index_name = index_name;
-        this.dep_chain = dep_chain;
-        this.phi_vars = phi_vars;
-        this.resoved_eq = resolve_dep_chain();
-    }
+    private String resolved_eq;
 
     Solver(String index_name, ImmutablePair<Variable, List<AssignStmt>> dep_chain,
            PhiVariableContainer phi_vars) {
-        this.host = "";
-        this.port = -1;
         this.index_name = index_name;
         this.dep_chain = dep_chain;
         this.phi_vars = phi_vars;
-        this.resoved_eq = resolve_dep_chain();
+        this.resolved_eq = resolve_dep_chain();
+
     }
 
     int solve() {
         int d = 0;
+        String resolved_eq = resolve_dep_chain();
         String filename = Constants.Z3_DIR + File.separator + "solver_z3_test_" + index_name + ".py";
         Path path = Paths.get(filename);
         try (BufferedWriter writer = Files.newBufferedWriter(path)) {
-            String res_eq_flat = resoved_eq.replace(" ", "");
+            String res_eq_flat = resolved_eq.replace(" ", "");
             res_eq_flat = res_eq_flat.replace("$", "");
             writer.write("from z3 import *\n");
-            writer.write("# " + resoved_eq + "\n");
+            writer.write("# " + resolved_eq + "\n");
             String left = res_eq_flat.split("=")[0];
             String rem = res_eq_flat.split("=")[1];
             // TODO: more split options
             Set<String> vars = new HashSet<>(Arrays.asList(rem.split("\\+|-|/|\\*|\\^|\\||%|&|~|>>|<<|>>>")));
             List<String> zero_neg_list = new ArrayList<>();
             writer.write(String.format("%s = Int('%s')\n", left, left));
-            zero_neg_list.add(String.format(Constants.ZERO_TEST_PY_STR_POS, left));
+            zero_neg_list.add(String.format(Constants.ZERO_TEST_PY_STR_NEG, left));
             for (String v : vars) {
                 if (!NumberUtils.isCreatable(v)) {
                     writer.write(String.format("%s = Int('%s')\n", v, v));
@@ -95,12 +82,13 @@ public class Solver {
             writer.write("F = [" + zero_neg_str + "]\n");
             writer.write("s = Solver()\n");
             writer.write("s.add(F)\n");
-            writer.write(String.format("s.add(%s)\n", resoved_eq.replace("$", "").replace("=", "==")));
+            writer.write(String.format("s.add(%s)\n", resolved_eq.replace("$", "").replace("=", "==")));
             writer.write("print(s.check())\n");
 //            writer.write("print(s.model())\n");
-            writer.write("m = s.model()\n");
-            writer.write("for el in m:\n");
-            writer.write("    print(el, m[el])\n");
+            writer.write("if s.check() == z3.sat:\n");
+            writer.write("    m = s.model()\n");
+            writer.write("    for el in m:\n");
+            writer.write("        print(el, m[el])\n");
             writer.close();
             // run command
             List<String> results = Utils.execute_cmd_ret(String.format(Constants.RUN_SOLVER_CMD, filename));
@@ -175,18 +163,12 @@ public class Solver {
         return base_stmt;
     }
 
-    String send_recv_stmt() throws IOException {
-        Socket s = new Socket(host, port);
-        DataOutputStream out = new DataOutputStream(s.getOutputStream());
-        BufferedReader br = new BufferedReader(new InputStreamReader(s.getInputStream()));
-        byte[] bytes = stmt.toString().getBytes(StandardCharsets.UTF_8);
-        out.write(bytes);
-        String ans = br.readLine();
-        s.close();
-        return ans;
+    String get_resolved_eq() {
+        return resolved_eq;
     }
 
-    String get_resoved_eq() {
-        return resoved_eq;
+    @Override
+    public void run() {
+
     }
 }

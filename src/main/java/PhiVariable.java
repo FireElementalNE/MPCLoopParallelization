@@ -21,7 +21,7 @@ import static guru.nidi.graphviz.model.Factory.*;
 public class PhiVariable {
     // TODO: add javadoc for these variables
     private PhiExpr phi_expr;
-    private ValueBox phi_def;
+    private Value phi_def;
     private Map<Integer, ImmutablePair<ValueBox, AssignStmt>> all_values;
     private List<AssignStmt> linked_stmts;
     private List<Variable> var_links;
@@ -36,13 +36,13 @@ public class PhiVariable {
      */
     PhiVariable(AssignStmt stmt) {
         this.phi_expr = (PhiExpr)stmt.getRightOp();
-        this.phi_def = stmt.getLeftOpBox();
+        this.phi_def = stmt.getLeftOpBox().getValue();
         this.all_values = new HashMap<>();
         this.linked_stmts = new ArrayList<>();
         this.counter = 1;
         this.all_values.put(counter, new ImmutablePair<>(stmt.getLeftOpBox(), stmt));
         this.var_links = new ArrayList<>();
-        var_links.add(new Variable(phi_def.getValue(), phi_expr));
+        var_links.add(new Variable(phi_def, phi_expr));
         for(Value v : phi_expr.getValues()) {
             var_links.add(new Variable(v, phi_expr));
         }
@@ -69,7 +69,7 @@ public class PhiVariable {
      * @return true iff the variable is a def of a phi var or one of the uses.
      */
     boolean contains_var(String var) {
-        String def = phi_def.getValue().toString();
+        String def = phi_def.toString();
         List<String> use_vars = Utils.get_phi_var_uses_as_str(phi_expr);
         return Objects.equals(def, var) || use_vars.contains(var);
     }
@@ -82,7 +82,7 @@ public class PhiVariable {
     public String toString() {
         // TODO: show more info
         return String.format("%s = %s --> %s",
-                phi_def.getValue().toString(), phi_expr.toString(),
+                phi_def.toString(), phi_expr.toString(),
                 all_values.get(counter).getRight().toString());
     }
 
@@ -93,7 +93,7 @@ public class PhiVariable {
      */
     void make_graph() {
         for(Variable v : var_links) {
-            v.make_graph(phi_def.getValue().toString() + "-" + phi_expr.toString());
+            v.make_graph(phi_def.toString() + "-" + phi_expr.toString());
         }
     }
 
@@ -254,7 +254,7 @@ public class PhiVariable {
      * getter for phi_def
      * @return the phi_def for this PhiVariable
      */
-    ValueBox get_phi_def() {
+    Value get_phi_def() {
         return phi_def;
     }
 
@@ -338,8 +338,8 @@ public class PhiVariable {
      */
     void write_non_index_graph() {
         if(!used_as_index) {
-            this.non_index_graph = mutGraph("NonIndex-" + phi_def.getValue().toString()).setDirected(true);
-            guru.nidi.graphviz.model.Node cur_node = node(phi_def.getValue().toString());
+            this.non_index_graph = mutGraph("NonIndex-" + phi_def.toString()).setDirected(true);
+            guru.nidi.graphviz.model.Node cur_node = node(phi_def.toString());
             for(int i = 1; i <= counter; i++) {
                 ImmutablePair<ValueBox, AssignStmt> value = all_values.get(i);
                 guru.nidi.graphviz.model.Node tmp =

@@ -172,16 +172,21 @@ class ArrayDefUseGraph {
             Logger.info("DEF INDEX DEP CHAIN: ");
             // pvc.print_var_dep_chain(constants, def.get_index().to_str());
             ImmutablePair<Variable, List<AssignStmt>> def_dep_chain = pvc.get_var_dep_chain(constants, def_index);
-            Solver def_solver = new Solver(def_index, def_dep_chain, pvc);
-            String def_eq = def_solver.get_resoved_eq();
-            if(def_eq.contains("=")) {
-                def_eq = def_eq.split(" = ")[1];
+            String def_eq = null;
+            if(Utils.not_null(def_dep_chain)) {
+                Solver def_solver = new Solver(def_index, def_dep_chain, pvc);
+                def_eq = def_solver.get_resolved_eq();
+                if (def_eq.contains("=")) {
+                    def_eq = def_eq.split(" = ")[1];
+                }
+            } else {
+                def_eq = "CREATED_ARRAY_SSA_PHI_NODE";
             }
             Logger.info(def_eq);
             Logger.info("USE INDEX DEP CHAIN: ");
             ImmutablePair<Variable, List<AssignStmt>> use_dep_chain = pvc.get_var_dep_chain(constants, use_index);
             Solver use_solver = new Solver(use_index, use_dep_chain, pvc);
-            String use_eq = use_solver.get_resoved_eq();
+            String use_eq = use_solver.get_resolved_eq();
             if(use_eq.contains("=")) {
                 use_eq = use_eq.split(" = ")[1];
             }

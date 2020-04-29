@@ -24,8 +24,8 @@ import static guru.nidi.graphviz.model.Factory.*;
 public class PhiVariableContainer {
 
     private Set<PhiVariable> phi_vars;
-    private MutableGraph non_index_phi_var_links;
-    private MutableGraph index_phi_var_links;
+    private MutableGraph graph_creator;
+//    private MutableGraph index_phi_var_links;
     // for printing phi link graph
     private Set<String> parsed_phi_vars;
 
@@ -35,10 +35,7 @@ public class PhiVariableContainer {
      */
     PhiVariableContainer(String class_name) {
         this.phi_vars = new HashSet<>();
-        this.non_index_phi_var_links = mutGraph(class_name + "_non_index_phi_links").setDirected(true);
-        this.index_phi_var_links = mutGraph(class_name + "_index_phi_var_links").setDirected(true);
         this.parsed_phi_vars = new HashSet<>();
-
     }
 
     /**
@@ -47,9 +44,10 @@ public class PhiVariableContainer {
      */
     PhiVariableContainer(PhiVariableContainer pvc) {
         this.phi_vars = pvc.phi_vars.stream().map(PhiVariable::new).collect(Collectors.toSet());
-        this.non_index_phi_var_links = pvc.non_index_phi_var_links;
-        this.index_phi_var_links = pvc.index_phi_var_links;
+        this.graph_creator = pvc.graph_creator;
+//        this.index_phi_var_links = pvc.index_phi_var_links;
         this.parsed_phi_vars = new HashSet<>(pvc.parsed_phi_vars);
+
     }
 
     /**
@@ -95,7 +93,7 @@ public class PhiVariableContainer {
                 ArrayRef ar = stmt.getArrayRef();
                 String index_name = ar.getIndexBox().getValue().toString();
                 // Logger.info(pv.toString() + " has been " + index_name + ": " + );
-                if(Objects.equals(pv.get_phi_def().getValue().toString(), index_name)
+                if(Objects.equals(pv.get_phi_def().toString(), index_name)
                         || pv.has_ever_been(index_name)) {
                     Logger.debug("PhiVar " + index_name + " used as an index, needs to also have a link");
 //                    found_link = true;
@@ -219,7 +217,7 @@ public class PhiVariableContainer {
      */
     PhiVariable get_phi_var(String def) {
         for(PhiVariable pv : phi_vars) {
-            if(Objects.equals(pv.get_phi_def().getValue().toString(), def)) {
+            if(Objects.equals(pv.get_phi_def().toString(), def)) {
                 return pv;
             }
         }
@@ -234,7 +232,7 @@ public class PhiVariableContainer {
      */
     PhiExpr get_phi_expr(String var) {
         for(PhiVariable pv : phi_vars) {
-            if(Objects.equals(var, pv.get_phi_def().getValue().toString())) {
+            if(Objects.equals(var, pv.get_phi_def().toString())) {
                 return pv.get_phi_expr();
             }
         }
@@ -262,7 +260,7 @@ public class PhiVariableContainer {
      */
     boolean defines_phi(String var) {
         for(PhiVariable pv : phi_vars) {
-            if(Objects.equals(pv.get_phi_def().getValue().toString(), var)) {
+            if(Objects.equals(pv.get_phi_def().toString(), var)) {
                 return true;
             }
         }
@@ -277,7 +275,7 @@ public class PhiVariableContainer {
      */
     boolean is_phi_def(String var) {
         for(PhiVariable pv : phi_vars) {
-            if(Objects.equals(pv.get_phi_def().getValue().toString(), var)) {
+            if(Objects.equals(pv.get_phi_def().toString(), var)) {
                 return true;
             }
         }
@@ -292,45 +290,40 @@ public class PhiVariableContainer {
      * @param phi_expr the phi expression of the node
      * @param array_vars the array variables that have been found (passed from Analysis)
      * @param constants the constants that have been found (passed from Analysis)
-     * @param is_index true iff we are modifying a graph for index phi vars
      */
     @SuppressWarnings("DuplicatedCode")
     private void handle_phi_var(PhiVariable pv, guru.nidi.graphviz.model.Node cur_node, PhiExpr phi_expr,
-                                ArrayVariables array_vars, Set<String> constants, boolean is_index) {
+                                ArrayVariables array_vars, Set<String> constants) {
         String var = cur_node.name().toString();
-        guru.nidi.graphviz.model.Node src_node;
-        cur_node = node(var);
         cur_node = cur_node.with(Color.GREEN);
-        src_node = node(var + " = " + phi_expr.toString()).with(Color.BROWN);
-        if(is_index) {
-            index_phi_var_links.add(cur_node.link(to(src_node).with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
-        } else {
-            non_index_phi_var_links.add(cur_node.link(to(src_node).with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
-        }
-
+        Logger.debug("handle_phi_var: " + var + " (" + pv.toString() + ")");
+        guru.nidi.graphviz.model.Node src_node;
+        String src_name = var + " = " + phi_expr.toString();
+        src_node = node(src_name).with(Color.BROWN);
+        graph_creator.add(cur_node.link(to(src_node)
+                .with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+//        if(is_index && !Utils.contains_node(index_phi_var_links, src_name)) {
+//            index_phi_var_links.add(cur_node.link(to(src_node)
+//                    .with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+//        } else if(!Utils.contains_node(non_index_phi_var_links, src_name)){
+//            non_index_phi_var_links.add(cur_node.link(to(src_node)
+//                    .with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+//        }
         List<String> phi_expr_uses = Utils.get_phi_var_uses_as_str(phi_expr);
-        for (String s : phi_expr_uses) {
-            guru.nidi.graphviz.model.Node use_node = node(s);
+        for (String use : phi_expr_uses) {
+            guru.nidi.graphviz.model.Node use_node = node(use);
             boolean is_not_constant = false;
-            if(constants.contains(s)) {
+            if(constants.contains(use)) {
                 use_node = use_node.with(Color.RED);
+            } else if(pv.get_uses().contains(use)) {
+                use_node = use_node.with(Color.CYAN);
             } else {
-                is_not_constant = true;
                 use_node = use_node.with(Color.GREEN);
-
             }
-            if(is_index) {
-                index_phi_var_links
-                        .add(src_node.link(to(use_node).with(Style.ROUNDED,
-                                LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
-            } else {
-                non_index_phi_var_links
-                        .add(src_node.link(to(use_node).with(Style.ROUNDED,
-                                LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
-            }
-
-            if(is_not_constant) {
-                add_phi_links_node(pv, use_node, array_vars, constants, is_index);
+            graph_creator.add(src_node.link(to(use_node)
+                        .with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+            if(!constants.contains(use)) { //  && !pv.get_uses().contains(use)) {
+                add_phi_links_node(pv, use_node, array_vars, constants);
             }
         }
     }
@@ -342,21 +335,19 @@ public class PhiVariableContainer {
      * @param cur_node the current node being parsed
      * @param array_vars the array variables that have been found (passed from Analysis)
      * @param constants the constants that have been found (passed from Analysis)
-     * @param is_index true iff we are modifying a graph for index phi vars
      */
     @SuppressWarnings("DuplicatedCode")
     private void handle_non_phi_var(PhiVariable pv, guru.nidi.graphviz.model.Node cur_node, ArrayVariables array_vars,
-                                    Set<String> constants, boolean is_index) {
+                                    Set<String> constants) {
         String var = cur_node.name().toString();
-        Logger.error(var);
-        guru.nidi.graphviz.model.Node src_node;
+        Logger.debug("handle_non_phi_var: " + var + " (" + pv.toString() + ")");
         ImmutablePair<Variable, List<AssignStmt>> dep_chain = get_var_dep_chain(constants, var);
         if (Utils.not_null(dep_chain)) {
             for (AssignStmt stmt : dep_chain.getRight()) {
                 List<String> uses = Utils.get_assignment_uses_as_str(stmt);
                 boolean complex_var = false;
                 for (String use : uses) {
-                    src_node = node(use);
+                    guru.nidi.graphviz.model.Node src_node = node(use);
                     if (constants.contains(use)) {
                         src_node = src_node.with(Color.RED);
                     } else if (array_vars.contains_key(use)) {
@@ -372,18 +363,11 @@ public class PhiVariableContainer {
                             complex_var = true;
                         }
                     }
-                    if(is_index) {
-                        index_phi_var_links.add(cur_node
-                                .link(to(src_node).with(Style.ROUNDED, LinkAttr
-                                        .weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
-                    } else {
-                        non_index_phi_var_links.add(cur_node
-                                .link(to(src_node).with(Style.ROUNDED, LinkAttr
-                                        .weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
-                    }
-
+                    // TODO: adding too many nodes
+                    graph_creator.add(cur_node.link(to(src_node)
+                            .with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
                     if(complex_var) {
-                        add_phi_links_node(pv, src_node, array_vars, constants, is_index);
+                        add_phi_links_node(pv, src_node, array_vars, constants);
                     }
                 }
             }
@@ -398,19 +382,17 @@ public class PhiVariableContainer {
      * @param cur_node the current node being parsed
      * @param array_vars the array variables that have been found (passed from Analysis)
      * @param constants the constants that have been found (passed from Analysis)
-     * @param is_index true iff we are modifying a graph for index phi vars
      */
     private void add_phi_links_node(PhiVariable pv, guru.nidi.graphviz.model.Node cur_node,
-                                    ArrayVariables array_vars, Set<String> constants,
-                                    boolean is_index) {
+                                    ArrayVariables array_vars, Set<String> constants) {
         String var = cur_node.name().toString();
         PhiExpr phi_expr = get_phi_expr(cur_node.name().toString());
         if(!parsed_phi_vars.contains(var)) {
             parsed_phi_vars.add(var);
             if (Utils.not_null(phi_expr) && pv.contains_var(var)) {
-                handle_phi_var(pv, cur_node, phi_expr, array_vars, constants, is_index);
+                handle_phi_var(pv, cur_node, phi_expr, array_vars, constants);
             } else {
-                handle_non_phi_var(pv, cur_node, array_vars, constants, is_index);
+                handle_non_phi_var(pv, cur_node, array_vars, constants);
             }
         }
     }
@@ -421,16 +403,19 @@ public class PhiVariableContainer {
      * @param constants the constants that have been found (passed from Analysis)
      */
     void make_phi_links_graph(ArrayVariables array_vars, Set<String> constants) {
-//        List<PhiVariable> non_index = get_non_index_vars();
         for (PhiVariable pv : phi_vars) {
-            String var = pv.get_phi_def().getValue().toString();
+            String var = pv.get_phi_def().toString();
+            Logger.debug("make_phi_links_graph: " + var + " (" + pv.toString() + ")");
+            if(pv.is_used_as_index()) {
+                graph_creator = mutGraph(var + "_index_phi_var_links").setDirected(true);
+            } else {
+                graph_creator = mutGraph(var + "_non_index_phi_links").setDirected(true);
+            }
+            parsed_phi_vars = new HashSet<>();
             guru.nidi.graphviz.model.Node cur_node = node(var);
-            add_phi_links_node(pv, cur_node, array_vars, constants, pv.is_used_as_index());
-
+            add_phi_links_node(pv, cur_node, array_vars, constants);
+            Utils.print_graph(graph_creator);
         }
-        Utils.print_graph(non_index_phi_var_links);
-        Utils.print_graph(index_phi_var_links);
-        parsed_phi_vars = new HashSet<>();
     }
 
     /**
@@ -439,7 +424,7 @@ public class PhiVariableContainer {
     void make_non_index_graphs() {
         for(PhiVariable pv : phi_vars) {
             pv.write_non_index_graph();
-            Logger.info(pv.get_phi_def().getValue().toString() + ": " + pv.get_counter());
+            Logger.info(pv.get_phi_def().toString() + ": " + pv.get_counter());
         }
     }
 }
