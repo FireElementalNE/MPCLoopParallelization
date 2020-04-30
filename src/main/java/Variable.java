@@ -197,11 +197,11 @@ public class Variable {
 
     /**
      * initiate the creation of a def/use string (see parse_node_print())
-     * @param constants a list of variables that are constants (phi values do not effect them at all)
+     * @param constants a map of variables that are constants (phi values do not effect them at all) and their values
      * @param v the variable
      * @return the parse node string if there is some alias of it otherwise null
      */
-    String get_var_dep_chain_str(Set<String> constants, String v) {
+    String get_var_dep_chain_str(Map<String, Integer> constants, String v) {
         // TODO: check root var?
         if(aliases.containsKey(v)) {
             return build_var_dep_chain_str(v);
@@ -239,11 +239,11 @@ public class Variable {
 
     /**
      * function to start the recursive  parse_var_dep_chain() function with an empty list
-     * @param constants a list of variables that are constants (phi values do not effect them at all)
+     * @param constants a map of variables that are constants (phi values do not effect them at all) and their values
      * @param v a variable name
      * @return the def/use chain of from the passed variable to the root variable represented as a list.
      */
-    Set<AssignStmt> get_var_dep_chain(Set<String> constants, String v) {
+    Set<AssignStmt> get_var_dep_chain(Map<String, Integer> constants, String v) {
         Set<AssignStmt> def_lst = new HashSet<>();
         if(aliases.containsKey(v)) {
             return parse_var_dep_chain(v, def_lst);
@@ -257,13 +257,14 @@ public class Variable {
      * to the def_graph
      * @param stmt the statement
      * @param cur_node the current node
-     * @param constants a list of variables that are constants (phi values do not effect them at all)
+     * @param constants a map of variables that are constants (phi values do not effect them at all) and their valeus
      */
-    private void add_constant_nodes(AssignStmt stmt, guru.nidi.graphviz.model.Node cur_node, Set<String> constants) {
+    private void add_constant_nodes(AssignStmt stmt, guru.nidi.graphviz.model.Node cur_node,
+                                    Map<String, Integer> constants) {
         List<String> uses = stmt.getUseBoxes().stream()
                 .map(i -> i.getValue().toString()).collect(Collectors.toList());
         for(String u : uses) {
-            if(constants.contains(u)) {
+            if(constants.containsKey(u)) {
                 guru.nidi.graphviz.model.Node con_node = node(u).with(Color.RED);
                 def_graph.add(cur_node.link(to(con_node)
                         .with(LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
@@ -275,10 +276,11 @@ public class Variable {
      * recursive function to create a visible dependency graph for a given variable
      * @param current_var the current variable being parsed
      * @param prev the previous node that we came from
-     * @param constants a list of variables that are constants (phi values do not effect them at all)
+     * @param constants a map of variables that are constants (phi values do not effect them at all) and their values
      */
     @SuppressWarnings("DuplicatedCode")
-    private void create_var_dep_graph(String current_var, guru.nidi.graphviz.model.Node prev, Set<String> constants) {
+    private void create_var_dep_graph(String current_var, guru.nidi.graphviz.model.Node prev,
+                                      Map<String, Integer> constants) {
         List<ImmutablePair<String, Alias>> p_pairs = get_parents(current_var);
         assert p_pairs.size() == 1 || p_pairs.size() == 2 || p_pairs.isEmpty();
         if(p_pairs.size() == 1) {
@@ -310,10 +312,10 @@ public class Variable {
 
     /**
      * function to start the recursive function create_var_dep_graph()
-     * @param constants a list of variables that are constants (phi values do not effect them at all)
+     * @param constants a map of variables that are constants (phi values do not effect them at all) and their values
      * @param v the top level variable we are looking at.
      */
-    void make_var_dep_chain_graph(Set<String> constants, String v) {
+    void make_var_dep_chain_graph(Map<String, Integer> constants, String v) {
         guru.nidi.graphviz.model.Node current_node = node(v);
         String graph_name = String.format("%s_%s_def", v, root_val.toString());
         this.def_graph = mutGraph(graph_name).setDirected(true);

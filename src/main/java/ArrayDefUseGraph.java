@@ -7,7 +7,10 @@ import org.tinylog.Logger;
 import soot.jimple.AssignStmt;
 import soot.jimple.Stmt;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static guru.nidi.graphviz.model.Factory.*;
@@ -160,7 +163,7 @@ class ArrayDefUseGraph {
         Utils.print_graph(final_graph);
     }
 
-    void make_scc_graph(PhiVariableContainer pvc, Set<String> constants) {
+    void make_scc_graph(PhiVariableContainer pvc, Map<String, Integer> constants) {
         // TODO: add weights
         Map<Integer, Edge> the_edges = edges.entrySet().stream().filter(k -> k.getValue().is_scc_edge()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         for(Map.Entry<Integer, Edge> entry: the_edges.entrySet()) {
@@ -174,7 +177,7 @@ class ArrayDefUseGraph {
             ImmutablePair<Variable, List<AssignStmt>> def_dep_chain = pvc.get_var_dep_chain(constants, def_index);
             String def_eq = null;
             if(Utils.not_null(def_dep_chain)) {
-                Solver def_solver = new Solver(def_index, def_dep_chain, pvc);
+                Solver def_solver = new Solver(def_index, def_dep_chain, pvc, constants);
                 def_eq = def_solver.get_resolved_eq();
                 if (def_eq.contains("=")) {
                     def_eq = def_eq.split(" = ")[1];
@@ -185,7 +188,7 @@ class ArrayDefUseGraph {
             Logger.info(def_eq);
             Logger.info("USE INDEX DEP CHAIN: ");
             ImmutablePair<Variable, List<AssignStmt>> use_dep_chain = pvc.get_var_dep_chain(constants, use_index);
-            Solver use_solver = new Solver(use_index, use_dep_chain, pvc);
+            Solver use_solver = new Solver(use_index, use_dep_chain, pvc, constants);
             String use_eq = use_solver.get_resolved_eq();
             if(use_eq.contains("=")) {
                 use_eq = use_eq.split(" = ")[1];

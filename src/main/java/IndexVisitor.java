@@ -5,19 +5,20 @@ import soot.jimple.*;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-@SuppressWarnings("FieldMayBeFinal")
+@SuppressWarnings({"FieldMayBeFinal", "unused"})
 public class IndexVisitor extends AbstractStmtSwitch {
 
     private PhiVariableContainer pvc;
     private Set<String> second_iter_def_vars;
     private Set<String> top_phi_var_names;
     private ArrayDefUseGraph graph;
-    private Set<String> constants;
+    private Map<String, Integer> constants;
 
     IndexVisitor(PhiVariableContainer pvc, Set<String> second_iter_def_vars,
-                 Set<String> top_phi_var_names, Set<String> constants, ArrayDefUseGraph graph) {
+                 Set<String> top_phi_var_names, Map<String, Integer> constants, ArrayDefUseGraph graph) {
         this.pvc = new PhiVariableContainer(pvc);
         this.second_iter_def_vars = new HashSet<>(second_iter_def_vars);
         this.top_phi_var_names = new HashSet<>(top_phi_var_names);
@@ -54,7 +55,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
         // only break if it is a DEF!!!
         if(!second_iter_def_vars.contains(index_name)
                 && !top_phi_var_names.contains(index_name)
-                && !constants.contains(index_name)) {
+                && !constants.containsKey(index_name)) {
             Logger.debug("Printing def-chain: '" + index_name + "' in stmt '" + stmt.toString() + "'");
             pvc.print_var_dep_chain(constants, index_box.getValue().toString());
             ImmutablePair<Variable, List<AssignStmt>> dep_chain = pvc.get_var_dep_chain(constants, index_name);
@@ -66,7 +67,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
                         AssignStmt a = dep_chain.getRight().get(i);
                         Logger.debug("\t" + a.toString());
                     }
-                    Solver solver = new Solver(index_name, dep_chain, pvc);
+                    Solver solver = new Solver(index_name, dep_chain, pvc, constants);
                     Logger.info("Resolved dep chain: " + solver.get_resolved_eq());
 //                    solver.solve();
 //                    try {
@@ -97,7 +98,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
             Logger.debug("Variable '" + index_name + "' is has been defined already.");
             Logger.debug("\t!second_iter_def_vars.contains(index_name) = " + !second_iter_def_vars.contains(index_name));
             Logger.debug("\t!top_phi_var_names.contains(index_name) = " + !top_phi_var_names.contains(index_name));
-            Logger.debug("\t!constants.contains(index_name) = " + !constants.contains(index_name));
+            Logger.debug("\t!constants.contains(index_name) = " + !constants.containsKey(index_name));
             Logger.debug("\t!Utils.is_def(stmt) = " +  !Utils.is_def(stmt));
 
         }

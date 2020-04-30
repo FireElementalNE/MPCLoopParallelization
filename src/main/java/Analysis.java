@@ -58,7 +58,7 @@ public class Analysis extends BodyTransformer {
 	private PhiVariableContainer phi_vars;
 	// A set of possible constants gathered from non-loop blocks
 	// TODO: HAVE TO PASS CONSTANT VALUES!!!!
-	private Set<String> constants;
+	private Map<String, Integer> constants;
 	// A list of the _original_ phi variables that is queried on the second iteration
 	private Set<String> top_phi_var_names;
 	// The final DefUse Graph
@@ -90,7 +90,7 @@ public class Analysis extends BodyTransformer {
 		second_iter_def_vars = new HashSet<>();
 		graph = new ArrayDefUseGraph(this.class_name);
 		loop_blocks = new HashSet<>();
-		constants = new HashSet<>();
+		constants = new HashMap<>();
 		this.host = host;
 		this.port = port;
 	}

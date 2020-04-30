@@ -56,7 +56,7 @@ public class ArrayVariables {
         array_vars.put(name, av);
     }
 
-    void make_array_var_graph(Set<String> constants) {
+    void make_array_var_graph(Map<String, Integer> constants) {
         // TODO: this does not contain all the info!
         for(Map.Entry<String, ArrayVersion> entry : array_vars.entrySet()) {
             MutableGraph ver_graph = mutGraph(entry.getKey() + "_versions").setDirected(true);

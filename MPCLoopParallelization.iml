@@ -88,5 +88,6 @@
     <orderEntry type="library" name="Maven: org.apache.xmlgraphics:batik-i18n:1.12" level="project" />
     <orderEntry type="library" name="Maven: org.apache.xmlgraphics:batik-codec:1.12" level="project" />
     <orderEntry type="library" name="Python 3.7 interpreter library" level="application" />
+    <orderEntry type="library" name="net.objecthunter:exp4j:0.4.8" level="project" />
   </component>
 </module>

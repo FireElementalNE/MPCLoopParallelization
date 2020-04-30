@@ -45,14 +45,15 @@ public class Solver implements Runnable{
     private PhiVariableContainer phi_vars;
     private List<String> results;
     private String resolved_eq;
+    private Map<String, Integer> constants;
 
     Solver(String index_name, ImmutablePair<Variable, List<AssignStmt>> dep_chain,
-           PhiVariableContainer phi_vars) {
+           PhiVariableContainer phi_vars, Map<String, Integer> constants) {
         this.index_name = index_name;
         this.dep_chain = dep_chain;
         this.phi_vars = phi_vars;
         this.resolved_eq = resolve_dep_chain();
-
+        this.constants = constants;
     }
 
     int solve() {
@@ -75,7 +76,11 @@ public class Solver implements Runnable{
             for (String v : vars) {
                 if (!NumberUtils.isCreatable(v)) {
                     writer.write(String.format("%s = Int('%s')\n", v, v));
-                    zero_neg_list.add(String.format(Constants.ZERO_TEST_PY_STR_NEG, v));
+                    if(constants.containsKey(v)) {
+                        zero_neg_list.add(String.format(Constants.CONSTANTS_PY_STR, v, constants.get(v)));
+                    } else {
+                        zero_neg_list.add(String.format(Constants.ZERO_TEST_PY_STR_NEG, v));
+                    }
                 }
             }
             String zero_neg_str = String.join(", ", zero_neg_list);

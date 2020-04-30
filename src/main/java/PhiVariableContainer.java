@@ -20,7 +20,7 @@ import static guru.nidi.graphviz.model.Factory.*;
  * A  convenience class to cut down on unreadable code. It contains all of the phi variables, as well
  * as their associated functions
  */
-@SuppressWarnings("FieldMayBeFinal")
+@SuppressWarnings({"FieldMayBeFinal", "unused"})
 public class PhiVariableContainer {
 
     private Set<PhiVariable> phi_vars;
@@ -115,10 +115,10 @@ public class PhiVariableContainer {
 
     /**
      * print a def/use string for a given variable
-     * @param constants a list of variables that are constants (phi values do not effect them at all)
+     * @param constants a map of variables that are constants (phi values do not effect them at all) and their values
      * @param v the variable name
      */
-    void print_var_dep_chain(Set<String> constants, String v) {
+    void print_var_dep_chain(Map<String, Integer> constants, String v) {
         // TODO: this is a proof of concept function
         for(PhiVariable pv : phi_vars) {
             if(pv.has_ever_been(v)) {
@@ -133,10 +133,10 @@ public class PhiVariableContainer {
 
     /**
      * make a variable dependency graph for the passed variable
-     * @param constants a list of variables that are constants (phi values do not effect them at all)
+     * @param constants a map of variables that are constants (phi values do not effect them at all) and their values
      * @param v the variable name
      */
-    void make_var_dep_chain_graph(Set<String> constants, String v) {
+    void make_var_dep_chain_graph(Map<String, Integer> constants, String v) {
         for(PhiVariable pv : phi_vars) {
             if(pv.has_ever_been(v)) {
                pv.make_var_dep_chain_graph(constants, v);
@@ -146,12 +146,12 @@ public class PhiVariableContainer {
 
     /**
      * get the actual list of assignments for the passed variable
-     * @param constants a list of variables that are constants (phi values do not effect them at all)
+     * @param constants a map of variables that are constants (phi values do not effect them at all) and their values
      * @param v the variable name
      * @return a pair consisting of the variable and the list of assignment statements (if it exists)
      *   otherwise null.
      */
-    ImmutablePair<Variable, List<AssignStmt>> get_var_dep_chain(Set<String> constants, String v) {
+    ImmutablePair<Variable, List<AssignStmt>> get_var_dep_chain(Map<String, Integer> constants, String v) {
         for(PhiVariable pv : phi_vars) {
             if(pv.has_ever_been(v)) {
                 ImmutablePair<Variable, Set<AssignStmt>> ans = pv.get_var_dep_chain(constants, v);
@@ -293,7 +293,7 @@ public class PhiVariableContainer {
      */
     @SuppressWarnings("DuplicatedCode")
     private void handle_phi_var(PhiVariable pv, guru.nidi.graphviz.model.Node cur_node, PhiExpr phi_expr,
-                                ArrayVariables array_vars, Set<String> constants) {
+                                ArrayVariables array_vars, Map<String, Integer> constants) {
         String var = cur_node.name().toString();
         cur_node = cur_node.with(Color.GREEN);
         Logger.debug("handle_phi_var: " + var + " (" + pv.toString() + ")");
@@ -313,7 +313,7 @@ public class PhiVariableContainer {
         for (String use : phi_expr_uses) {
             guru.nidi.graphviz.model.Node use_node = node(use);
             boolean is_not_constant = false;
-            if(constants.contains(use)) {
+            if(constants.containsKey(use)) {
                 use_node = use_node.with(Color.RED);
             } else if(pv.get_uses().contains(use)) {
                 use_node = use_node.with(Color.CYAN);
@@ -322,7 +322,7 @@ public class PhiVariableContainer {
             }
             graph_creator.add(src_node.link(to(use_node)
                         .with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
-            if(!constants.contains(use)) { //  && !pv.get_uses().contains(use)) {
+            if(!constants.containsKey(use)) { //  && !pv.get_uses().contains(use)) {
                 add_phi_links_node(pv, use_node, array_vars, constants);
             }
         }
@@ -338,7 +338,7 @@ public class PhiVariableContainer {
      */
     @SuppressWarnings("DuplicatedCode")
     private void handle_non_phi_var(PhiVariable pv, guru.nidi.graphviz.model.Node cur_node, ArrayVariables array_vars,
-                                    Set<String> constants) {
+                                    Map<String, Integer> constants) {
         String var = cur_node.name().toString();
         Logger.debug("handle_non_phi_var: " + var + " (" + pv.toString() + ")");
         ImmutablePair<Variable, List<AssignStmt>> dep_chain = get_var_dep_chain(constants, var);
@@ -348,7 +348,7 @@ public class PhiVariableContainer {
                 boolean complex_var = false;
                 for (String use : uses) {
                     guru.nidi.graphviz.model.Node src_node = node(use);
-                    if (constants.contains(use)) {
+                    if (constants.containsKey(use)) {
                         src_node = src_node.with(Color.RED);
                     } else if (array_vars.contains_key(use)) {
                         src_node = src_node.with(Color.BLUE);
@@ -384,7 +384,7 @@ public class PhiVariableContainer {
      * @param constants the constants that have been found (passed from Analysis)
      */
     private void add_phi_links_node(PhiVariable pv, guru.nidi.graphviz.model.Node cur_node,
-                                    ArrayVariables array_vars, Set<String> constants) {
+                                    ArrayVariables array_vars, Map<String, Integer> constants) {
         String var = cur_node.name().toString();
         PhiExpr phi_expr = get_phi_expr(cur_node.name().toString());
         if(!parsed_phi_vars.contains(var)) {
@@ -402,7 +402,7 @@ public class PhiVariableContainer {
      * @param array_vars the array variables that have been found (passed from Analysis)
      * @param constants the constants that have been found (passed from Analysis)
      */
-    void make_phi_links_graph(ArrayVariables array_vars, Set<String> constants) {
+    void make_phi_links_graph(ArrayVariables array_vars, Map<String, Integer> constants) {
         for (PhiVariable pv : phi_vars) {
             String var = pv.get_phi_def().toString();
             Logger.debug("make_phi_links_graph: " + var + " (" + pv.toString() + ")");

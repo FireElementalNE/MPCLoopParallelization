@@ -181,12 +181,12 @@ public class PhiVariable {
 
     /**
      * create a def/use string for a given variable
-     * @param constants a list of variables that are constants (phi values do not effect them at all)
+     * @param constants a list of variables that are constants (phi values do not effect them at all) and their values
      * @param v the variable name
      * @return a def/use string iff this PhiVariable contains a Variable that has been the passed variable at
      *         at some point, otherwise null
      */
-    String get_var_dep_chain_str(Set<String> constants, String v) {
+    String get_var_dep_chain_str(Map<String, Integer> constants, String v) {
         for(Variable var : var_links) {
             if(var.has_ever_been(v)) {
                 return var.get_var_dep_chain_str(constants, v);
@@ -197,10 +197,10 @@ public class PhiVariable {
 
     /**
      * Make a def graph for a given variable (based on this phi variable)
-     * @param constants a list of variables that are constants (phi values do not effect them at all)
+     * @param constants a map of variables that are constants (phi values do not effect them at all) and their values
      * @param v the variable name
      */
-    void make_var_dep_chain_graph(Set<String> constants, String v) {
+    void make_var_dep_chain_graph(Map<String, Integer> constants, String v) {
         for(Variable var : var_links) {
             if(var.has_ever_been(v)) {
                 var.make_var_dep_chain_graph(constants, v);
@@ -212,12 +212,12 @@ public class PhiVariable {
      * get a pair that consists of:
      *   1. a variable
      *   2. the dep chain of that variable
-     * @param constants a list of variables that are constants (phi values do not effect them at all)
+     * @param constants a map of variables that are constants (phi values do not effect them at all) and their values
      * @param v the variable name
      * @return a pair consisting of the variable and the list of assignment statements (if it exists)
      *   otherwise null.
      */
-    ImmutablePair<Variable, Set<AssignStmt>> get_var_dep_chain(Set<String> constants, String v) {
+    ImmutablePair<Variable, Set<AssignStmt>> get_var_dep_chain(Map<String, Integer> constants, String v) {
         for(Variable var : var_links) {
             if(var.has_ever_been(v)) {
                 return new ImmutablePair<>(var, var.get_var_dep_chain(constants, v));

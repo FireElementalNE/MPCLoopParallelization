@@ -1,3 +1,5 @@
+import net.objecthunter.exp4j.Expression;
+import net.objecthunter.exp4j.ExpressionBuilder;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.tinylog.Logger;
 import soot.ValueBox;
@@ -5,10 +7,10 @@ import soot.jimple.AbstractStmtSwitch;
 import soot.jimple.AssignStmt;
 import soot.shimple.PhiExpr;
 
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * A visitor class that looks at possible index values
@@ -20,7 +22,7 @@ public class VariableVisitor extends AbstractStmtSwitch {
     private Set<String> top_phi_var_names;
     private boolean is_array;
     private boolean in_loop;
-    private Set<String> constants;
+    private Map<String, Integer> constants;
     /**
      * create new VariableVisitor
      * this class is looks for possible index values and tracks them
@@ -35,13 +37,13 @@ public class VariableVisitor extends AbstractStmtSwitch {
      * @param is_array used to find constants when we are _outside_ of a loop body
      * @param in_loop true iff this is called when processing inside of a loop
      */
-    VariableVisitor(PhiVariableContainer phi_vars, Set<String> top_phi_var_names, Set<String> constants,
+    VariableVisitor(PhiVariableContainer phi_vars, Set<String> top_phi_var_names, Map<String, Integer> constants,
                     boolean is_array, boolean in_loop) {
         this.phi_vars = new PhiVariableContainer(phi_vars);
         this.top_phi_var_names = new HashSet<>(top_phi_var_names);
         this.is_array = is_array;
         this.in_loop = in_loop;
-        this.constants = new HashSet<>(constants);
+        this.constants = new HashMap<>(constants);
     }
 
     /**
@@ -64,9 +66,9 @@ public class VariableVisitor extends AbstractStmtSwitch {
      * get possible changed constants list (only used when not in a loop)
      * @return the set of constants
      */
-    Set<String> get_constants() {
+    Map<String, Integer> get_constants() {
         assert !in_loop;
-        return new HashSet<>(constants);
+        return new HashMap<>(constants);
     }
 
     /**
@@ -75,16 +77,23 @@ public class VariableVisitor extends AbstractStmtSwitch {
      * @param stmt the statement
      */
     void check_constants(AssignStmt stmt) {
-        List<String> uses = stmt.getUseBoxes().stream()
-                .map(i -> i.getValue().toString()).collect(Collectors.toList());
-        List<String> prims =  uses.stream().filter(NumberUtils::isCreatable).collect(Collectors.toList());
-        uses.remove(stmt.getRightOp().toString());
-        uses.removeAll(prims);
-        boolean all_constants = constants.containsAll(uses);
-        if(all_constants) {
-            constants.addAll(uses);
-            constants.add(stmt.getLeftOp().toString());
+//        List<String> uses = stmt.getUseBoxes().stream()
+//                .map(i -> i.getValue().toString()).collect(Collectors.toList());
+//        List<String> prims =  uses.stream().filter(NumberUtils::isCreatable).collect(Collectors.toList());
+//        uses.remove(stmt.getRightOp().toString());
+//        uses.removeAll(prims);
+//        boolean all_constants = constants.keySet().containsAll(uses);
+//        if(all_constants) {
+        String right = stmt.getRightOp().toString();
+        for(Map.Entry<String, Integer> entry : constants.entrySet()) {
+            right = right.replace(entry.getKey(), entry.getValue().toString());
         }
+        Expression e = new ExpressionBuilder(right).build();
+        int result = (int) e.evaluate();
+        constants.put(stmt.getLeftOp().toString(), result);
+//            constants.addAll(uses);
+//            constants.add(stmt.getLeftOp().toString());
+//        }
     }
 
 
@@ -109,7 +118,12 @@ public class VariableVisitor extends AbstractStmtSwitch {
             if(!found_link && !stmt.containsArrayRef() && !is_array) {
                 if(!in_loop) {
                     Logger.debug("'" + stmt.toString() + "' appears to deal with a constant");
-                    constants.add(stmt.getLeftOp().toString());
+                    if(stmt.getUseBoxes().size() == 1 && NumberUtils.isCreatable(stmt.getRightOp().toString())) {
+                        constants.put(stmt.getLeftOp().toString(), Integer.parseInt(stmt.getRightOp().toString()));
+                    } else {
+                        Logger.error("Not sure what went wrong. Something did.");
+                    }
+//                    constants.add(stmt.getLeftOp().toString());
                 } else {
                     check_constants(stmt);
                 }
