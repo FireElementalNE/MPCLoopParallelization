@@ -20,9 +20,21 @@ import static guru.nidi.graphviz.model.Factory.*;
  */
 @SuppressWarnings("ALL")
 class ArrayDefUseGraph {
+    /**
+     * a list of all edges in the graph
+     */
     private Map<Integer, Edge> edges;
+    /**
+     * a list of all nodes in the graph
+     */
     private Map<String, Node> nodes;
-    private MutableGraph final_graph;
+    /**
+     * the graph that is made for the inter loop dependencies
+     */
+    private MutableGraph inter_loop_dep_graph;
+    /**
+     * the SCC graph
+     */
     private MutableGraph SCC_graph;
 
     /**
@@ -32,7 +44,7 @@ class ArrayDefUseGraph {
     ArrayDefUseGraph(String class_name) {
         edges = new HashMap<>();
         nodes = new HashMap<>();
-        final_graph = mutGraph(class_name + "_final").setDirected(true);
+        inter_loop_dep_graph = mutGraph(class_name + "_inter_loop_deps").setDirected(true);
         SCC_graph = mutGraph(class_name + "_scc_final").setDirected(true);
     }
 
@@ -45,7 +57,7 @@ class ArrayDefUseGraph {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         this.nodes =  a_graph.nodes.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        this.final_graph = a_graph.final_graph;
+        this.inter_loop_dep_graph = a_graph.inter_loop_dep_graph;
         this.SCC_graph = a_graph.SCC_graph;
     }
 
@@ -152,15 +164,20 @@ class ArrayDefUseGraph {
      */
     void make_graph() {
         Map<Integer, Edge> the_edges = edges.entrySet().stream().filter(k -> !k.getValue().is_scc_edge()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        for(Map.Entry<Integer, Edge> entry: the_edges.entrySet()) {
-            Edge e = entry.getValue();
-            Node def = e.get_def();
-            Node use = e.get_use();
-            guru.nidi.graphviz.model.Node def_node = node(def.get_stmt());
-            guru.nidi.graphviz.model.Node use_node = node(use.get_stmt());
-            final_graph.add(def_node.link(to(use_node).with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+        if(the_edges.size() > 0) {
+            for (Map.Entry<Integer, Edge> entry : the_edges.entrySet()) {
+                Edge e = entry.getValue();
+                Node def = e.get_def();
+                Node use = e.get_use();
+                guru.nidi.graphviz.model.Node def_node = node(def.get_stmt());
+                guru.nidi.graphviz.model.Node use_node = node(use.get_stmt());
+                inter_loop_dep_graph.add(def_node.link(to(use_node).with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+            }
+        } else {
+            // TODO: this is added all the time??? why???
+            inter_loop_dep_graph.add(Constants.NO_INTER_LOOP_DEPS_NODE);
         }
-        Utils.print_graph(final_graph);
+        Utils.print_graph(inter_loop_dep_graph);
     }
 
     void make_scc_graph(PhiVariableContainer pvc, Map<String, Integer> constants) {
@@ -195,6 +212,12 @@ class ArrayDefUseGraph {
             }
             Logger.info(use_eq);
             pvc.print_var_dep_chain(constants, use.get_index().to_str());
+//            String def_stmt, use_stmt;
+//            if(def.is_aug()) {
+//                def_stmt = def.get
+//            }
+
+
             guru.nidi.graphviz.model.Node def_node = node(def.get_stmt().replace(def.get_index().to_str(), def_eq));
             guru.nidi.graphviz.model.Node use_node = node(use.get_stmt().replace(use.get_index().to_str(), use_eq));
             int d = use_solver.solve();

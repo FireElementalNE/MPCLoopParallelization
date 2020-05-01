@@ -257,7 +257,7 @@ public class Variable {
      * to the def_graph
      * @param stmt the statement
      * @param cur_node the current node
-     * @param constants a map of variables that are constants (phi values do not effect them at all) and their valeus
+     * @param constants a map of variables that are constants (phi values do not effect them at all) and their values
      */
     private void add_constant_nodes(AssignStmt stmt, guru.nidi.graphviz.model.Node cur_node,
                                     Map<String, Integer> constants) {
@@ -278,7 +278,6 @@ public class Variable {
      * @param prev the previous node that we came from
      * @param constants a map of variables that are constants (phi values do not effect them at all) and their values
      */
-    @SuppressWarnings("DuplicatedCode")
     private void create_var_dep_graph(String current_var, guru.nidi.graphviz.model.Node prev,
                                       Map<String, Integer> constants) {
         List<ImmutablePair<String, Alias>> p_pairs = get_parents(current_var);

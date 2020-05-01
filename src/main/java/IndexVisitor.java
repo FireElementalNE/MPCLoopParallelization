@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * visit variables after the first run through, this finds cross loop dependencies.
+ * TODO: needs better explanation
+ */
 @SuppressWarnings({"FieldMayBeFinal", "unused"})
 public class IndexVisitor extends AbstractStmtSwitch {
 
@@ -17,6 +21,14 @@ public class IndexVisitor extends AbstractStmtSwitch {
     private ArrayDefUseGraph graph;
     private Map<String, Integer> constants;
 
+    /**
+     * constructor for the Index visitor
+     * @param pvc the phi variables
+     * @param second_iter_def_vars the list of vars that have been defined so far on the second iter run through
+     * @param top_phi_var_names A list of the _original_ phi variables that is queried on the second iteration
+     * @param constants the constants
+     * @param graph the current graph
+     */
     IndexVisitor(PhiVariableContainer pvc, Set<String> second_iter_def_vars,
                  Set<String> top_phi_var_names, Map<String, Integer> constants, ArrayDefUseGraph graph) {
         this.pvc = new PhiVariableContainer(pvc);
@@ -26,24 +38,20 @@ public class IndexVisitor extends AbstractStmtSwitch {
         this.constants = constants;
     }
 
+    /**
+     * getter for the second iter defs
+     * @return the list of vars that have been defined so far on the second iter run through
+     */
     Set<String> get_second_iter_def_vars() {
         // TODO: this may be incorrect. To be an intra-loop dependency a variable must be based off
         //         of a phi variable, and have some sort of augmentation done to it (e.g. pv1 - 1).
         return new HashSet<>(second_iter_def_vars);
     }
 
-    Set<String> get_top_phi_var_names() {
-        return new HashSet<>(top_phi_var_names);
-    }
-
-    public ArrayDefUseGraph get_graph() {
-        return new ArrayDefUseGraph(graph);
-    }
-
-    PhiVariableContainer get_pvc() {
-        return new PhiVariableContainer(pvc);
-    }
-
+    /**
+     * checks indexes for cross loop dependencies. If any are found they are added to the graph
+     * @param stmt the current statement being analyzed
+     */
     private void check_index(Stmt stmt) {
         // TODO:
         //   Just check the stmt on the _right_ if it is an operation if any kind
@@ -104,6 +112,29 @@ public class IndexVisitor extends AbstractStmtSwitch {
         }
     }
 
+    /**
+     * getter for the original phi vars
+     * @return A list of the _original_ phi variables that is queried on the second iteration
+     */
+    Set<String> get_top_phi_var_names() {
+        return new HashSet<>(top_phi_var_names);
+    }
+
+    /**
+     * a getter for the possibly changed graph
+     * @return the graph
+     */
+    public ArrayDefUseGraph get_graph() {
+        return new ArrayDefUseGraph(graph);
+    }
+
+    /**
+     * getter for the phi vars
+     * @return the phi var container
+     */
+    PhiVariableContainer get_pvc() {
+        return new PhiVariableContainer(pvc);
+    }
 
     @Override
     public void caseBreakpointStmt(BreakpointStmt stmt) {
@@ -113,6 +144,11 @@ public class IndexVisitor extends AbstractStmtSwitch {
         }
     }
 
+
+    /**
+     * Check InvokeStmt statement
+     * @param stmt the statement
+     */
     @Override
     public void caseInvokeStmt(InvokeStmt stmt) {
         if(stmt.containsArrayRef()) {
@@ -121,6 +157,10 @@ public class IndexVisitor extends AbstractStmtSwitch {
         }
     }
 
+    /**
+     * Check AssignStmt statement
+     * @param stmt the statement
+     */
     @Override
     public void caseAssignStmt(AssignStmt stmt) {
         if(stmt.containsArrayRef()) {
@@ -129,6 +169,10 @@ public class IndexVisitor extends AbstractStmtSwitch {
         }
     }
 
+    /**
+     * Check IdentityStmt statement
+     * @param stmt the statement
+     */
     @Override
     public void caseIdentityStmt(IdentityStmt stmt) {
         if(stmt.containsArrayRef()) {
@@ -137,6 +181,10 @@ public class IndexVisitor extends AbstractStmtSwitch {
         }
     }
 
+    /**
+     * Check EnterMonitorStmt statement (NOT IMPLEMENTED)
+     * @param stmt the statement
+     */
     @Override
     public void caseEnterMonitorStmt(EnterMonitorStmt stmt) {
         if(stmt.containsArrayRef()) {
@@ -145,6 +193,10 @@ public class IndexVisitor extends AbstractStmtSwitch {
         }
     }
 
+    /**
+     * Check ExitMonitorStmt statement (NOT IMPLEMENTED)
+     * @param stmt the statement
+     */
     @Override
     public void caseExitMonitorStmt(ExitMonitorStmt stmt) {
         if(stmt.containsArrayRef()) {
@@ -153,6 +205,10 @@ public class IndexVisitor extends AbstractStmtSwitch {
         }
     }
 
+    /**
+     * Check GotoStmt statement
+     * @param stmt the statement
+     */
     @Override
     public void caseGotoStmt(GotoStmt stmt) {
         if(stmt.containsArrayRef()) {
@@ -161,6 +217,10 @@ public class IndexVisitor extends AbstractStmtSwitch {
         }
     }
 
+    /**
+     * Check IfStmt statement
+     * @param stmt the statement
+     */
     @Override
     public void caseIfStmt(IfStmt stmt) {
 
@@ -170,6 +230,10 @@ public class IndexVisitor extends AbstractStmtSwitch {
         }
     }
 
+    /**
+     * Check LookupSwitchStmt statement
+     * @param stmt the statement
+     */
     @Override
     public void caseLookupSwitchStmt(LookupSwitchStmt stmt) {
         if(stmt.containsArrayRef()) {
@@ -178,6 +242,10 @@ public class IndexVisitor extends AbstractStmtSwitch {
         }
     }
 
+    /**
+     * Check NopStmt statement
+     * @param stmt the statement
+     */
     @Override
     public void caseNopStmt(NopStmt stmt) {
         if(stmt.containsArrayRef()) {
@@ -186,6 +254,10 @@ public class IndexVisitor extends AbstractStmtSwitch {
         }
     }
 
+    /**
+     * Check ReturnStmt statement
+     * @param stmt the statement
+     */
     @Override
     public void caseRetStmt(RetStmt stmt) {
         if(stmt.containsArrayRef()) {
@@ -202,11 +274,19 @@ public class IndexVisitor extends AbstractStmtSwitch {
         }
     }
 
+    /**
+     * Check ReturnVoidStmt statement (NOT IMPLEMENTED)
+     * @param stmt the statement
+     */
     @Override
     public void caseReturnVoidStmt(ReturnVoidStmt stmt) {
 
     }
 
+    /**
+     * Check TableSwitchStmt statement
+     * @param stmt the statement
+     */
     @Override
     public void caseTableSwitchStmt(TableSwitchStmt stmt) {
         if(stmt.containsArrayRef()) {
@@ -215,6 +295,10 @@ public class IndexVisitor extends AbstractStmtSwitch {
         }
     }
 
+    /**
+     * Check ThrowStmt statement
+     * @param stmt the statement
+     */
     @Override
     public void caseThrowStmt(ThrowStmt stmt) {
         if(stmt.containsArrayRef()) {
@@ -223,6 +307,10 @@ public class IndexVisitor extends AbstractStmtSwitch {
         }
     }
 
+    /**
+     * default case (NOT IMPLEMENTED)
+     * @param obj the object?
+     */
     @Override
     public void defaultCase(Object obj) {
 

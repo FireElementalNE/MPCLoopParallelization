@@ -18,6 +18,8 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="org.apache.xmlgraphics:batik-rasterizer:1.12" level="project" />
+    <orderEntry type="library" name="Python 3.7 interpreter library" level="application" />
+    <orderEntry type="library" name="net.objecthunter:exp4j:0.4.8" level="project" />
     <orderEntry type="library" name="Maven: org.tinylog:tinylog-api:2.0.1" level="project" />
     <orderEntry type="library" name="Maven: org.tinylog:tinylog-impl:2.0.1" level="project" />
     <orderEntry type="library" name="Maven: ca.mcgill.sable:soot:4.1.0" level="project" />
@@ -87,7 +89,6 @@
     <orderEntry type="library" name="Maven: org.apache.xmlgraphics:batik-constants:1.12" level="project" />
     <orderEntry type="library" name="Maven: org.apache.xmlgraphics:batik-i18n:1.12" level="project" />
     <orderEntry type="library" name="Maven: org.apache.xmlgraphics:batik-codec:1.12" level="project" />
-    <orderEntry type="library" name="Python 3.7 interpreter library" level="application" />
-    <orderEntry type="library" name="net.objecthunter:exp4j:0.4.8" level="project" />
+    <orderEntry type="library" name="Maven: net.objecthunter:exp4j:0.4.8" level="project" />
   </component>
 </module>

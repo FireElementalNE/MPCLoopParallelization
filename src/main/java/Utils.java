@@ -183,7 +183,7 @@ class Utils {
 	static int get_block_num(Block b) {
 		Matcher m = Constants.BLOCK_NUM_RE.matcher(b.toString());
 		if(m.find()) {
-			return new Integer(m.group(1));
+			return Integer.parseInt(m.group(1));
 		} else {
 			Logger.error("Pattern not found.");
 			return -1;

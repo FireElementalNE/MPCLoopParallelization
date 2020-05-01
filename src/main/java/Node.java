@@ -235,7 +235,7 @@ class Node {
 
     /**
      * getter for the line number of this statement
-     * @return the line number for this statment
+     * @return the line number for this statement
      */
     int get_line_num() {
         return line_num;

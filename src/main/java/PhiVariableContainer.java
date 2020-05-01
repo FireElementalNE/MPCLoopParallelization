@@ -291,7 +291,6 @@ public class PhiVariableContainer {
      * @param array_vars the array variables that have been found (passed from Analysis)
      * @param constants the constants that have been found (passed from Analysis)
      */
-    @SuppressWarnings("DuplicatedCode")
     private void handle_phi_var(PhiVariable pv, guru.nidi.graphviz.model.Node cur_node, PhiExpr phi_expr,
                                 ArrayVariables array_vars, Map<String, Integer> constants) {
         String var = cur_node.name().toString();
@@ -302,13 +301,6 @@ public class PhiVariableContainer {
         src_node = node(src_name).with(Color.BROWN);
         graph_creator.add(cur_node.link(to(src_node)
                 .with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
-//        if(is_index && !Utils.contains_node(index_phi_var_links, src_name)) {
-//            index_phi_var_links.add(cur_node.link(to(src_node)
-//                    .with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
-//        } else if(!Utils.contains_node(non_index_phi_var_links, src_name)){
-//            non_index_phi_var_links.add(cur_node.link(to(src_node)
-//                    .with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
-//        }
         List<String> phi_expr_uses = Utils.get_phi_var_uses_as_str(phi_expr);
         for (String use : phi_expr_uses) {
             guru.nidi.graphviz.model.Node use_node = node(use);
@@ -336,7 +328,6 @@ public class PhiVariableContainer {
      * @param array_vars the array variables that have been found (passed from Analysis)
      * @param constants the constants that have been found (passed from Analysis)
      */
-    @SuppressWarnings("DuplicatedCode")
     private void handle_non_phi_var(PhiVariable pv, guru.nidi.graphviz.model.Node cur_node, ArrayVariables array_vars,
                                     Map<String, Integer> constants) {
         String var = cur_node.name().toString();

@@ -1,7 +1,14 @@
 import soot.jimple.AssignStmt;
 
+@SuppressWarnings("FieldMayBeFinal")
 public class Alias {
+    /**
+     * the name of the alias
+     */
     private String name;
+    /**
+     * the assignment statement for the alias
+     */
     private AssignStmt stmt;
 
     /**

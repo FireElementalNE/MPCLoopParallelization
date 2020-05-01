@@ -3,9 +3,9 @@ class DB_JOIN1 {
         int[] a = new int[100];
         int[] b = new int[100];
         int[] OUTPUT_db = new int[100];
-        int ATT_A = Integer.parseInt(args[1]);
-        int ATT_B = Integer.parseInt(args[2]);
-        int ATT = Integer.parseInt(args[3]);
+        int ATT_A = 10;
+        int ATT_B = 11;
+        int ATT = 12;
         int id_out  = 0;
         int LEN_B = 0;
         int i = 0;

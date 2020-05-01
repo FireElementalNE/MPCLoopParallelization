@@ -16,8 +16,8 @@ import java.util.List;
 
 public class Main {
 
-	private static String RT_PATH = Utils.rt_path();
-	private static String JCE_PATH = Utils.jce_path();
+	private static final String RT_PATH = Utils.rt_path();
+	private static final String JCE_PATH = Utils.jce_path();
 
 	/**
 	 * compile a java program
@@ -40,22 +40,6 @@ public class Main {
 		Utils.refresh_dir(Constants.Z3_DIR);
 
 		org.apache.commons.cli.Options options = new org.apache.commons.cli.Options();
-
-		Option a = Option.builder("a")
-				.hasArg()
-				.longOpt("address")
-				.desc("address of z3 python server, default: " + Constants.Z3_HOST)
-				.required(false)
-				.build();
-		options.addOption(a);
-
-		Option p = Option.builder("s")
-				.hasArg()
-				.longOpt("port")
-				.desc("port of z3 python server, default: " + Constants.Z3_PORT)
-				.required(false)
-				.build();
-		options.addOption(p);
 
 		Option r = Option.builder("r")
 				.hasArg()
@@ -103,17 +87,9 @@ public class Main {
 			System.exit(1);
 		}
 		String classpath = cmd.getOptionValue("classpath", Constants.DEFAULT_CP);
-		String rtpath = cmd.getOptionValue("rtpath", Constants.DEFAILT_RT_PATH);
-		String jcepath = cmd.getOptionValue("jcepath", Constants.DEFAILT_JCE_PATH);
-		String address = cmd.getOptionValue("address", Constants.Z3_HOST);
-		String port_str = cmd.getOptionValue("port", Constants.Z3_PORT);
-		int port;
-		try {
-			port = Integer.parseInt(port_str);
-		} catch (NumberFormatException e) {
-			Logger.error("Value '" + port_str + "' could not be parsed, using default");
-			port = Integer.parseInt(Constants.Z3_PORT);
-		}
+		String rtpath = cmd.getOptionValue("rtpath", Constants.DEFAULT_RT_PATH);
+		String jcepath = cmd.getOptionValue("jcepath", Constants.DEFAULT_JCE_PATH);
+
 		String klass = cmd.getOptionValue("class");
 
 		if(SystemUtils.IS_OS_WINDOWS) {
@@ -150,7 +126,7 @@ public class Main {
 		PackManager pm = PackManager.v();
 		Pack pack = pm.getPack("stp");
 
-		Analysis analysis = new Analysis(klass, address, port);
+		Analysis analysis = new Analysis(klass);
 		Transform t = new Transform("stp.arrayssa", analysis);
 		//p.insertAfter(t, phaseName);
 		//p.insertAfter(t, "sop.cpf");

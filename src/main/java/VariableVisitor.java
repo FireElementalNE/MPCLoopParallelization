@@ -77,23 +77,20 @@ public class VariableVisitor extends AbstractStmtSwitch {
      * @param stmt the statement
      */
     void check_constants(AssignStmt stmt) {
-//        List<String> uses = stmt.getUseBoxes().stream()
-//                .map(i -> i.getValue().toString()).collect(Collectors.toList());
-//        List<String> prims =  uses.stream().filter(NumberUtils::isCreatable).collect(Collectors.toList());
-//        uses.remove(stmt.getRightOp().toString());
-//        uses.removeAll(prims);
-//        boolean all_constants = constants.keySet().containsAll(uses);
-//        if(all_constants) {
         String right = stmt.getRightOp().toString();
         for(Map.Entry<String, Integer> entry : constants.entrySet()) {
             right = right.replace(entry.getKey(), entry.getValue().toString());
         }
-        Expression e = new ExpressionBuilder(right).build();
-        int result = (int) e.evaluate();
+        int result = 0;
+        try {
+            Expression e = new ExpressionBuilder(right).build();
+            result = (int) e.evaluate();
+        } catch (net.objecthunter.exp4j.tokenizer.UnknownFunctionOrVariableException e) {
+            Logger.error(e.getMessage());
+            Logger.error(right);
+            System.exit(0);
+        }
         constants.put(stmt.getLeftOp().toString(), result);
-//            constants.addAll(uses);
-//            constants.add(stmt.getLeftOp().toString());
-//        }
     }
 
 

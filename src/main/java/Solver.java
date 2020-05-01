@@ -14,7 +14,8 @@ import java.util.*;
 /**
  * Class that solves constraints via SMT
  */
-public class Solver implements Runnable{
+@SuppressWarnings("FieldMayBeFinal")
+public class Solver {
 
     // TODO: this will be the solver class!
 
@@ -43,10 +44,16 @@ public class Solver implements Runnable{
     private ImmutablePair<Variable, List<AssignStmt>> dep_chain;
     private String index_name;
     private PhiVariableContainer phi_vars;
-    private List<String> results;
     private String resolved_eq;
     private Map<String, Integer> constants;
 
+    /**
+     * constructor for the solver class
+     * @param index_name the name of the index being solved
+     * @param dep_chain the dependency chain for the index
+     * @param phi_vars the phi variables
+     * @param constants the constants
+     */
     Solver(String index_name, ImmutablePair<Variable, List<AssignStmt>> dep_chain,
            PhiVariableContainer phi_vars, Map<String, Integer> constants) {
         this.index_name = index_name;
@@ -56,6 +63,48 @@ public class Solver implements Runnable{
         this.constants = constants;
     }
 
+    /**
+     * resolver the dependency chain using the constants and dep chain
+     * this uses the variable definitions to get an equation that contains only
+     * phi variables and the needed index
+     * @return a string representing the final equation for the index
+     */
+    @SuppressWarnings("ConstantConditions")
+    String resolve_dep_chain() {
+        LinkedList<AssignStmt> stmts = new LinkedList<>(dep_chain.getRight());
+        String base_stmt = null;
+        for(int i = 0; i < stmts.size(); i++) {
+            String left = stmts.get(i).getLeftOp().toString();
+            if(Objects.equals(left, index_name)) {
+                base_stmt = stmts.remove(i).toString();
+                break;
+            }
+        }
+        if(Utils.not_null(base_stmt)) {
+            while(!stmts.isEmpty()) {
+                AssignStmt current_stmt = stmts.remove(0);
+                String left = current_stmt.getLeftOp().toString();
+                List<String> split_lst = Arrays.asList(base_stmt.split(" "));
+                if(split_lst.contains(left)) {
+                    String right = current_stmt.getRightOp().toString();
+                    int index = split_lst.indexOf(left);
+                    split_lst.set(index, right);
+                    base_stmt = String.join(" ", split_lst);
+                } else {
+                    stmts.addLast(current_stmt);
+                }
+            }
+        } else {
+            base_stmt = index_name;
+        }
+        return base_stmt;
+    }
+
+    /**
+     * solve the dep chain equation using z3
+     * TODO: needs more explaination
+     * @return the d value between the index and the relevant phi variables
+     */
     int solve() {
         int d = 0;
         String resolved_eq = resolve_dep_chain();
@@ -89,7 +138,6 @@ public class Solver implements Runnable{
             writer.write("s.add(F)\n");
             writer.write(String.format("s.add(%s)\n", resolved_eq.replace("$", "").replace("=", "==")));
             writer.write("print(s.check())\n");
-//            writer.write("print(s.model())\n");
             writer.write("if s.check() == z3.sat:\n");
             writer.write("    m = s.model()\n");
             writer.write("    for el in m:\n");
@@ -137,43 +185,11 @@ public class Solver implements Runnable{
 
     }
 
-    @SuppressWarnings("ConstantConditions")
-    String resolve_dep_chain() {
-        LinkedList<AssignStmt> stmts = new LinkedList<>(dep_chain.getRight());
-        String base_stmt = null;
-        for(int i = 0; i < stmts.size(); i++) {
-            String left = stmts.get(i).getLeftOp().toString();
-            if(Objects.equals(left, index_name)) {
-                base_stmt = stmts.remove(i).toString();
-                break;
-            }
-        }
-        if(Utils.not_null(base_stmt)) {
-            while(!stmts.isEmpty()) {
-                AssignStmt current_stmt = stmts.remove(0);
-                String left = current_stmt.getLeftOp().toString();
-                List<String> split_lst = Arrays.asList(base_stmt.split(" "));
-                if(split_lst.contains(left)) {
-                    String right = current_stmt.getRightOp().toString();
-                    int index = split_lst.indexOf(left);
-                    split_lst.set(index, right);
-                    base_stmt = String.join(" ", split_lst);
-                } else {
-                    stmts.addLast(current_stmt);
-                }
-            }
-        } else {
-            base_stmt = index_name;
-        }
-        return base_stmt;
-    }
-
+    /**
+     * getter for the resolved equation
+     * @return the resolved equation
+     */
     String get_resolved_eq() {
         return resolved_eq;
-    }
-
-    @Override
-    public void run() {
-
     }
 }

@@ -1,4 +1,10 @@
+import guru.nidi.graphviz.attribute.Color;
+import guru.nidi.graphviz.attribute.Shape;
+import guru.nidi.graphviz.attribute.Style;
+
 import java.util.regex.Pattern;
+
+import static guru.nidi.graphviz.model.Factory.node;
 
 /**
  * Constants class
@@ -20,8 +26,8 @@ class Constants {
     static final Pattern BLOCK_NUM_RE = Pattern.compile("^Block\\s(\\d+)");
     static final int BLOCK_RE_FAILED = -1;
     static final String DEFAULT_CP = "test_programs/out";
-    static final String DEFAILT_RT_PATH = Utils.rt_path();
-    static final String DEFAILT_JCE_PATH = Utils.jce_path();
+    static final String DEFAULT_RT_PATH = Utils.rt_path();
+    static final String DEFAULT_JCE_PATH = Utils.jce_path();
     static final String ARRAY_VERSION_NEW_ARRAY = "NEW_ARRAY";
     static final String INT_TYPE = "int";
     static final String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
@@ -42,6 +48,13 @@ class Constants {
     static final String ZERO_TEST_PY_STR_NEG = "%s != 0";
     static final String ZERO_TEST_PY_STR_POS = "%s == 0";
     static final String SAT = "sat";
+
+    // BLANK NODE PLACEHOLDERS
+    static final guru.nidi.graphviz.model.Node NO_INTER_LOOP_DEPS_NODE =
+            node("NO INTER LOOP DEPS").with(Shape.RECTANGLE, Style.FILLED, Color.GRAY);
+
+//    static final guru.nidi.graphviz.model.Node NO_VERSION_CHANGE =
+//            node("NO VERSION CHANGE").with(Shape.RECTANGLE, Style.FILLED, Color.GRAY);
 
 }
 

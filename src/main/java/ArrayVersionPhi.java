@@ -9,13 +9,29 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings("FieldMayBeFinal")
 public class ArrayVersionPhi implements ArrayVersion {
-
-
+    /**
+     * the current version
+     */
     private int version;
+    /**
+     * the list of all array versions
+     */
     private List<ArrayVersion> array_versions;
+    /**
+     * flag to tell if we happen to have the same names, for printing mostly
+     */
     private boolean diff_ver_match;
+    /**
+     * the block number for the merge that created this
+     */
     private int block;
+    /**
+     * flag to tell if this has been written to
+     */
     private boolean has_been_written_to;
+    /**
+     * all the versions
+     */
     private Map<Integer, Stmt> versions;
 
     /**

@@ -26,6 +26,7 @@ import static guru.nidi.graphviz.model.Factory.*;
  */
 @SuppressWarnings("FieldMayBeFinal")
 public class Analysis extends BodyTransformer {
+	// TODO: finish private member Javadoc
 
 	// No loop carried dependencies for this! the arrays are only read only or write only.
 	// The only dependency that is carried is for the sum variable. Make a check, if an array
@@ -33,51 +34,71 @@ public class Analysis extends BodyTransformer {
 	// Get loops from HPC literature
 	// FIX: need to finish SCC by next week, a lot of work.
 
-	// the name of the class being analyzed
+	/**
+	 * the name of the class being analyzed
+ 	 */
 	@SuppressWarnings("FieldCanBeLocal")
 	private String class_name;
-	// Map that represents the current array versions that I block presents to a successor block
+	/**
+	 * Map that represents the current array versions that I block presents to a successor block
+	 */
 	private Map<Block, DownwardExposedArrayRef> c_arr_ver; // current array version
-	// A worklist containing the block left to process
+	/**
+	 * A worklist containing the block left to process
+	 */
 	private LinkedList<Block> worklist;
-	// a list of blocks that have been seen
+	/**
+	 * a list of blocks that have been seen
+	 */
 	private Set<Block> seen_blocks;
-	// a list of blocks that have been seen IN THE CURRENT BFS execution
-	// This is a bit more complex, these blocks are removed when the second iteration is parsed
-	// Then they are added back.
+	/**
+	 * a list of blocks that have been seen IN THE CURRENT BFS execution
+	 * This is a bit more complex, these blocks are removed when the second iteration is parsed
+	 * Then they are added back.
+	 */
 	private Set<Block> loop_blocks;
-	// A Set containing pairs of loop heads and exits (this will be important for nested loops)
+	/**
+	 * A Set containing pairs of loop heads and exits (this will be important for nested loops)
+	 */
 	private Set<ImmutablePair<String, String>> loop_head_exits;
-	// A wrapper class that contains a Map for all array variables to  array version
+	/**
+	 * A wrapper class that contains a Map for all array variables to  array version
+	 */
 	private ArrayVariables array_vars;
-	// A list of variables that have been defined in the second iteration, this is needed so we do not
-	// confuse mark a variable as having an intra-loop dependency when it was defined earlier in the
-	// loop (it is contained in array_vars but has been defined)
+	/**
+	 * A list of variables that have been defined in the second iteration, this is needed so we do not
+	 * confuse mark a variable as having an intra-loop dependency when it was defined earlier in the
+	 * loop (it is contained in array_vars but has been defined)
+	 */
 	private Set<String> second_iter_def_vars;
-	// The container class for all array ssa phi variables
+	/**
+	 * The container class for all array ssa phi variables
+	 */
 	private PhiVariableContainer phi_vars;
-	// A set of possible constants gathered from non-loop blocks
-	// TODO: HAVE TO PASS CONSTANT VALUES!!!!
+	/**
+	 * A set of possible constants gathered from non-loop blocks
+	 */
 	private Map<String, Integer> constants;
-	// A list of the _original_ phi variables that is queried on the second iteration
+	/**
+	 * A list of the _original_ phi variables that is queried on the second iteration
+	 */
 	private Set<String> top_phi_var_names;
-	// The final DefUse Graph
+	/**
+	 * The final DefUse Graph
+	 */
 	private ArrayDefUseGraph graph;
-	// Dot graphs (for printing)
+
+	/**
+	 * Dot graphs (for printing)
+ 	 *
+	 */
 	private MutableGraph flow_graph;
-
-
-	// server information
-	private int port;
-	private String host;
 
 	/**
 	 * Create an analysis object
 	 * @param class_name the class that is being analyzed
-	 * @param host the hose of the server
-	 * @param port the port of the server
 	 */
-	public Analysis(String class_name, String host, int port) {
+	public Analysis(String class_name) {
 		this.class_name = class_name;
 		flow_graph = mutGraph(class_name + "_flow").setDirected(true);
 		seen_blocks = new HashSet<>();
@@ -91,8 +112,6 @@ public class Analysis extends BodyTransformer {
 		graph = new ArrayDefUseGraph(this.class_name);
 		loop_blocks = new HashSet<>();
 		constants = new HashMap<>();
-		this.host = host;
-		this.port = port;
 	}
 
 	/**
@@ -320,7 +339,6 @@ public class Analysis extends BodyTransformer {
 	 * @param exits all exits from the loop
 	 * @param second_iter true iff we are parsing the loop for the second time.
 	 */
-	@SuppressWarnings({"ForLoopReplaceableByForEach", "DuplicatedCode"})
 	private void process(Block b, Block head, List<String> exits, boolean second_iter) {
 		List<Block> pred_blocks = b.getPreds();
 		if(second_iter) {
@@ -328,8 +346,7 @@ public class Analysis extends BodyTransformer {
 				Logger.error("Were have seen this block on the second iter: " + b.getHead().toString());
 				return;
 			}
-			for (Iterator<Unit> i = b.iterator(); i.hasNext(); ) {
-				Unit u = i.next();
+			for (Unit u : b) {
 				IndexVisitor iv = new IndexVisitor(phi_vars, second_iter_def_vars,
 						top_phi_var_names, constants, graph);
 				u.apply(iv);
@@ -362,9 +379,7 @@ public class Analysis extends BodyTransformer {
 				handle_non_merge(b, pred_blocks.get(0), exits);
 			}
 			// process stmts
-			for (Iterator<Unit> i = b.iterator(); i.hasNext(); ) {
-
-				Unit u = i.next();
+			for (Unit u : b) {
 				ArrayVariableVisitor av_visitor = new ArrayVariableVisitor(array_vars, graph, Utils.get_block_num(b));
 				u.apply(av_visitor);
 				array_vars = av_visitor.get_vars();
@@ -519,7 +534,7 @@ public class Analysis extends BodyTransformer {
 			graph.make_scc_graph(phi_vars, constants);
 			Logger.info("Linking non index phi vars");
 			phi_vars.make_phi_links_graph(array_vars, constants);
-			array_vars.make_array_var_graph(constants);
+			array_vars.make_array_var_graph();
 			phi_vars.make_non_index_graphs();
 		}
 	}
