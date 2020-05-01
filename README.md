@@ -56,12 +56,12 @@ usage: utility-name
 * the default **-j** and **-r** arguments change depending on operating system.
 
 * Currently the depedencies are:
-    *  [tinylog-api 2.0.1](https://mvnrepository.com/artifact/org.tinylog/tinylog-api/2.0.1)
+    * [tinylog-api 2.0.1](https://mvnrepository.com/artifact/org.tinylog/tinylog-api/2.0.1)
     * [tinylog-impl 2.0.1](https://mvnrepository.com/artifact/org.tinylog/tinylog-impl/2.0.1)
     * [soot 4.2.0](https://mvnrepository.com/artifact/ca.mcgill.sable/soot/4.1.0)
     * [graphviz-java 0.15.1](https://mvnrepository.com/artifact/guru.nidi/graphviz-java/0.15.1)
     * [commons-lang3 3.9](https://mvnrepository.com/artifact/org.apache.commons/commons-lang3/3.9)
     * [commons-cli 1.4](https://mvnrepository.com/artifact/commons-cli/commons-cli/1.4)
-    * [batik-rasterizer 1.12](https://mvnrepository.com/artifact/org.apache.xmlgraphics/batik-rasterizer/1.12)
+    * [exp4j 0.4.8](https://mvnrepository.com/artifact/net.objecthunter/exp4j/0.4.8)
 
 Again though, the **mvn package** step should download and set all that up.
