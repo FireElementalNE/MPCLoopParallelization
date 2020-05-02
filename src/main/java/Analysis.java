@@ -81,6 +81,10 @@ public class Analysis extends BodyTransformer {
 	 */
 	private ArrayDefUseGraph graph;
 	/**
+	 * the final SCC graph
+	 */
+	private SCCGraph scc_graph;
+	/**
 	 * Dot graphs (for printing)
 	 */
 	final private MutableGraph flow_graph;
@@ -102,6 +106,7 @@ public class Analysis extends BodyTransformer {
 		constants = new HashMap<>();
 		top_phi_var_names = new HashSet<>();
 		second_iter_def_vars = new HashSet<>();
+		scc_graph = new SCCGraph(class_name);
 	}
 
 	/**
@@ -339,10 +344,10 @@ public class Analysis extends BodyTransformer {
 			}
 			for (Unit u : b) {
 				IndexVisitor iv = new IndexVisitor(phi_vars, second_iter_def_vars,
-						top_phi_var_names, constants, graph);
+						top_phi_var_names, constants, scc_graph);
 				u.apply(iv);
 				second_iter_def_vars = iv.get_second_iter_def_vars();
-				graph = iv.get_graph();
+				scc_graph = iv.get_graph();
 			}
 			seen_blocks.add(b);
 			worklist.addAll(b.getSuccs());
@@ -475,13 +480,13 @@ public class Analysis extends BodyTransformer {
 		// second iter
 		Logger.info("Entering second iteration!");
 		// Empty worklist
-//		worklist = new LinkedList<>();
-//		worklist.add(head);
-//		Logger.info("seen_blocks size 1: " + seen_blocks.size());
-//		seen_blocks.removeAll(loop_blocks);
-//		Logger.info("seen_blocks size 2: " + seen_blocks.size());
-//		parse_iteration(head, exits, true);
-//		seen_blocks.addAll(loop_blocks);
+		worklist = new LinkedList<>();
+		worklist.add(head);
+		Logger.info("seen_blocks size 1: " + seen_blocks.size());
+		seen_blocks.removeAll(loop_blocks);
+		Logger.info("seen_blocks size 2: " + seen_blocks.size());
+		parse_iteration(head, exits, true);
+		seen_blocks.addAll(loop_blocks);
 	}
 
 
@@ -502,13 +507,13 @@ public class Analysis extends BodyTransformer {
 			parse_blocks_start(body);
 			Logger.info("Node count: " + graph.get_nodes().size());
 			for (Map.Entry<String, Node> entry : graph.get_nodes().entrySet()) {
-				Logger.info(entry.getKey() + " -> " + entry.getValue().get_stmt());
+				Logger.info(entry.getKey() + " -> " + entry.getValue().get_aug_stmt());
 			}
 			Logger.info("Edge count: " + graph.get_edges().size());
 			for (Map.Entry<Integer, Edge> entry : graph.get_edges().entrySet()) {
 				Logger.info(entry.getKey() + ": ");
-				Logger.info(" " + entry.getValue().get_def().get_stmt());
-				Logger.info(" " + entry.getValue().get_use().get_stmt());
+				Logger.info(" " + entry.getValue().get_def().get_aug_stmt());
+				Logger.info(" " + entry.getValue().get_use().get_aug_stmt());
 			}
 			phi_vars.make_graphs();
 			List<PhiVariable> linked_pvars = phi_vars.get_looping_index_vars();
@@ -525,7 +530,7 @@ public class Analysis extends BodyTransformer {
 			}
 			Utils.print_graph(flow_graph);
 			graph.make_graph();
-			graph.make_scc_graph(phi_vars, array_vars, constants);
+			scc_graph.make_scc_graph(phi_vars, array_vars, constants, graph);
 			Logger.info("Linking non index phi vars");
 			phi_vars.make_phi_links_graph(array_vars, constants);
 			array_vars.make_array_var_graph();

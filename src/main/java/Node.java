@@ -181,10 +181,18 @@ class Node {
 
 
     /**
-     * get the node statement (might be augmented)
+     * get the original node stmt
      * @return the possibly augmented node statement
      */
     String get_stmt() {
+        return stmt;
+    }
+
+    /**
+     * get the node statement (might be augmented)
+     * @return the possibly augmented node statement
+     */
+    String get_aug_stmt() {
         if(is_aug) {
             return aug_stmt;
         } else {

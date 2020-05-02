@@ -44,8 +44,8 @@ class Constants {
     static final String SAT = "sat";
     static final String ASSERT_NULL_STR = "%s should not be null.";
     // BLANK NODE PLACEHOLDERS
-    static final guru.nidi.graphviz.model.Node NO_INTER_LOOP_DEPS_NODE =
-            node("NO INTER LOOP DEPS").with(Shape.RECTANGLE, Style.FILLED, Color.GRAY);
+    static final guru.nidi.graphviz.model.Node NO_ARRAY_DEF_USE =
+            node("NO_ARRAY_DEF_USE").with(Shape.RECTANGLE, Style.FILLED, Color.GRAY);
 
 }
 

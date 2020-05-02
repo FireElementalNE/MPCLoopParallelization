@@ -32,7 +32,9 @@ public class VariableVisitor extends AbstractStmtSwitch {
      * A set of possible constants gathered from non-loop blocks
      */
     private final Map<String, Integer> constants;
-
+    /**
+     * A list of the _original_ phi variables that is queried on the second iteration
+     */
     private Set<String> top_phi_var_names;
 
     /**
@@ -90,6 +92,7 @@ public class VariableVisitor extends AbstractStmtSwitch {
      */
     void check_constants(AssignStmt stmt) {
         String right = stmt.getRightOp().toString();
+        Logger.info("Checking if '" + stmt.getLeftOp().toString() + "' is a constant.");
         for(Map.Entry<String, Integer> entry : constants.entrySet()) {
             right = right.replace(entry.getKey(), entry.getValue().toString());
         }
@@ -102,6 +105,7 @@ public class VariableVisitor extends AbstractStmtSwitch {
             Logger.error(right);
             System.exit(0);
         }
+        Logger.info("'" + stmt.getLeftOp().toString() + "' is a constant.");
         constants.put(stmt.getLeftOp().toString(), result);
     }
 

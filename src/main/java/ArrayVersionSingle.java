@@ -8,6 +8,7 @@ import java.util.Map;
  * Defines logic for non-phi array variables.
  */
 class ArrayVersionSingle implements ArrayVersion {
+    // TODO: the FIRST write should have a _1!!!
     /**
      * the current version
      */

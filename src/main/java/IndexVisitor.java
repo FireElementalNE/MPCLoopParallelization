@@ -17,8 +17,10 @@ public class IndexVisitor extends AbstractStmtSwitch {
 
     private PhiVariableContainer pvc;
     private Set<String> second_iter_def_vars;
+    // TODO: top_phi_var_name is not needed.
     private Set<String> top_phi_var_names;
-    private ArrayDefUseGraph graph;
+//    private ArrayDefUseGraph graph;
+    private SCCGraph graph;
     private Map<String, Integer> constants;
 
     /**
@@ -30,11 +32,11 @@ public class IndexVisitor extends AbstractStmtSwitch {
      * @param graph the current graph
      */
     IndexVisitor(PhiVariableContainer pvc, Set<String> second_iter_def_vars,
-                 Set<String> top_phi_var_names, Map<String, Integer> constants, ArrayDefUseGraph graph) {
+                 Set<String> top_phi_var_names, Map<String, Integer> constants, SCCGraph graph) {
         this.pvc = new PhiVariableContainer(pvc);
         this.second_iter_def_vars = new HashSet<>(second_iter_def_vars);
         this.top_phi_var_names = new HashSet<>(top_phi_var_names);
-        this.graph = new ArrayDefUseGraph(graph);
+        this.graph = new SCCGraph(graph);
         this.constants = constants;
     }
 
@@ -62,7 +64,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
         // now that we have all of the possible constants we should be OK.
         // only break if it is a DEF!!!
         if(!second_iter_def_vars.contains(index_name)
-                && !top_phi_var_names.contains(index_name)
+           //     !top_phi_var_names.contains(index_name)
                 && !constants.containsKey(index_name)) {
             Logger.debug("Printing def-chain: '" + index_name + "' in stmt '" + stmt.toString() + "'");
             pvc.print_var_dep_chain(constants, index_box.getValue().toString());
@@ -77,22 +79,11 @@ public class IndexVisitor extends AbstractStmtSwitch {
                     }
                     Solver solver = new Solver(index_name, dep_chain, pvc, constants);
                     Logger.info("Resolved dep chain: " + solver.get_resolved_eq());
-//                    solver.solve();
-//                    try {
-//
-//                        String resp = solver.send_recv_stmt();
-//                        Logger.debug("Got this from server: " + resp);
-//
-//                    } catch (IOException e) {
-//                        Logger.error("Could not send '" + stmt.toString() + "' to solver.");
-//                    }
                 } else {
                     Logger.debug("Dep chain for " + index_name + " is empty (is it a phi var?).");
                 }
-//                graph.make_node_scc(ar.getBaseBox().getValue().toString(), index_box.getValue().toString());
-//                graph.add_node(new Node(stmt.toString(), ar.getBaseBox().getValue().toString(),
-//                        new ArrayVersionSingle(-1, -1, stmt), new Index(index_box), DefOrUse.USE,
-//                        stmt.getJavaSourceStartLineNumber(), false), false, true);
+                SCCNode node = new SCCNode(stmt.toString(), ar.getBaseBox().getValue().toString(), new Index(index_box));
+                graph.add_node(node);
             } else {
                 Logger.error("dep chain for " + index_box.getValue().toString() + " is null.");
             }
@@ -109,7 +100,6 @@ public class IndexVisitor extends AbstractStmtSwitch {
             Logger.debug("\t!top_phi_var_names.contains(index_name) = " + !top_phi_var_names.contains(index_name));
             Logger.debug("\t!constants.contains(index_name) = " + !constants.containsKey(index_name));
             Logger.debug("\t!Utils.is_def(stmt) = " +  !Utils.is_def(stmt));
-
         }
     }
 
@@ -125,8 +115,8 @@ public class IndexVisitor extends AbstractStmtSwitch {
      * a getter for the possibly changed graph
      * @return the graph
      */
-    public ArrayDefUseGraph get_graph() {
-        return new ArrayDefUseGraph(graph);
+    public SCCGraph get_graph() {
+        return new SCCGraph(graph);
     }
 
     /**

@@ -118,7 +118,7 @@ class BFSVisitor extends AbstractStmtSwitch {
                 array_vars.put(basename, av);
                 graph.add_node(new Node(stmt.toString(), basename, av, new Index(stmt.getArrayRef().getIndexBox()), DefOrUse.DEF,
                         new ImmutablePair<>(basename, daf.get_name(basename)),
-                                stmt.getJavaSourceStartLineNumber(), false), true);
+                        stmt.getJavaSourceStartLineNumber(), false), true);
                 c_arr_ver.put(b, daf);
             } else {
                 check_array_read(stmt);
