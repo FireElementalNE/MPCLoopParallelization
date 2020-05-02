@@ -65,6 +65,7 @@ class ArrayDefUseGraph {
      * add a node (and possibly an edge) to the graph
      * @param node the node
      * @param is_def true iff the node is a def node
+     * @param links_to_prev_iter true iff we are adding an intra-loop dep
      */
     void add_node(Node node, boolean is_def) {
         if (!is_def) {
@@ -76,36 +77,50 @@ class ArrayDefUseGraph {
 
     }
 
+
     /**
      * possibly add an edge to the graph
      * this is only called as nodes are added via the add_node() function
      * @param use_node the node being added
      */
     private void add_edge(Node use_node) {
-        assert nodes.containsKey(use_node.get_opposite_id()) : "the def_node id  must be a key in nodes.";
-        Node def_node = new Node(nodes.get(use_node.get_opposite_id()));
-        if (use_node.get_index().equals(def_node.get_index()) || def_node.is_phi()) {
-            if (def_node.is_phi()) {
+//        if(links_to_prev_iter) {
+//            for(Map.Entry<String, Node> entry : nodes.entrySet()) {
+//                String name = entry.getKey();
+//                Node n = entry.getValue();
+//                if(n.get_type() == DefOrUse.DEF
+//                        && Objects.equals(use_node.get_basename(), n.get_basename())
+//                        && !n.is_base_def()) {
+//                    Edge edge = new Edge(new Node(n), use_node, true);
+//                    edges.put(edge.hashCode(), edge);
+//                }
+//            }
+//        } else {
+            assert nodes.containsKey(use_node.get_opposite_id()) : "the def_node id  must be a key in nodes.";
+            Node def_node = new Node(nodes.get(use_node.get_opposite_id()));
+            if (use_node.get_index().equals(def_node.get_index()) || def_node.is_phi()) {
                 Logger.info("Adding edge def node is a phi node");
+//                if (def_node.is_phi()) {
+//
+//                } else {
+//                    Logger.info("Adding edge, indexes match.");
+//                }
+                Edge edge = new Edge(nodes.get(use_node.get_opposite_id()), use_node);
+                edges.put(edge.hashCode(), edge);
             } else {
-                Logger.info("Adding edge, indexes match.");
+                // TODO: fix if the indexes _are_ the same but just renamed....
+                //      Test12 shimple:
+                //        i19 = i16_1
+                //        ...
+                //        r0[i19] = $i2
+                //        ...
+                //        $i4 = r0[i16_1]
+                //  That should be an edge.
+                Logger.info("Not adding edge, indexes mismatch and def node is not a phi node. ");
+                Logger.debug("\tdef_index: " + def_node.get_index().to_str());
+                Logger.debug("\tuse_index: " + use_node.get_index().to_str());
             }
-            Edge edge = new Edge(nodes.get(use_node.get_opposite_id()), use_node);
-            edges.put(edge.hashCode(), edge);
-        } else {
-            // TODO: fix if the indexes _are_ the same but just renamed....
-            //      Test12 shimple:
-            //        i19 = i16_1
-            //        ...
-            //        r0[i19] = $i2
-            //        ...
-            //        $i4 = r0[i16_1]
-            //  That should be an edge.
-            Logger.info("Not adding edge, indexes mismatch and def node is not a phi node. ");
-            Logger.debug("\tdef_index: " + def_node.get_index().to_str());
-            Logger.debug("\tuse_index: " + use_node.get_index().to_str());
-            Logger.debug("\tis phi?: " + def_node.is_phi());
-        }
+//        }
     }
 
 
@@ -149,6 +164,7 @@ class ArrayDefUseGraph {
      * Make a pretty inter loop dependency graph
      */
     void make_graph() {
+//        Map<Integer, Edge> the_edges = edges.entrySet().stream().filter(k -> !k.getValue().is_scc_edge()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         if(edges.size() > 0) {
             for (Map.Entry<Integer, Edge> entry : edges.entrySet()) {
                 Edge e = entry.getValue();

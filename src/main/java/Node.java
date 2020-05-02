@@ -317,4 +317,5 @@ class Node {
     boolean is_base_def() {
         return base_def;
     }
+
 }

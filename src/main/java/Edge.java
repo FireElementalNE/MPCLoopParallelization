@@ -10,11 +10,16 @@ class Edge {
      * the use node
      */
     private final Node use;
+    /**
+     * true iff this edge is an scc edge
+     */
+//    private final boolean scc_edge;
 
     /**
      * constructor for Edge
      * @param node1 the def node
      * @param node2 the use node
+//     * @param scc_edge true iff this is an scc edge.
      */
     Edge(Node node1, Node node2) {
         this.def = node1;
@@ -36,6 +41,14 @@ class Edge {
     Node get_use() {
         return use;
     }
+
+    /**
+     * get scc edge flag
+     * @return true iff we are dealing with an scc edge
+     */
+//    boolean is_scc_edge() {
+//        return scc_edge;
+//    }
 
     /**
      * hashing function so we can use a map in ArrayDefUseGraph
