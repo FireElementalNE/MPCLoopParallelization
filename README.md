@@ -65,3 +65,8 @@ usage: utility-name
     * [exp4j 0.4.8](https://mvnrepository.com/artifact/net.objecthunter/exp4j/0.4.8)
 
 Again though, the **mvn package** step should download and set all that up.
+
+* Creates a bunch of pngs in the graphs/ directory
+
+* Also creates JavaDoc jar file
+
