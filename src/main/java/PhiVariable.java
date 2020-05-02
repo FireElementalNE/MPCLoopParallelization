@@ -17,16 +17,41 @@ import static guru.nidi.graphviz.model.Factory.*;
  * Class representing a phi variable. Theses variables are the only that can "change" per loop iterations
  * Any variable based off of theses variables also can "change"
  */
-@SuppressWarnings("FieldMayBeFinal")
+@SuppressWarnings("unused")
 public class PhiVariable {
-    // TODO: add javadoc for these variables
-    private PhiExpr phi_expr;
-    private Value phi_def;
-    private Map<Integer, ImmutablePair<ValueBox, AssignStmt>> all_values;
-    private List<AssignStmt> linked_stmts;
-    private List<Variable> var_links;
+    /**
+     * the phi expresion
+     */
+    private final PhiExpr phi_expr;
+    /**
+     * the phi variable definition (lhs)
+     */
+    private final Value phi_def;
+    /**
+     * complex data structure that maps a phi counter variable to a pair that contains
+     * a statement with a definition.
+     * TODO: needs better explanation
+     */
+    private final Map<Integer, ImmutablePair<ValueBox, AssignStmt>> all_values;
+    /**
+     * the assignment statements 'linked' to this phi variable (mostly for looping)
+     */
+    private final List<AssignStmt> linked_stmts;
+    /**
+     * variables that are DIRECTLY linked to this phi variable
+     */
+    private final List<Variable> var_links;
+    /**
+     * counter for all values map
+     */
     private int counter;
+    /**
+     * flag to tell if this phi variable was ever used as an index
+     */
     private boolean used_as_index;
+    /**
+     * if it is NOT used as an index (and is not an array phi var) the graph showing it's dep chain
+     */
     private MutableGraph non_index_graph;
 
 
@@ -149,8 +174,6 @@ public class PhiVariable {
      * @return true iff this PhiVariable has ever been this value
      */
     boolean has_ever_been(String v) {
-        // must be int!
-        assert Objects.equals(v, Constants.INT_TYPE);
         for(Map.Entry<Integer, ImmutablePair<ValueBox, AssignStmt>> entry : all_values.entrySet()) {
             Value v1 = entry.getValue().getLeft().getValue();
             if(Objects.equals(v1.toString(), v)) {
@@ -323,7 +346,7 @@ public class PhiVariable {
      *         if it does not contain it null.
      */
     AssignStmt get_linked_var_def(String var) {
-        assert has_linked_var_def(var);
+        assert has_linked_var_def(var) : "to get the linked stmt it must have one";
         for(AssignStmt stmt : this.linked_stmts) {
             String left_name = stmt.getLeftOp().toString();
             if(Objects.equals(var, left_name)) {

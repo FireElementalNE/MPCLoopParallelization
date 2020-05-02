@@ -11,9 +11,11 @@ import static guru.nidi.graphviz.model.Factory.*;
 /**
  * class to store all actual array variables
  */
-@SuppressWarnings("FieldMayBeFinal")
 public class ArrayVariables {
-    private Map<String, ArrayVersion> array_vars;
+    /**
+     * a map of all array variables and versions
+     */
+    final private Map<String, ArrayVersion> array_vars;
 
     /**
      * blank constructor for array variable class

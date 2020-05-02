@@ -9,20 +9,48 @@ import java.util.stream.Collectors;
 /**
  * An _overly_ complex node class for ArrayDefUseGraph
  */
-@SuppressWarnings("FieldMayBeFinal")
+@SuppressWarnings("unused")
 class Node {
-
-    private String stmt; // the statement the node represents
-    private DefOrUse type; // type of node (definition or usage)
-    private ArrayVersion av; // ArrayVersion keeps track of the array version represented in the node
-    private Index index; // the index of the array reference
-    private String basename; // the basename of the array reference
-    private String aug_stmt; // the augmented statement based on any new definitions
-    private boolean is_aug; // this node has been augmented
-    private boolean phi_flag; // this is a phi node (special)
-    private boolean is_prev_loop_dummy; // this node is a dummy node representing the entire previous iteration
-    private int line_num; // the line number of the statement
-    private boolean base_def;
+    /**
+     * the statement the node represents
+     */
+    private final String stmt;
+    /**
+     * type of node (definition or usage)
+     */
+    private final DefOrUse type;
+    /**
+     * ArrayVersion keeps track of version of the array  represented in the node
+     */
+    private final ArrayVersion av;
+    /**
+     * the index of the array reference
+     */
+    private final Index index;
+    /**
+     * the basename of the array reference
+     */
+    private final String basename;
+    /**
+     * the augmented statement based on any new definitions
+     */
+    private String aug_stmt;
+    /**
+     * flag showing if this node is augmented
+     */
+    private boolean is_aug;
+    /**
+     * this is a phi node (special)
+     */
+    private final boolean phi_flag;
+    /**
+     * the line number of the node statement
+     */
+    private final int line_num;
+    /**
+     * flag showing if this node is a base (first) definition
+     */
+    private final boolean base_def;
 
     /**
      * Constructor for a brand NEW node. This will either have ArrayVersions of -1 (as a dummy node
@@ -47,7 +75,6 @@ class Node {
         this.is_aug = false;
         this.index = index;
         this.line_num = line_num;
-        this.is_prev_loop_dummy = false;
         this.base_def = base_def;
     }
 
@@ -76,7 +103,6 @@ class Node {
         this.is_aug = true;
         this.aug_stmt = stmt.replace(replacements.getLeft(), replacements.getRight());
         this.line_num = line_num;
-        this.is_prev_loop_dummy = false;
         this.base_def = base_def;
     }
 
@@ -94,21 +120,8 @@ class Node {
         this.phi_flag = av.is_phi();
         this.index = new Index();
         this.line_num = Constants.PHI_LINE_NUM;
-        this.is_prev_loop_dummy = false;
         this.base_def = false;
     }
-
-    /*
-     * Constructor for a dummy node that represents the entire previous iterations. No important info is
-     * held in it.
-     * @param stmt the statement that the node represents (Is always static)
-     * @param basename the basename of the array reference
-     */
-//    Node(String stmt, String basename) {
-//        this.stmt = stmt;
-//        this.basename = basename;
-//        this.is_prev_loop_dummy = true;
-//    }
 
     /**
      * Node Copy constructor (prevent shallow copies as much as possible!)
@@ -124,9 +137,48 @@ class Node {
         this.index = n.index;
         this.phi_flag = n.phi_flag;
         this.line_num = n.line_num;
-        this.is_prev_loop_dummy = n.is_prev_loop_dummy;
         this.base_def = n.base_def;
     }
+
+//    String resolve_index(PhiVariableContainer pvc, Map<String, Integer> constants) {
+//        if(!is_phi()) {
+//            String index_str = index.to_str();
+//            if(!Objects.equals(index_str, Constants.ARRAY_VERSION_NEW_ARRAY)) {
+//                ImmutablePair<Variable, List<AssignStmt>> dep_chain = pvc.get_var_dep_chain(constants, index_str);
+//                String eq;
+//                if(Utils.not_null(dep_chain)) {
+//                    Solver def_solver = new Solver(index_str, dep_chain, pvc, constants);
+//                    eq = def_solver.get_resolved_eq();
+//                    if (eq.contains("=")) {
+//                        eq = eq.split(" = ")[1];
+//                    }
+//                } else {
+//                    eq = "CREATED_ARRAY_SSA_PHI_NODE";
+//                }
+//                return eq;
+//            } else {
+//                return Constants.CANNOT_RESOLVE_NODE_EQ;
+//            }
+//        } else {
+//            return Constants.CANNOT_RESOLVE_NODE_EQ;
+//        }
+//    }
+//
+//    int resolve_d(PhiVariableContainer pvc, Map<String, Integer> constants) {
+//        if(!is_phi()) {
+//            String index_str = index.to_str();
+//            if(!Objects.equals(index_str, Constants.ARRAY_VERSION_NEW_ARRAY)) {
+//                ImmutablePair<Variable, List<AssignStmt>> use_dep_chain = pvc.get_var_dep_chain(constants, index_str);
+//                Solver use_solver = new Solver(index_str, use_dep_chain, pvc, constants);
+//                return use_solver.solve();
+//            } else {
+//                return Constants.CANNOT_RESOLVE_NODE_D;
+//            }
+//        } else {
+//            return Constants.CANNOT_RESOLVE_NODE_D;
+//        }
+//    }
+
 
     /**
      * get the node statement (might be augmented)

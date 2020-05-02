@@ -1,10 +1,16 @@
 /**
  * Hash class for Edges
  */
-@SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
+@SuppressWarnings("FieldCanBeLocal")
 class DefUseHash {
-    private String def;
-    private String use;
+    /**
+     * definition string
+     */
+    private final String def;
+    /**
+     * use string
+     */
+    private final String use;
 
     /**
      * @param def the definition as a string

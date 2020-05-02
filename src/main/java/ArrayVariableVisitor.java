@@ -7,13 +7,23 @@ import java.util.Objects;
 /**
  * Visitor for keeping track of array Variables
  */
-@SuppressWarnings("FieldMayBeFinal")
 public class ArrayVariableVisitor extends AbstractStmtSwitch {
-    private ArrayVariables vars;
-    private ArrayDefUseGraph graph;
-    private int block_num;
-    // flag that is used by VariableVisitor to check for constants. If we are dealing with an array
-    // it is not a constant we are interested in.
+    /**
+     * all array variables
+     */
+    private final ArrayVariables vars;
+    /**
+     * the array definition use graph
+     */
+    private final ArrayDefUseGraph graph;
+    /**
+     * the number of the block of code being currently analyzed
+     */
+    private final int block_num;
+    /**
+     * flag that is used by VariableVisitor to check for constants. If we are dealing with an array
+     * it is not a constant we are interested in.
+     */
     private boolean is_array;
 
     /**
@@ -119,13 +129,13 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
             ArrayVersion av = new ArrayVersionSingle(1, block_num, stmt);
             graph.add_node(new Node(stmt.toString(), left_op, av, new Index(), DefOrUse.DEF,
                             stmt.getJavaSourceStartLineNumber(), true),
-                    true, false);
+                    true);
             vars.put(left_op, av);
             is_array = true;
         }
         else if(vars.contains_key(right_op)) {
             // NOTE: PURE array renaming!
-            assert !stmt.containsArrayRef();
+            assert !stmt.containsArrayRef() : "pure array naming cannot contain an array reference.";
             ArrayVersion av = vars.get(right_op);
             ArrayVersion new_av = Utils.rename_av(av);
             vars.put(left_op, new_av);

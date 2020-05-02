@@ -30,3 +30,4 @@ out/*
 target/*
 graphs/*
 z3_python/*
+doc/*

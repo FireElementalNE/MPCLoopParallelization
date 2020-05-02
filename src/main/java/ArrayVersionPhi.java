@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
  * Subclass of the ArrayVersion interface
  * Defines logic for phi array variables.
  */
-@SuppressWarnings("FieldMayBeFinal")
 public class ArrayVersionPhi implements ArrayVersion {
     /**
      * the current version
@@ -16,13 +15,13 @@ public class ArrayVersionPhi implements ArrayVersion {
     /**
      * the list of all array versions
      */
-    private List<ArrayVersion> array_versions;
+    private final List<ArrayVersion> array_versions;
     /**
      * flag to tell if we happen to have the same names, for printing mostly
      */
-    private boolean diff_ver_match;
+    private final boolean diff_ver_match;
     /**
-     * the block number for the merge that created this
+     * the block number for the merge
      */
     private int block;
     /**
@@ -32,7 +31,7 @@ public class ArrayVersionPhi implements ArrayVersion {
     /**
      * all the versions
      */
-    private Map<Integer, Stmt> versions;
+    private final Map<Integer, Stmt> versions;
 
     /**
      * create a new ArrayVersionPhi

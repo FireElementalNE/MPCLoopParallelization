@@ -17,13 +17,27 @@ import static guru.nidi.graphviz.model.Factory.*;
  * It has a map _aliases_ which contains information on how every variable linked to the phi expression maps
  * to every other variable that gets added TODO: need to explain this better
  */
-@SuppressWarnings("FieldMayBeFinal")
 public class Variable {
-    private Map<String, Set<Alias>> aliases;
-    private Value root_val;
+    /**
+     * a class to hold all aliases of this variable
+     */
+    private final Map<String, Set<Alias>> aliases;
+    /**
+     * the root (or base) variable
+     */
+    private final Value root_val;
+    /**
+     * a graph showing the variable aliases
+     */
     private MutableGraph var_graph; // TODO: this might be stale.
+    /**
+     * a graph showing the variables dependencies
+     */
     private MutableGraph def_graph;
-    private PhiExpr phi_expr;
+    /**
+     * the base phi expression for the variable
+     */
+    private final PhiExpr phi_expr;
 
     /**
      * Create a new variable object.
@@ -163,7 +177,7 @@ public class Variable {
         for(Map.Entry<String, Set<Alias>> entry : aliases.entrySet()) {
             if(alias_set_contains(entry.getValue(), child)) {
                 Alias a = get_alias(entry.getValue(), child);
-                assert Utils.not_null(a) : "Should NEVER get here";
+                assert Utils.not_null(a) : String.format(Constants.ASSERT_NULL_STR, "a");
                 parents.add(new ImmutablePair<>(entry.getKey(), a));
             }
         }
@@ -178,7 +192,7 @@ public class Variable {
      */
     private String build_var_dep_chain_str(String current_var) {
         List<ImmutablePair<String, Alias>> p_pairs = get_parents(current_var);
-        assert p_pairs.size() == 1 || p_pairs.size() == 2 || p_pairs.isEmpty();
+        assert p_pairs.size() == 1 || p_pairs.size() == 2 || p_pairs.isEmpty() : "p_pairs must be of size 0, 1, or 2.";
         if(p_pairs.size() == 1) {
             ImmutablePair<String, Alias> p_pair = p_pairs.get(0);
             return current_var + " (" + p_pair.getRight().get_stmt().getRightOp().toString() +
@@ -219,7 +233,7 @@ public class Variable {
     private Set<AssignStmt> parse_var_dep_chain(String current_var, Set<AssignStmt> def_lst) {
         // parents can only be of size 0, 1, or 2
         List<ImmutablePair<String, Alias>> p_pairs = get_parents(current_var);
-        assert p_pairs.size() == 1 || p_pairs.size() == 2 || p_pairs.isEmpty();
+        assert p_pairs.size() == 1 || p_pairs.size() == 2 || p_pairs.isEmpty() : "p_pairs must be of size 0, 1, or 2.";
         if(p_pairs.size() == 1) {
             ImmutablePair<String, Alias> p_pair = p_pairs.get(0);
             def_lst.add(p_pair.getRight().get_stmt());
@@ -281,7 +295,7 @@ public class Variable {
     private void create_var_dep_graph(String current_var, guru.nidi.graphviz.model.Node prev,
                                       Map<String, Integer> constants) {
         List<ImmutablePair<String, Alias>> p_pairs = get_parents(current_var);
-        assert p_pairs.size() == 1 || p_pairs.size() == 2 || p_pairs.isEmpty();
+        assert p_pairs.size() == 1 || p_pairs.size() == 2 || p_pairs.isEmpty() : "p_pairs must be of size 0, 1, or 2.";
         if(p_pairs.size() == 1) {
             ImmutablePair<String, Alias> p_pair = p_pairs.get(0);
             AssignStmt stmt = p_pair.getRight().get_stmt();

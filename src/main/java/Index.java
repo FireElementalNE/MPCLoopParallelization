@@ -5,12 +5,15 @@ import java.util.Objects;
 /**
  * An class representing and index that is used in an array access
  */
-@SuppressWarnings("FieldMayBeFinal")
 public class Index {
-    //
-
-    private ValueBox index_valuebox;
-    private boolean has_index_flag;
+    /**
+     * the index value
+     */
+    private final ValueBox index_valuebox;
+    /**
+     * true iff we actually have an index (for placeholders)
+     */
+    private final boolean has_index_flag;
 
     /**
      * constrictor for the index
@@ -45,6 +48,7 @@ public class Index {
      */
     String to_str() {
         if(has_index_flag) {
+            assert index_valuebox != null : String.format(Constants.ASSERT_NULL_STR, "index_valuebox");
             return index_valuebox.getValue().toString();
         } else {
             return Constants.ARRAY_VERSION_NEW_ARRAY;

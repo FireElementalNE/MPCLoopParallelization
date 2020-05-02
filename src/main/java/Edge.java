@@ -1,23 +1,24 @@
 /**
  * Very simple class that represents an edge in an ArrayDefUseGraph
  */
-@SuppressWarnings("FieldMayBeFinal")
 class Edge {
-
-    private Node def;
-    private Node use;
-    private boolean scc_edge;
+    /**
+     * the def node
+     */
+    private final Node def;
+    /**
+     * the use node
+     */
+    private final Node use;
 
     /**
      * constructor for Edge
      * @param node1 the def node
      * @param node2 the use node
-     * @param scc_edge true iff we are making an scc edge.
      */
-    Edge(Node node1, Node node2, boolean scc_edge) {
+    Edge(Node node1, Node node2) {
         this.def = node1;
         this.use = node2;
-        this.scc_edge = scc_edge;
     }
 
     /**
@@ -34,14 +35,6 @@ class Edge {
      */
     Node get_use() {
         return use;
-    }
-
-    /**
-     * get scc edge flag
-     * @return true iff we are dealing with an scc edge
-     */
-    boolean is_scc_edge() {
-        return scc_edge;
     }
 
     /**

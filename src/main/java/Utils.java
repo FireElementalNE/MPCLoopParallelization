@@ -38,7 +38,7 @@ class Utils {
 	static boolean deleteDirectory(File dir) {
 		if (dir.isDirectory()) {
 			File[] children = dir.listFiles();
-			assert children != null;
+			assert children != null : String.format(Constants.ASSERT_NULL_STR, "children");
 			for (File child : children) {
 				boolean success = deleteDirectory(child);
 				if (!success) {
@@ -211,7 +211,7 @@ class Utils {
 	 * @return a String representation of the array version
 	 */
 	static String create_phi_stmt(String basename, ArrayVersion av) {
-		assert av instanceof ArrayVersionPhi;
+		assert av instanceof ArrayVersionPhi : "can only create phi statements for array versions are in are phi nodes.";
 		ArrayVersionPhi av_phi = (ArrayVersionPhi)av;
 		StringBuilder sb = new StringBuilder();
 		sb.append(Constants.ARR_PHI_STR_START);

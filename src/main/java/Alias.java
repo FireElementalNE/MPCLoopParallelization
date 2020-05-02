@@ -1,15 +1,14 @@
 import soot.jimple.AssignStmt;
 
-@SuppressWarnings("FieldMayBeFinal")
 public class Alias {
     /**
      * the name of the alias
      */
-    private String name;
+    final private String name;
     /**
      * the assignment statement for the alias
      */
-    private AssignStmt stmt;
+    final private AssignStmt stmt;
 
     /**
      * create an Alias object. An alias is an association between a variable name and an assignment stmt.

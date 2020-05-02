@@ -7,13 +7,28 @@ import java.util.Map;
  * Subclass of the ArrayVersion interface
  * Defines logic for non-phi array variables.
  */
-@SuppressWarnings("FieldMayBeFinal")
 class ArrayVersionSingle implements ArrayVersion {
+    /**
+     * the current version
+     */
     private int version;
+    /**
+     * a map of versions coupled with statements
+     */
+    private final Map<Integer, Stmt> versions;
+    /**
+     * the number of the block of code being currently analyzed
+     */
     private int block;
-    private boolean diff_ver_match;
+    /**
+     * flag to tell if we happen to have the same names, for printing mostly (only for phi implementation
+     * of ArrayVersion)
+     */
+    private final boolean diff_ver_match;
+    /**
+     * flag to tell if this has been written to
+     */
     private boolean has_been_written_to;
-    private Map<Integer, Stmt> versions;
 
     /**
      * Create a new ArrayVersionSingle

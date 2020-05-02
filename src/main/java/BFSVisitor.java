@@ -9,14 +9,31 @@ import java.util.Map;
 /**
  * The main visitor for the BFS algorithm.
  */
-@SuppressWarnings("FieldMayBeFinal")
 class BFSVisitor extends AbstractStmtSwitch {
-    private Map<Block, DownwardExposedArrayRef> c_arr_ver;
-    private Block b;
-    private DownwardExposedArrayRef daf;
-    private ArrayDefUseGraph graph;
-    private ArrayVariables array_vars;
-    private int block_num;
+    /**
+     * Map that represents the current array versions that a block presents to a successor block
+     */
+    private final Map<Block, DownwardExposedArrayRef> c_arr_ver;
+    /**
+     * The current block being analyzed
+     */
+    private final Block b;
+    /**
+     * the current downward exposed array references from the previous block
+     */
+    private final DownwardExposedArrayRef daf;
+    /**
+     * The final DefUse Graph
+     */
+    private final ArrayDefUseGraph graph;
+    /**
+     * A wrapper class that contains a Map for all array variables to  array version
+     */
+    private final ArrayVariables array_vars;
+    /**
+     * the block number for the merge
+     */
+    private final int block_num;
 
     /**
      * Constructor for the BFS Visitor
@@ -30,7 +47,7 @@ class BFSVisitor extends AbstractStmtSwitch {
                ArrayVariables array_vars, int block_num) {
         this.c_arr_ver = c_arr_ver;
         this.b = b;
-        assert c_arr_ver.containsKey(b); // this should always be here!
+        assert c_arr_ver.containsKey(b) : "the current array versions must have an entry for the current block";
         this.daf = new DownwardExposedArrayRef(c_arr_ver.get(b));
         this.graph = new ArrayDefUseGraph(graph);
         this.block_num = block_num;
@@ -79,7 +96,7 @@ class BFSVisitor extends AbstractStmtSwitch {
         Node new_node = new Node(stmt.toString(), basename, av, new Index(index_box), DefOrUse.USE,
                 new ImmutablePair<>(basename, daf.get_name(basename)),
                 stmt.getJavaSourceStartLineNumber(), false);
-        graph.add_node(new_node, false, false);
+        graph.add_node(new_node, false);
         c_arr_ver.put(b, daf);
     }
 
@@ -101,7 +118,7 @@ class BFSVisitor extends AbstractStmtSwitch {
                 array_vars.put(basename, av);
                 graph.add_node(new Node(stmt.toString(), basename, av, new Index(stmt.getArrayRef().getIndexBox()), DefOrUse.DEF,
                         new ImmutablePair<>(basename, daf.get_name(basename)),
-                                stmt.getJavaSourceStartLineNumber(), false), true, false);
+                                stmt.getJavaSourceStartLineNumber(), false), true);
                 c_arr_ver.put(b, daf);
             } else {
                 check_array_read(stmt);

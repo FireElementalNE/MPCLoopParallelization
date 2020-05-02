@@ -6,7 +6,7 @@ class Test19 {
         for(int i = 0; i < 10; i++) {
             int p = i * z;
             if(p > 10) {
-                A[i - 2 + z] = 10;
+                A[i - 2 + z] = 10; // j = i - 2 + z; j - i = d
             } else {
                 A[i - 10] = 10;
             }

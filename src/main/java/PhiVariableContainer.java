@@ -18,15 +18,21 @@ import static guru.nidi.graphviz.model.Factory.*;
 
 /**
  * A  convenience class to cut down on unreadable code. It contains all of the phi variables, as well
- * as their associated functions
+ * as their associated functions (does not contain created array phi variables!)
  */
 @SuppressWarnings({"FieldMayBeFinal", "unused"})
 public class PhiVariableContainer {
-
+    /**
+     * all true phi vars
+     */
     private Set<PhiVariable> phi_vars;
+    /**
+     * a graph variable used to create multiple png graphs
+     */
     private MutableGraph graph_creator;
-//    private MutableGraph index_phi_var_links;
-    // for printing phi link graph
+    /**
+     * variables used when making graphs (to make sure we do not add nodes multiple times)
+     */
     private Set<String> parsed_phi_vars;
 
     /**
