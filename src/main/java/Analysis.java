@@ -124,24 +124,21 @@ public class Analysis extends BodyTransformer {
 	 * @param from_blk the source block
 	 * @param to_blk the target block
 	 * @param is_loop true iff it is a looping edge (return to head)
-	 * @param second_iter true iff we are parsing on the second iteration
 	 */
 	@SuppressWarnings("ConstantConditions")
-	private void add_flow_edge(Block from_blk, Block to_blk, boolean is_loop, boolean second_iter) {
-		if(!second_iter) {
-			String from_name = Utils.get_block_name(from_blk);
-			String to_name = Utils.get_block_name(to_blk);
-			if (Utils.not_null(from_name) && Utils.not_null(to_name)) {
-				guru.nidi.graphviz.model.Node from_node = node(from_name);
-				guru.nidi.graphviz.model.Node to_node = node(to_name);
-				if (is_loop) {
-					flow_graph.add(from_node.link(to(to_node).with(Style.DASHED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
-				} else {
-					flow_graph.add(from_node.link(to(to_node).with(LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
-				}
+	private void add_flow_edge(Block from_blk, Block to_blk, boolean is_loop) {
+		String from_name = Utils.get_block_name(from_blk);
+		String to_name = Utils.get_block_name(to_blk);
+		if (Utils.not_null(from_name) && Utils.not_null(to_name)) {
+			guru.nidi.graphviz.model.Node from_node = node(from_name);
+			guru.nidi.graphviz.model.Node to_node = node(to_name);
+			if (is_loop) {
+				flow_graph.add(from_node.link(to(to_node).with(Style.DASHED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
 			} else {
-				Logger.error("Graph broke because RE broke.");
+				flow_graph.add(from_node.link(to(to_node).with(LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
 			}
+		} else {
+			Logger.error("Graph broke because RE broke.");
 		}
 	}
 
@@ -192,7 +189,7 @@ public class Analysis extends BodyTransformer {
 		}
 		for(Block sb : b.getSuccs()) {
 			if(!seen_blocks.contains(sb)) {
-				add_flow_edge(b, sb, false, false);
+				add_flow_edge(b, sb, false);
 				seen_blocks.add(b);
 				parse_block(sb);
 			}
@@ -328,87 +325,68 @@ public class Analysis extends BodyTransformer {
 	 * @param b the Block
 	 * @param head the head Block of the current loop
 	 * @param exits all exits from the loop
-	 * @param second_iter true iff we are parsing the loop for the second time.
 	 */
-	private void process(Block b, Block head, List<String> exits, boolean second_iter) {
+	private void process(Block b, Block head, List<String> exits) {
 		List<Block> pred_blocks = b.getPreds();
-		if(second_iter) {
-			if (seen_blocks.contains(b)) {
-				Logger.error("Were have seen this block on the second iter: " + b.getHead().toString());
-				return;
-			}
-			for (Unit u : b) {
-				IndexVisitor iv = new IndexVisitor(phi_vars, second_iter_def_vars,
-						top_phi_var_names, constants, graph);
-				u.apply(iv);
-				second_iter_def_vars = iv.get_second_iter_def_vars();
-				graph = iv.get_graph();
-			}
-			seen_blocks.add(b);
-			worklist.addAll(b.getSuccs());
-			// TODO: remove this if stmt and replace with true second iteration:
-			//       look at current index variables and how they have changed!
-		} else {
-			if (seen_blocks.contains(b)) {
-				Logger.warn("Were have seen this block: " + b.getHead().toString());
-				return;
-			}
-			// TODO: update indexes!
-			Logger.info(Utils.get_block_name(b) + ": " + b.getHead().toString());
-			if (b.getPreds().size() > 1) { // we have a merge
-				if (check_c_arr_ver(b.getPreds())) {
-					handle_merge(b, exits);
-				} else {
-					Logger.info("Both preds should already be in c_arr_ver!");
-					Logger.info("Skipping and adding this block to the back of worklist.");
-					worklist.addLast(b);
-					return;
-				}
-				handle_merge(b, exits);
-			} else { // we do not have a merge
-				// second iter is always false here.
-				handle_non_merge(b, pred_blocks.get(0), exits);
-			}
-			// process stmts
-			for (Unit u : b) {
-				ArrayVariableVisitor av_visitor = new ArrayVariableVisitor(array_vars,
-						graph, Utils.get_block_num(b));
-				u.apply(av_visitor);
-				array_vars = av_visitor.get_vars();
-				BFSVisitor bfs_visitor = new BFSVisitor(c_arr_ver, b, graph,
-						array_vars, Utils.get_block_num(b));
-				u.apply(bfs_visitor);
-				array_vars = bfs_visitor.get_vars();
-				c_arr_ver = bfs_visitor.get_c_arr_ver();
-				graph = bfs_visitor.get_graph();
-				boolean is_array = av_visitor.get_is_array();
-				VariableVisitor var_visitor =
-						new VariableVisitor(phi_vars, top_phi_var_names, constants, is_array, true);
-				u.apply(var_visitor);
-				phi_vars = var_visitor.get_phi_vars();
-				top_phi_var_names = var_visitor.get_top_phi_var_names();
-				constants = var_visitor.get_constants();
-			}
-			List<Block> succ_blocks = b.getSuccs();
-			Logger.debug("We found " + succ_blocks.size() + " successor blocks.");
-			if (loop_head_exits.contains(new ImmutablePair<>(head.toString(), b.toString()))) {
-				// TODO: this does nothing.
-				Logger.info("We found an exit, stopping.");
-			} else {
-				for (Block s1 : succ_blocks) {
-					if (!seen_blocks.contains(s1)) {
-						add_flow_edge(b, s1, false, false);
-						worklist.addLast(s1);
-					} else if (Objects.equals(Utils.get_block_name(s1), Utils.get_block_name(head))) {
-						Logger.info("We found the head!");
-						add_flow_edge(b, head, true, false);
-						// TODO: should I clear the worklist?
-					}
-				}
-			}
-			seen_blocks.add(b);
-			loop_blocks.add(b);
+		if (seen_blocks.contains(b)) {
+			Logger.warn("Were have seen this block: " + b.getHead().toString());
+			return;
 		}
+		// TODO: update indexes!
+		Logger.info(Utils.get_block_name(b) + ": " + b.getHead().toString());
+		if (b.getPreds().size() > 1) { // we have a merge
+			if (check_c_arr_ver(b.getPreds())) {
+				handle_merge(b, exits);
+			} else {
+				Logger.info("Both preds should already be in c_arr_ver!");
+				Logger.info("Skipping and adding this block to the back of worklist.");
+				worklist.addLast(b);
+				return;
+			}
+			handle_merge(b, exits);
+		} else { // we do not have a merge
+			// second iter is always false here.
+			handle_non_merge(b, pred_blocks.get(0), exits);
+		}
+		// process stmts
+		for (Unit u : b) {
+			ArrayVariableVisitor av_visitor = new ArrayVariableVisitor(array_vars,
+					graph, Utils.get_block_num(b));
+			u.apply(av_visitor);
+			array_vars = av_visitor.get_vars();
+			BFSVisitor bfs_visitor = new BFSVisitor(c_arr_ver, b, graph,
+					array_vars, Utils.get_block_num(b));
+			u.apply(bfs_visitor);
+			array_vars = bfs_visitor.get_vars();
+			c_arr_ver = bfs_visitor.get_c_arr_ver();
+			graph = bfs_visitor.get_graph();
+			boolean is_array = av_visitor.get_is_array();
+			VariableVisitor var_visitor =
+					new VariableVisitor(phi_vars, top_phi_var_names, constants, is_array, true);
+			u.apply(var_visitor);
+			phi_vars = var_visitor.get_phi_vars();
+			top_phi_var_names = var_visitor.get_top_phi_var_names();
+			constants = var_visitor.get_constants();
+		}
+		List<Block> succ_blocks = b.getSuccs();
+		Logger.debug("We found " + succ_blocks.size() + " successor blocks.");
+		if (loop_head_exits.contains(new ImmutablePair<>(head.toString(), b.toString()))) {
+			// TODO: this does nothing.
+			Logger.info("We found an exit, stopping.");
+		} else {
+			for (Block s1 : succ_blocks) {
+				if (!seen_blocks.contains(s1)) {
+					add_flow_edge(b, s1, false);
+					worklist.addLast(s1);
+				} else if (Objects.equals(Utils.get_block_name(s1), Utils.get_block_name(head))) {
+					Logger.info("We found the head!");
+					add_flow_edge(b, head, true);
+					// TODO: should I clear the worklist?
+				}
+			}
+		}
+		seen_blocks.add(b);
+		loop_blocks.add(b);
 	}
 
 	/**
@@ -427,9 +405,8 @@ public class Analysis extends BodyTransformer {
 	 * Initialize the worklist for the BFS algorithm. The workslist represents
 	 * the Blocks that are _left_ to parse
 	 * @param head the Head Block of the Current loop
-	 * @param second_iter true iff we are parsing the loop for the second time.
 	 */
-	private void init_worklist(Block head, boolean second_iter) {
+	private void init_worklist(Block head) {
 		for(Block b : head.getSuccs()) {
 			String head_str = head.getHead().toString();
 			String exit_str = b.getHead().toString();
@@ -437,7 +414,7 @@ public class Analysis extends BodyTransformer {
 			if(loop_head_exits.contains(head_exit)) {
 				Logger.debug("Found an exit, skipping.");
 			} else {
-				add_flow_edge(head, b, false, second_iter);
+				add_flow_edge(head, b, false);
 				worklist.addFirst(b);
 			}
 		}
@@ -447,16 +424,14 @@ public class Analysis extends BodyTransformer {
 	 * perform a full parse of the loop (first or second iteration) for the BFS algorithm
 	 * @param head the head of the currently loop
 	 * @param exits all exits for the current loop
-	 * @param second_iter true iff we are parsing the loop for the second time.
 	 */
-	private void parse_iteration(Block head, List<String> exits, boolean second_iter) {
-		init_worklist(head, second_iter);
+	private void parse_iteration(Block head, List<String> exits) {
+		init_worklist(head);
 		// first iter
 		while(!worklist.isEmpty()) {
 			Block b = worklist.remove();
-			process(b, head, exits, second_iter);
+			process(b, head, exits);
 		}
-		Logger.info("Finished " + second_iter);
 	}
 
 
@@ -471,17 +446,7 @@ public class Analysis extends BodyTransformer {
 		loop_blocks.add(head);
 		init_BFS_vars(head);
 		// CHECKTHIS: Assuming we only have one head...
-		parse_iteration(head, exits, false);
-		// second iter
-		Logger.info("Entering second iteration!");
-		// Empty worklist
-//		worklist = new LinkedList<>();
-//		worklist.add(head);
-//		Logger.info("seen_blocks size 1: " + seen_blocks.size());
-//		seen_blocks.removeAll(loop_blocks);
-//		Logger.info("seen_blocks size 2: " + seen_blocks.size());
-//		parse_iteration(head, exits, true);
-//		seen_blocks.addAll(loop_blocks);
+		parse_iteration(head, exits);
 	}
 
 
