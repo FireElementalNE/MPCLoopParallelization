@@ -133,10 +133,6 @@ public class Main {
 
 		soot.Main.main(args.toArray(new String[0]));
 
-		//        String outputDir = SourceLocator.v().getOutputDir();
-
-		// analysis.showResult();
-
 		long endTime   = System.currentTimeMillis();
 		Logger.info(String.format("Total running time: %.2f sec", ((float)(endTime - startTime) / 1000)));
 		try {

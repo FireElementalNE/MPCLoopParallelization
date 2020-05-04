@@ -4,10 +4,6 @@ import java.util.regex.Pattern;
  * Constants class
  */
 class Constants {
-
-
-
-    static final int PHI_LINE_NUM = -1;
     static final boolean PRINT_ST = false;
     static final String RT_PATH_WINDOWS = "C:\\Program Files\\Java\\jdk1.8.0_221\\jre\\lib\\rt.jar";
     static final String JCE_PATH_WINDOWS = "C:\\Program Files\\Java\\jdk1.8.0_221\\jre\\lib\\jce.jar";
@@ -22,12 +18,10 @@ class Constants {
     static final String DEFAULT_RT_PATH = Utils.rt_path();
     static final String DEFAULT_JCE_PATH = Utils.jce_path();
     static final String ARRAY_VERSION_NEW_ARRAY = "NEW_ARRAY";
-    static final String INT_TYPE = "int";
     static final String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
     static final char[] ALPHABET_ARRAY = ALPHABET.toCharArray();
     static final String UNDERSCORE = "_";
     static final int GRAPHVIZ_EDGE_WEIGHT = 8;
-    static final int GRAPHVIZ_WIDTH = 700;
     static final String GRAPH_DIR = "graphs";
     static final String Z3_DIR = "z3_python";
     static final String GRAPH_EXT =  ".png";
@@ -37,7 +31,6 @@ class Constants {
     static final String RUN_SOLVER_CMD = "python %s";
     static final String CONSTANTS_PY_STR = "%s == %s";
     static final String ZERO_TEST_PY_STR_NEG = "%s != 0";
-    static final String ZERO_TEST_PY_STR_POS = "%s == 0";
     static final String SAT = "sat";
     static final String ASSERT_NULL_STR = "%s should not be null.";
     // BLANK NODE PLACEHOLDERS

@@ -22,7 +22,7 @@ class Node {
     /**
      * ArrayVersion keeps track of version of the array  represented in the node
      */
-    private ArrayVersion av;
+    private final ArrayVersion av;
     /**
      * the index of the array reference
      */

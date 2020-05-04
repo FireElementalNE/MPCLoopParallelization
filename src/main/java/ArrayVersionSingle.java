@@ -33,7 +33,7 @@ class ArrayVersionSingle implements ArrayVersion {
     /**
      * the line number of the version change
      */
-    private int line_num;
+    private final int line_num;
 
     /**
      * Create a new ArrayVersionSingle
@@ -49,6 +49,7 @@ class ArrayVersionSingle implements ArrayVersion {
         has_been_written_to = false;
         this.versions = new HashMap<>();
         versions.put(version, stmt);
+        this.line_num = line_num;
     }
 
     /**

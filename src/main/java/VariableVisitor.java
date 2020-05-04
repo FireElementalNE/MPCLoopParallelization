@@ -35,7 +35,7 @@ public class VariableVisitor extends AbstractStmtSwitch {
     /**
      * A list of the _original_ phi variables that is queried on the second iteration
      */
-    private Set<String> top_phi_var_names;
+    private final Set<String> top_phi_var_names;
 
     /**
      * create new VariableVisitor

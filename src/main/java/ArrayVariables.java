@@ -11,6 +11,7 @@ import static guru.nidi.graphviz.model.Factory.*;
 /**
  * class to store all actual array variables
  */
+@SuppressWarnings("unused")
 public class ArrayVariables {
     /**
      * a map of all array variables and versions

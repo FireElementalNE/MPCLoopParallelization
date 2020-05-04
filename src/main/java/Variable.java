@@ -17,6 +17,7 @@ import static guru.nidi.graphviz.model.Factory.*;
  * It has a map _aliases_ which contains information on how every variable linked to the phi expression maps
  * to every other variable that gets added TODO: need to explain this better
  */
+@SuppressWarnings("unused")
 public class Variable {
     /**
      * a class to hold all aliases of this variable

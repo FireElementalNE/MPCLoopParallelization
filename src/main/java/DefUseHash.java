@@ -1,7 +1,8 @@
 /**
  * Hash class for Edges
  */
-@SuppressWarnings("FieldCanBeLocal")
+
+@SuppressWarnings({"FieldCanBeLocal", "unused"})
 class DefUseHash {
     /**
      * definition string

@@ -19,7 +19,6 @@ public class IndexVisitor extends AbstractStmtSwitch {
     private Set<String> second_iter_def_vars;
     // TODO: top_phi_var_name is not needed.
     private Set<String> top_phi_var_names;
-//    private ArrayDefUseGraph graph;
     private SCCGraph graph;
     private Map<String, Integer> constants;
 

@@ -5,6 +5,7 @@ import java.util.Objects;
 /**
  * An class representing and index that is used in an array access
  */
+@SuppressWarnings("unused")
 public class Index {
     /**
      * the index value

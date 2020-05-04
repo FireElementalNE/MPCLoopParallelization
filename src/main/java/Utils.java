@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 /**
  * Generic Utility class
  */
+@SuppressWarnings("unused")
 class Utils {
 
 	/**
