@@ -95,8 +95,10 @@ class Utils {
 				errors_found = true;
 			}
 		} catch (IOException | InterruptedException e) {
-			Logger.error("Caught exception: " + e.getMessage());
-			System.exit(0);
+			Logger.error("Caught " + e.getClass().getSimpleName() + ": " + e.getMessage());
+			if(Constants.PRINT_ST) {
+				e.printStackTrace();
+			}
 		}
 		if(errors_found) {
 			Logger.error("Errors found. Exiting.");
@@ -127,8 +129,10 @@ class Utils {
 				errors_found = true;
 			}
 		} catch (IOException e) {
-			Logger.error("Caught exception: " + e.getMessage());
-			System.exit(0);
+			Logger.error("Caught " + e.getClass().getSimpleName() + ": " + e.getMessage());
+			if(Constants.PRINT_ST) {
+				e.printStackTrace();
+			}
 		}
 		if(errors_found) {
 			Logger.error("Errors found. Exiting.");
@@ -286,24 +290,25 @@ class Utils {
 	/**
 	 * Write a Mutable GraphViz to disk
 	 * @param graph the graph
+	 * @param default_case the default string that to be shown on an empty map
 	 */
-	static void print_graph(MutableGraph graph) {
+	static void print_graph(MutableGraph graph, String default_case) {
 		String graph_name = graph.name().toString();
 		Logger.debug(graph_name + ":");
 		Logger.debug("\tNodes: " + graph.nodes().size());
 		Logger.debug("\tEdges: " + graph.edges().size());
+		// TODO: fix this
+		/*if(graph.nodes().size() < 1) {
+			guru.nidi.graphviz.model.Node default_node =
+					node(default_case).with(guru.nidi.graphviz.attribute.Shape.RECTANGLE, Style.FILLED, Color.GRAY);
+			graph.add(default_node);
+		}*/
 		try {
 			BufferedImage bimg = Graphviz.fromGraph(graph).render(Format.PNG).toImage();
 			File f = new File(Utils.make_graph_name(graph.name().toString()));
 			ImageIO.write(bimg, "png", f);
 			Logger.info(graph_name + " has " + graph.nodes().size() + " nodes.");
 			Logger.info(graph_name + " has " + graph.edges().size() + " edges.");
-
-//					.toFile().;
-//			viz.render(Format.PNG);
-//			viz.rasterize(Rasterizer.BATIK).toFile(new File(Utils.make_graph_name(graph_name)));
-//			.render(Format.PNG)
-//					.toFile(new File(Utils.make_graph_name(graph.name().toString())));
 		} catch (IOException | AWTError | NoClassDefFoundError e) {
 			Logger.error("Caught " + e.getClass().getSimpleName() + ": " + e.getMessage());
 			if(Constants.PRINT_ST) {

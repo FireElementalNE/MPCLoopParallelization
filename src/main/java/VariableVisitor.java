@@ -101,9 +101,10 @@ public class VariableVisitor extends AbstractStmtSwitch {
             Expression e = new ExpressionBuilder(right).build();
             result = (int) e.evaluate();
         } catch (net.objecthunter.exp4j.tokenizer.UnknownFunctionOrVariableException e) {
-            Logger.error(e.getMessage());
-            Logger.error(right);
-            System.exit(0);
+            Logger.error("Caught " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            if(Constants.PRINT_ST) {
+                e.printStackTrace();
+            }
         }
         Logger.info("'" + stmt.getLeftOp().toString() + "' is a constant.");
         constants.put(stmt.getLeftOp().toString(), result);

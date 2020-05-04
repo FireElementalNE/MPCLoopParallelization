@@ -131,7 +131,7 @@ public class Variable {
         if(aliases.size() > 1) {
             this.var_graph = mutGraph(graph_name).setDirected(true);
             parse_node_graph(root_val.toString());
-            Utils.print_graph(var_graph);
+            Utils.print_graph(var_graph, String.format(Constants.EMPTY_VAR, root_val.toString()));
         } else {
             Logger.info(root_val.toString() + " only has one alias, itself. Not making graph.");
         }
@@ -333,7 +333,7 @@ public class Variable {
         String graph_name = String.format("%s_%s_def", v, root_val.toString());
         this.def_graph = mutGraph(graph_name).setDirected(true);
         create_var_dep_graph(v, current_node, constants);
-        Utils.print_graph(def_graph);
+        Utils.print_graph(def_graph, String.format(Constants.EMPTY_VAR_DEP, v, root_val.toString()));
     }
 
     /**

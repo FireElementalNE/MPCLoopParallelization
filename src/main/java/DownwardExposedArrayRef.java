@@ -67,6 +67,16 @@ class DownwardExposedArrayRef {
     }
 
     /**
+     * force an array version update
+     * @param s the variable name
+     */
+    void force_incr(String s) {
+        ArrayVersion av = array_vars.get(s);
+        av.force_incr_version();
+        array_vars.put(s, av);
+    }
+
+    /**
      * explicitly put a variable with a variable version in the map
      * @param s the variable name
      * @param av the variable version object

@@ -83,7 +83,6 @@ public class Main {
 		} catch (ParseException e) {
 			Logger.error(e.getMessage());
 			formatter.printHelp("utility-name", options);
-
 			System.exit(1);
 		}
 		String classpath = cmd.getOptionValue("classpath", Constants.DEFAULT_CP);
@@ -162,8 +161,11 @@ public class Main {
 			Logger.info(String.format("Peak NON-HEAP used: %.2f MB", non_heap_mem_used * 1e-6));
 			Logger.info(String.format("Peak NON-HEAP memory reserved: %.2f MB", non_heap_mem_com * 1e-6));
 
-		} catch (Throwable t1) {
-			Logger.error("Exception in agent: " + t1);
+		} catch (Throwable e) {
+			Logger.error("Caught " + e.getClass().getSimpleName() + ": " + e.getMessage());
+			if(Constants.PRINT_ST) {
+				e.printStackTrace();
+			}
 		}
 	}
 }

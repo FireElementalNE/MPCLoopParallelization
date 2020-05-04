@@ -22,7 +22,7 @@ class Node {
     /**
      * ArrayVersion keeps track of version of the array  represented in the node
      */
-    private final ArrayVersion av;
+    private ArrayVersion av;
     /**
      * the index of the array reference
      */
@@ -44,10 +44,6 @@ class Node {
      */
     private final boolean phi_flag;
     /**
-     * the line number of the node statement
-     */
-    private final int line_num;
-    /**
      * flag showing if this node is a base (first) definition
      */
     private final boolean base_def;
@@ -60,12 +56,11 @@ class Node {
      * @param av the NEW array version
      * @param index the index of the array reference
      * @param type the type of node (definition of usage)
-     * @param line_num the line number of the statement
      * @param base_def true iff we are dealing with a base definition or a pure rename, these do NOT need
      *                 to be included in any edges!
      */
     Node(String stmt, String basename, ArrayVersion av, Index index,
-         DefOrUse type, int line_num, boolean base_def) {
+         DefOrUse type, boolean base_def) {
         this.stmt = stmt;
         this.type = type;
         this.av = av;
@@ -74,7 +69,6 @@ class Node {
         this.aug_stmt = null;
         this.is_aug = false;
         this.index = index;
-        this.line_num = line_num;
         this.base_def = base_def;
     }
 
@@ -88,12 +82,11 @@ class Node {
      * @param replacements a pair of strings that represents the old augmented name of the node (based off of the array
      *                     OLD array version) and the new augmented name of the node. This is used to change the
      *                     aug_stmt
-     * @param line_num the line number of the statement
      * @param base_def true iff we are dealing with a base definition or a pure rename, these do NOT need
      *                 to be included in any edges!
      */
     Node(String stmt, String basename, ArrayVersion av, Index index,
-         DefOrUse type, ImmutablePair<String, String> replacements, int line_num, boolean base_def) {
+         DefOrUse type, ImmutablePair<String, String> replacements, boolean base_def) {
         this.stmt = stmt;
         this.type = type;
         this.av = av;
@@ -102,7 +95,6 @@ class Node {
         this.basename = basename;
         this.is_aug = true;
         this.aug_stmt = stmt.replace(replacements.getLeft(), replacements.getRight());
-        this.line_num = line_num;
         this.base_def = base_def;
     }
 
@@ -119,7 +111,6 @@ class Node {
         this.basename = basename;
         this.phi_flag = av.is_phi();
         this.index = new Index();
-        this.line_num = Constants.PHI_LINE_NUM;
         this.base_def = false;
     }
 
@@ -136,7 +127,6 @@ class Node {
         this.aug_stmt = n.aug_stmt;
         this.index = n.index;
         this.phi_flag = n.phi_flag;
-        this.line_num = n.line_num;
         this.base_def = n.base_def;
     }
 
@@ -206,7 +196,7 @@ class Node {
      */
     String get_opposite_id() {
         DefOrUse t = Objects.equals(DefOrUse.DEF, type) ? DefOrUse.USE : DefOrUse.DEF;
-        return Node.make_id(basename, av, t, line_num);
+        return Node.make_id(basename, av, t);
 
     }
 
@@ -215,15 +205,14 @@ class Node {
      * @param id the id of the node
      * @param av the array version of the node
      * @param t the type of the node
-     * @param line_num the line number of the statement
      * @return a node id as a string
      */
-    static String make_id(String id, ArrayVersion av, DefOrUse t, int line_num) {
+    static String make_id(String id, ArrayVersion av, DefOrUse t) {
         StringBuilder sb = new StringBuilder(id);
         sb.append(Constants.UNDERSCORE);
+        int line_num = av.get_line_num();
         if(av.is_phi()) {
             ArrayVersionPhi av_phi = (ArrayVersionPhi)av;
-
             Map<Integer, Integer> have_seen = new HashMap<>();
             List<Integer> versions = av_phi.get_array_versions().stream()
                     .map(ArrayVersion::get_version)
@@ -290,7 +279,7 @@ class Node {
      * @return  the ID of this node
      */
     String get_id() {
-        return Node.make_id(basename, av, type, line_num);
+        return Node.make_id(basename, av, type);
     }
 
     /**
@@ -298,7 +287,7 @@ class Node {
      * @return the line number for this statement
      */
     int get_line_num() {
-        return line_num;
+        return av.get_line_num();
     }
 
     /**
@@ -324,6 +313,13 @@ class Node {
      */
     boolean is_base_def() {
         return base_def;
+    }
+
+    /** if we are trying to place a node with the same name in the ArrayDef use graph,
+     *  a unique id is needed. To make that id the AV is artificially increased.
+     */
+    void force_av_incr() {
+        av.force_incr_version();
     }
 
 }

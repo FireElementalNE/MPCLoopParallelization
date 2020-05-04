@@ -26,6 +26,11 @@ interface ArrayVersion {
     void incr_version(int block, Stmt stmt);
 
     /**
+     * force a version increase (useful for merges to avoid id conflicts)
+     */
+    void force_incr_version();
+
+    /**
      * check if the variables in an ArrayVersionPhi have the same names
      * @return true iff the variables in an ArrayVersionPhi have the same name, false if
      *         called on an ArrayVersionSingle, or if the names in an ArrayVersionPhi are different
@@ -54,4 +59,10 @@ interface ArrayVersion {
      * @return the versions map
      */
     Map<Integer, Stmt> get_versions();
+
+    /**
+     * get the line number of the array version change
+     * @return the line number
+     */
+    int get_line_num();
 }

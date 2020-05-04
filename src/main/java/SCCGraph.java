@@ -96,6 +96,6 @@ public class SCCGraph {
                 }
             }
         }
-        Utils.print_graph(SCC_graph);
+        Utils.print_graph(SCC_graph, Constants.EMPTY_SCC);
     }
 }

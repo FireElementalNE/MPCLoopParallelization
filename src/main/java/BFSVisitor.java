@@ -94,9 +94,8 @@ class BFSVisitor extends AbstractStmtSwitch {
         Logger.debug(" " + "This is a use for " + daf.get_name(basename));
         ArrayVersion av = Utils.copy_av(daf.get(basename));
         Node new_node = new Node(stmt.toString(), basename, av, new Index(index_box), DefOrUse.USE,
-                new ImmutablePair<>(basename, daf.get_name(basename)),
-                stmt.getJavaSourceStartLineNumber(), false);
-        graph.add_node(new_node, false);
+                new ImmutablePair<>(basename, daf.get_name(basename)), false);
+        graph.add_node(new_node, false, false);
         c_arr_ver.put(b, daf);
     }
 
@@ -112,13 +111,17 @@ class BFSVisitor extends AbstractStmtSwitch {
                 String basename = stmt.getArrayRef().getBaseBox().getValue().toString();
                 Logger.debug("Array write found (change needed): " + stmt.toString());
                 daf.new_ver(basename, block_num, stmt);
+                ArrayVersion av = Utils.copy_av(daf.get(basename));
+                if(graph.get_nodes().containsKey(Node.make_id(basename, av, DefOrUse.DEF))) {
+                    Logger.warn("Id conflict, forcing version increase before adding node");
+                    daf.force_incr(basename);
+                    av.force_incr_version();
+                }
                 Logger.debug(" " + basename + " needs to be changed to " + daf.get_name(basename));
                 Logger.debug("This is a new def for " + daf.get_name(basename));
-                ArrayVersion av = Utils.copy_av(daf.get(basename));
                 array_vars.put(basename, av);
                 graph.add_node(new Node(stmt.toString(), basename, av, new Index(stmt.getArrayRef().getIndexBox()), DefOrUse.DEF,
-                        new ImmutablePair<>(basename, daf.get_name(basename)),
-                        stmt.getJavaSourceStartLineNumber(), false), true);
+                        new ImmutablePair<>(basename, daf.get_name(basename)), false), true, false);
                 c_arr_ver.put(b, daf);
             } else {
                 check_array_read(stmt);

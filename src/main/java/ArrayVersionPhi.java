@@ -32,13 +32,18 @@ public class ArrayVersionPhi implements ArrayVersion {
      * all the versions
      */
     private final Map<Integer, Stmt> versions;
+    /**
+     * the line number of the version change
+     */
+    private int line_num;
 
     /**
      * create a new ArrayVersionPhi
      * @param array_versions the individual array versions that compose this phi variable
      * @param block the block that created this AV
+     * @param line_num the line number of the version change
      */
-    ArrayVersionPhi(List<ArrayVersion> array_versions, int block) {
+    ArrayVersionPhi(List<ArrayVersion> array_versions, int block, int line_num) {
         this.version = array_versions.stream()
                 .map(ArrayVersion::get_version)
                 .reduce(Integer.MIN_VALUE, Math::max) + 1;
@@ -48,7 +53,7 @@ public class ArrayVersionPhi implements ArrayVersion {
         this.block = block;
         this.has_been_written_to = false;
         this.versions = new HashMap<>();
-
+        this.line_num = line_num;
     }
 
     /**
@@ -62,6 +67,7 @@ public class ArrayVersionPhi implements ArrayVersion {
         this.block = av_phi.block;
         this.has_been_written_to = av_phi.has_been_written_to;
         this.versions = new HashMap<>(av_phi.versions);
+        this.line_num = av_phi.line_num;
     }
 
     /**
@@ -95,6 +101,14 @@ public class ArrayVersionPhi implements ArrayVersion {
         this.block = block;
         version++;
         versions.put(version, stmt);
+    }
+
+    /**
+     * force a version increase (useful for merges to avoid id conflicts)
+     */
+    @Override
+    public void force_incr_version() {
+        version++;
     }
 
     /**
@@ -141,9 +155,22 @@ public class ArrayVersionPhi implements ArrayVersion {
         this.has_been_written_to = true;
     }
 
+    /**
+     * get the versions map
+     * @return the versions map
+     */
     @Override
     public Map<Integer, Stmt> get_versions() {
         return new HashMap<>(versions);
+    }
+
+    /**
+     * get the line number of the array version change
+     * @return the line number
+     */
+    @Override
+    public int get_line_num() {
+        return line_num;
     }
 
 }

@@ -127,7 +127,7 @@ public class ArrayVariables {
             } else {
                 ver_graph.add(cur_node);
             }
-            Utils.print_graph(ver_graph);
+            Utils.print_graph(ver_graph, String.format(Constants.EMPTY_VAR_GRAPH, entry.getKey()));
         }
     }
 }

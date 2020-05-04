@@ -361,7 +361,7 @@ public class PhiVariable {
      */
     void write_non_index_graph() {
         if(!used_as_index) {
-            this.non_index_graph = mutGraph("NonIndex-" + phi_def.toString()).setDirected(true);
+            this.non_index_graph = mutGraph("Non_Index_" + phi_def.toString()).setDirected(true);
             guru.nidi.graphviz.model.Node cur_node = node(phi_def.toString());
             for(int i = 1; i <= counter; i++) {
                 ImmutablePair<ValueBox, AssignStmt> value = all_values.get(i);
@@ -370,7 +370,7 @@ public class PhiVariable {
                 non_index_graph.add(cur_node.link(to(tmp).with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
                 cur_node = tmp;
             }
-            Utils.print_graph(non_index_graph);
+            Utils.print_graph(non_index_graph, String.format(Constants.EMPTY_NON_INDEX_GRAPH, phi_def.toString()));
         } else {
             Logger.warn("Cannot make graph for '" + this.toString() + "' as it is an index.");
         }

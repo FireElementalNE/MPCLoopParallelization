@@ -1,15 +1,12 @@
-import guru.nidi.graphviz.attribute.Color;
-import guru.nidi.graphviz.attribute.Shape;
-import guru.nidi.graphviz.attribute.Style;
-
 import java.util.regex.Pattern;
-
-import static guru.nidi.graphviz.model.Factory.node;
 
 /**
  * Constants class
  */
 class Constants {
+
+
+
     static final int PHI_LINE_NUM = -1;
     static final boolean PRINT_ST = false;
     static final String RT_PATH_WINDOWS = "C:\\Program Files\\Java\\jdk1.8.0_221\\jre\\lib\\rt.jar";
@@ -44,9 +41,14 @@ class Constants {
     static final String SAT = "sat";
     static final String ASSERT_NULL_STR = "%s should not be null.";
     // BLANK NODE PLACEHOLDERS
-    static final guru.nidi.graphviz.model.Node NO_ARRAY_DEF_USE =
-            node("NO_ARRAY_DEF_USE").with(Shape.RECTANGLE, Style.FILLED, Color.GRAY);
-
+    static final String EMPTY_DEF_USE = "EMPTY_DEF_USE";
+    static final String EMPTY_FLOW_GRAPH = "EMPTY_FLOW_GRAPH";
+    static final String EMPTY_VAR_GRAPH = "EMPTY_VAR_GRAPH: %s";
+    static final String EMPTY_NON_INDEX_GRAPH = "EMPTY_NON_INDEX_GRAPH: %s";
+    static final String EMPTY_PHI_LINKS = "EMPTY_PHI_LINKS: %s";
+    static final String EMPTY_SCC = "EMPTY_SCC";
+    static final String EMPTY_VAR = "EMPTY_VAR: %s";
+    static final String EMPTY_VAR_DEP = "EMPTY_VAR_DEP: %s && %s";
 }
 
 

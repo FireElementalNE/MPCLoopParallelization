@@ -30,14 +30,19 @@ class ArrayVersionSingle implements ArrayVersion {
      * flag to tell if this has been written to
      */
     private boolean has_been_written_to;
+    /**
+     * the line number of the version change
+     */
+    private int line_num;
 
     /**
      * Create a new ArrayVersionSingle
      * @param version create a new ArrayVersionPhi with the passed version
      * @param block the block that created this AV
      * @param stmt the  statement changing this version
+     * @param line_num the line num of the version change
      */
-    ArrayVersionSingle(int version, int block, Stmt stmt) {
+    ArrayVersionSingle(int version, int block, Stmt stmt, int line_num) {
         this.version = version;
         this.diff_ver_match = false;
         this.block = block;
@@ -56,6 +61,7 @@ class ArrayVersionSingle implements ArrayVersion {
         this.block = avs.block;
         has_been_written_to = avs.has_been_written_to;
         this.versions = new HashMap<>(avs.versions);
+        this.line_num = avs.line_num;
     }
 
     /**
@@ -100,6 +106,14 @@ class ArrayVersionSingle implements ArrayVersion {
     }
 
     /**
+     * force a version increase (useful for merges to avoid id conflicts)
+     */
+    @Override
+    public void force_incr_version() {
+        version++;
+    }
+
+    /**
      * Overridden getter return version
      * @return the current version
      */
@@ -125,9 +139,22 @@ class ArrayVersionSingle implements ArrayVersion {
         has_been_written_to = true;
     }
 
+    /**
+     * get the versions map
+     * @return the versions map
+     */
     @Override
     public Map<Integer, Stmt> get_versions() {
         return new HashMap<>(versions);
+    }
+
+    /**
+     * get the line number of the array version change
+     * @return the line number
+     */
+    @Override
+    public int get_line_num() {
+        return line_num;
     }
 
 }

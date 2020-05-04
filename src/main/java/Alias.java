@@ -1,5 +1,9 @@
 import soot.jimple.AssignStmt;
 
+/**
+ * An alias is an association between a variable name and an assignment stmt.
+ */
+@SuppressWarnings("unused")
 public class Alias {
     /**
      * the name of the alias
@@ -11,7 +15,7 @@ public class Alias {
     final private AssignStmt stmt;
 
     /**
-     * create an Alias object. An alias is an association between a variable name and an assignment stmt.
+     * create an Alias object.
      * @param name the variable name
      * @param stmt the assignment stmt
      */

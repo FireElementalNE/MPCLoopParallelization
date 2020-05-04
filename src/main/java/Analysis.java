@@ -274,11 +274,15 @@ public class Analysis extends BodyTransformer {
 			DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
 			if (c_arr_ver.containsKey(pred)) {
 				for (Map.Entry<String, ArrayVersion> entry : array_vars.entry_set()) {
-					ArrayVersion current_s = Utils.copy_av(c_arr_ver.get(pred).get(entry.getKey()));
+					ArrayVersion current_s;
+					if(c_arr_ver.containsKey(b) && c_arr_ver.get(b).contains_var(entry.getKey())) {
+						current_s = c_arr_ver.get(b).get(entry.getKey());
+					} else {
+						current_s = Utils.copy_av(c_arr_ver.get(pred).get(entry.getKey()));
+					}
 					new_daf.put(entry.getKey(), current_s);
 				}
 				c_arr_ver.put(b, new_daf);
-
 			} else {
 				Logger.warn("This should already be c_arr_ver!");
 			}
@@ -305,13 +309,13 @@ public class Analysis extends BodyTransformer {
 				// Indexes MUST be the same!
 				// ONLY make a phi node if the versions are ACTUALLY different
 				if(!check_avs_diffs(avs)) {
-					ArrayVersionPhi av_phi = new ArrayVersionPhi(avs, Utils.get_block_num(b));
+					ArrayVersionPhi av_phi = new ArrayVersionPhi(avs, Utils.get_block_num(b), -1);
 					DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
 					// TODO: branch renaming???? if we branch just call new vars a or b then for further branches aa, bb etc??
 					new_daf.put(entry.getKey(), av_phi);
 					Logger.info("We made a phi node: " + new_daf.get_name(entry.getKey()));
 					Node n = new Node(entry.getKey(), av_phi);
-					graph.add_node(n, true);
+					graph.add_node(n, true, true);
 					c_arr_ver.put(b, new_daf);
 				} else {
 					Logger.info("Branching changed nothing, not creating phi node.");
@@ -369,7 +373,7 @@ public class Analysis extends BodyTransformer {
 					worklist.addLast(b);
 					return;
 				}
-				handle_merge(b, exits);
+//				handle_merge(b, exits);
 			} else { // we do not have a merge
 				// second iter is always false here.
 				handle_non_merge(b, pred_blocks.get(0), exits);
@@ -528,7 +532,7 @@ public class Analysis extends BodyTransformer {
 					phi_vars.print_var_dep_chain(constants, linked_var);
 				}
 			}
-			Utils.print_graph(flow_graph);
+			Utils.print_graph(flow_graph, Constants.EMPTY_FLOW_GRAPH);
 			graph.make_graph();
 			scc_graph.make_scc_graph(phi_vars, array_vars, constants, graph);
 			Logger.info("Linking non index phi vars");

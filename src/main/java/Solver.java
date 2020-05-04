@@ -168,8 +168,10 @@ public class Solver {
                     }
                 }
             } catch (IOException e) {
-                Logger.error(e.getMessage());
-                System.exit(0);
+                Logger.error("Caught " + e.getClass().getSimpleName() + ": " + e.getMessage());
+                if(Constants.PRINT_ST) {
+                    e.printStackTrace();
+                }
             }
         }
         return ret;

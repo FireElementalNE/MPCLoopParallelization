@@ -411,7 +411,7 @@ public class PhiVariableContainer {
             parsed_phi_vars = new HashSet<>();
             guru.nidi.graphviz.model.Node cur_node = node(var);
             add_phi_links_node(pv, cur_node, array_vars, constants);
-            Utils.print_graph(graph_creator);
+            Utils.print_graph(graph_creator, String.format(Constants.EMPTY_PHI_LINKS, var));
         }
     }
 

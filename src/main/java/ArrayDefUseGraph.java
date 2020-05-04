@@ -5,6 +5,7 @@ import org.tinylog.Logger;
 import soot.jimple.Stmt;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -54,12 +55,29 @@ class ArrayDefUseGraph {
      * add a node (and possibly an edge) to the graph
      * @param node the node
      * @param is_def true iff the node is a def node
+     * @param is_phi true iff it is a phi node
      */
-    void add_node(Node node, boolean is_def) {
+    void add_node(Node node, boolean is_def, boolean is_phi) {
         if (!is_def) {
             nodes.put(node.get_id(), node);
             add_edge(node);
         } else {
+            if(is_phi) {
+                ArrayVersion av = node.get_av();
+                if(av instanceof ArrayVersionPhi) {
+                    ArrayVersionPhi avp = (ArrayVersionPhi)av;
+                    List<ArrayVersion> av_lst = avp.get_array_versions();
+                    for(ArrayVersion tmp_av : av_lst) {
+                        String id = Node.make_id(node.get_basename(), tmp_av, DefOrUse.DEF);
+                        Node use_node = nodes.get(id);
+                        Edge edge = new Edge(use_node, node);
+                        edges.put(edge.hashCode(), edge);
+                    }
+                } else {
+                    Logger.error("This should never be called on an ArrayVersionSingle");
+                    System.exit(0);
+                }
+             }
             nodes.put(node.get_id(), node);
         }
     }
@@ -109,12 +127,11 @@ class ArrayDefUseGraph {
      */
     void array_def_rename(String old_name, ArrayVersion old_av,
                           String new_name, ArrayVersion new_av, Stmt new_stmt, boolean base_def) {
-        String id = Node.make_id(old_name, old_av, DefOrUse.DEF, new_stmt.getJavaSourceStartLineNumber());
+        String id = Node.make_id(old_name, old_av, DefOrUse.DEF);
         assert nodes.containsKey(id) : "the id of the old node must be a key in nodes.";
         Node n = nodes.remove(id);
-        String new_id = Node.make_id(new_name, new_av, DefOrUse.DEF, new_stmt.getJavaSourceStartLineNumber());
-        Node new_node = new Node(new_stmt.toString(), new_name, new_av, n.get_index(), DefOrUse.DEF,
-                new_stmt.getJavaSourceStartLineNumber(), base_def);
+        String new_id = Node.make_id(new_name, new_av, DefOrUse.DEF);
+        Node new_node = new Node(new_stmt.toString(), new_name, new_av, n.get_index(), DefOrUse.DEF, base_def);
         nodes.put(new_id, new_node);
     }
 
@@ -138,20 +155,15 @@ class ArrayDefUseGraph {
      * Make a pretty array def use graph
      */
     void make_graph() {
-        if(edges.size() > 0) {
-            for (Map.Entry<Integer, Edge> entry : edges.entrySet()) {
-                Edge e = entry.getValue();
-                Node def = e.get_def();
-                Node use = e.get_use();
-                guru.nidi.graphviz.model.Node def_node = node(def.get_aug_stmt());
-                guru.nidi.graphviz.model.Node use_node = node(use.get_aug_stmt());
-                array_def_use_graph.add(def_node.link(to(use_node).with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
-            }
-        } else {
-            // TODO: this is added all the time??? why???
-            array_def_use_graph.add(Constants.NO_ARRAY_DEF_USE);
+        for (Map.Entry<Integer, Edge> entry : edges.entrySet()) {
+            Edge e = entry.getValue();
+            Node def = e.get_def();
+            Node use = e.get_use();
+            guru.nidi.graphviz.model.Node def_node = node(def.get_aug_stmt());
+            guru.nidi.graphviz.model.Node use_node = node(use.get_aug_stmt());
+            array_def_use_graph.add(def_node.link(to(use_node).with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
         }
-        Utils.print_graph(array_def_use_graph);
+        Utils.print_graph(array_def_use_graph, Constants.EMPTY_DEF_USE);
     }
 
 }
