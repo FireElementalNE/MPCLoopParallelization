@@ -30,7 +30,7 @@ I believe that on _*nix_ systems that is done automatically, however I am not po
 ```bash
 mvn package
 ```
-
+Pyhon must also be installed an available in the PATH.
 ## Usage
 
 The usage is as follows:
@@ -55,7 +55,7 @@ usage: utility-name
 
 * the default **-j** and **-r** arguments change depending on operating system.
 
-* Currently the depedencies are:
+* Currently the Java depedencies are (the **mvn package** step should download and set these up):
     * [tinylog-api 2.0.1](https://mvnrepository.com/artifact/org.tinylog/tinylog-api/2.0.1)
     * [tinylog-impl 2.0.1](https://mvnrepository.com/artifact/org.tinylog/tinylog-impl/2.0.1)
     * [soot 4.2.0](https://mvnrepository.com/artifact/ca.mcgill.sable/soot/4.1.0)
@@ -63,12 +63,14 @@ usage: utility-name
     * [commons-lang3 3.9](https://mvnrepository.com/artifact/org.apache.commons/commons-lang3/3.9)
     * [commons-cli 1.4](https://mvnrepository.com/artifact/commons-cli/commons-cli/1.4)
     * [exp4j 0.4.8](https://mvnrepository.com/artifact/net.objecthunter/exp4j/0.4.8)
-    * [Python](https://www.python.org/) *must be in PATH*
+
+* THe Python dependencies:
+
     * [z3-solver 4.8.7.0](https://pypi.org/project/z3-solver/)
 
-Again though, the **mvn package** step should download and set all that up.
+* Creates graph pngs in the graphs/ directory
 
-* Creates a bunch of pngs in the graphs/ directory
+* Createds python files in the z3_python/ directory
 
-* Also creates JavaDoc jar file
+* Creates JavaDoc jar file
 
