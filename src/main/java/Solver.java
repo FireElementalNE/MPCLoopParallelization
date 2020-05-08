@@ -103,6 +103,7 @@ public class Solver {
             String filename = Constants.Z3_DIR + File.separator + "solver_z3_test_" + index_name + ".py";
             Path path = Paths.get(filename);
             try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+                // TODO: this $ is a problem.
                 String res_eq_flat = resolved_eq.replace(" ", "");
                 res_eq_flat = res_eq_flat.replace("$", "");
                 writer.write("from z3 import *\n");

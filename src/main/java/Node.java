@@ -219,14 +219,15 @@ class Node {
                     .collect(Collectors.toList());
             for(int s : versions) {
                 sb.append(s);
-                if(av_phi.has_diff_ver_match()) {
-                    if(have_seen.containsKey(s)) {
-                        have_seen.put(s, have_seen.get(s) + 1);
-                    } else {
-                        have_seen.put(s, 0);
-                    }
-                    sb.append(Constants.ALPHABET_ARRAY[have_seen.get(s)]);
-                }
+//                // TODO: this is not longer needed
+//                if(av_phi.has_diff_ver_match()) {
+//                    if(have_seen.containsKey(s)) {
+//                        have_seen.put(s, have_seen.get(s) + 1);
+//                    } else {
+//                        have_seen.put(s, 0);
+//                    }
+//                    sb.append(Constants.ALPHABET_ARRAY[have_seen.get(s)]);
+//                }
                 sb.append(Constants.UNDERSCORE);
             }
         } else {

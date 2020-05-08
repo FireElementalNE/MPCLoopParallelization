@@ -30,12 +30,13 @@ interface ArrayVersion {
      */
     void force_incr_version();
 
-    /**
-     * check if the variables in an ArrayVersionPhi have the same names
-     * @return true iff the variables in an ArrayVersionPhi have the same name, false if
-     *         called on an ArrayVersionSingle, or if the names in an ArrayVersionPhi are different
-     */
-    boolean has_diff_ver_match();
+//    /**
+//     * TODO: this is not longer needed
+//     * check if the variables in an ArrayVersionPhi have the same names
+//     * @return true iff the variables in an ArrayVersionPhi have the same name, false if
+//     *         called on an ArrayVersionSingle, or if the names in an ArrayVersionPhi are different
+//     */
+//    boolean has_diff_ver_match();
 
     /**
      * get the last block to change this AV

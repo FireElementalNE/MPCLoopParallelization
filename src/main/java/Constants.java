@@ -10,7 +10,7 @@ class Constants {
     static final String RT_PATH_UNIX = "/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/rt.jar";
     static final String JCE_PATH_UNIX = "/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/jce.jar";
     static final ArrayVersion VAR_NOT_FOUND = null;
-    static final String ARR_VER_STR = "%s_%d%s";
+    static final String ARR_VER_STR = "%s_%d";
     static final String ARR_PHI_STR_START = "phi(";
     static final Pattern BLOCK_RE = Pattern.compile("^(Block\\s\\d+)");
     static final Pattern BLOCK_NUM_RE = Pattern.compile("^Block\\s(\\d+)");

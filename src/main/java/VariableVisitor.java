@@ -92,6 +92,9 @@ public class VariableVisitor extends AbstractStmtSwitch {
      */
     void check_constants(AssignStmt stmt) {
         String right = stmt.getRightOp().toString();
+        String left =  stmt.getLeftOp().toString();
+        right = right.replace("$", "");
+        left = left.replace("$", "");
         Logger.info("Checking if '" + stmt.getLeftOp().toString() + "' is a constant.");
         for(Map.Entry<String, Integer> entry : constants.entrySet()) {
             right = right.replace(entry.getKey(), entry.getValue().toString());
@@ -106,8 +109,9 @@ public class VariableVisitor extends AbstractStmtSwitch {
                 e.printStackTrace();
             }
         }
-        Logger.info("'" + stmt.getLeftOp().toString() + "' is a constant.");
-        constants.put(stmt.getLeftOp().toString(), result);
+        Logger.debug("\teq: " + right + " -> " + right + " = " + result);
+        Logger.info("'" + right + "' is a constant.");
+        constants.put(left, result);
     }
 
 
@@ -127,15 +131,23 @@ public class VariableVisitor extends AbstractStmtSwitch {
         } else {
             Logger.debug("Not a phi node, looking for links: " + stmt.toString());
             Logger.debug("Checking phi_vars");
+
             // loop through phi variables
             boolean found_link = phi_vars.process_assignment(stmt);
             if(!found_link && !stmt.containsArrayRef() && !is_array) {
                 if(!in_loop) {
                     Logger.debug("'" + stmt.toString() + "' appears to deal with a constant");
-                    if(stmt.getUseBoxes().size() == 1 && NumberUtils.isCreatable(stmt.getRightOp().toString())) {
-                        constants.put(stmt.getLeftOp().toString(), Integer.parseInt(stmt.getRightOp().toString()));
+                    String left_stmt = stmt.getLeftOp().toString().replace("$", "");
+                    String right_stmt = stmt.getRightOp().toString().replace("$", "");
+                    if(stmt.getUseBoxes().size() == 1) {
+                        if(NumberUtils.isCreatable(right_stmt)) {
+                            constants.put(left_stmt, Integer.parseInt(right_stmt));
+                        } else if(constants.containsKey(right_stmt)) {
+                            constants.put(left_stmt, constants.get(right_stmt));
+                        }
                     } else {
-                        Logger.error("Not sure what went wrong. Something did.");
+                        Logger.error("Could not add constant in stmt '" + stmt.toString());
+                        System.exit(0);
                     }
 //                    constants.add(stmt.getLeftOp().toString());
                 } else {

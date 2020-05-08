@@ -1,62 +1,34 @@
 import argparse
 import os
 import shutil
-import subprocess
-import sys
 
-BASE_DIR = 'test_programs'
-OUT_DIR = os.path.join(BASE_DIR, 'out')
-SRC_DIR = os.path.join(BASE_DIR, 'src')
+import Constants
+import Utils
 
 
-def execute_cmd(cmd):
-    (outs, errs) = execute_cmd_helper(cmd)
-    if errs:
-        print('ERROR.')
-        print(errs, file=sys.stderr)
-    else:
-        print('Done.')
+def compile_program(file):
+    print('Compiling {}...'.format(file), end='')
+    cmd = ['javac', file, '-g', '-d', Constants.OUT_DIR, '-cp', Constants.OUT_DIR]
+    Utils.execute_cmd_error_catch(cmd)
 
 
-def execute_cmd_helper(cmd):
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-    try:
-        outs, errs = proc.communicate()
-        return outs, errs
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        outs, errs = proc.communicate()
-        return outs, errs
-
-
-def get_all_files():
-    global SRC_DIR
-    return [os.path.join(SRC_DIR, filename) for filename in os.listdir(SRC_DIR)]
-
-
-def main(main_args):
-    global BASE_DIR
-    global OUT_DIR
-    global SRC_DIR
-
-    if main_args.classname == "all":
-        if os.path.exists(OUT_DIR):
-            print(OUT_DIR + " exists, removing and remaking.")
-            shutil.rmtree(OUT_DIR)
-        os.mkdir(OUT_DIR)
-        src_files = get_all_files()
+def main(classname):
+    if classname == "all":
+        if os.path.exists(Constants.OUT_DIR):
+            print(Constants.OUT_DIR + " exists, removing and remaking.")
+            shutil.rmtree(Constants.OUT_DIR)
+        os.mkdir(Constants.OUT_DIR)
+        src_files = Utils.get_all_files()
         print("Found {} source files.".format(len(src_files)))
     else:
-        src_files = [os.path.join(SRC_DIR, main_args.classname) + ".java"]
+        src_files = [os.path.join(Constants.SRC_DIR, classname) + ".java"]
 
     for file in src_files:
-        print('Compiling {}...'.format(file), end='')
-        cmd = ['javac', file, '-g', '-d', OUT_DIR, '-cp', OUT_DIR]
-        execute_cmd(cmd)
+        compile_program(file)
 
 
 if __name__ == '__main__':
-    choice_lst = [os.path.basename(el).split('.')[0] for el in get_all_files()]
+    choice_lst = Utils.get_all_classes()
     choice_lst.append('all')
 
     parser = argparse.ArgumentParser()
@@ -65,4 +37,4 @@ if __name__ == '__main__':
                              ", ".join(choice_lst), metavar='', default="all", required=False)
     args = parser.parse_args()
 
-    main(args)
+    main(args.classname)

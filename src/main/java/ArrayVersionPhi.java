@@ -1,7 +1,9 @@
 import soot.jimple.Stmt;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Subclass of the ArrayVersion interface
@@ -16,11 +18,12 @@ public class ArrayVersionPhi implements ArrayVersion {
      * the list of all array versions
      */
     private final List<ArrayVersion> array_versions;
+//    /**
+//     * flag to tell if we happen to have the same names, for printing mostly
+//     */
+//    private final boolean diff_ver_match;
     /**
-     * flag to tell if we happen to have the same names, for printing mostly
-     */
-    private final boolean diff_ver_match;
-    /**
+     * TODO: this is not longer needed
      * the block number for the merge
      */
     private int block;
@@ -35,7 +38,7 @@ public class ArrayVersionPhi implements ArrayVersion {
     /**
      * the line number of the version change
      */
-    private int line_num;
+    private final int line_num;
 
     /**
      * create a new ArrayVersionPhi
@@ -48,8 +51,8 @@ public class ArrayVersionPhi implements ArrayVersion {
                 .map(ArrayVersion::get_version)
                 .reduce(Integer.MIN_VALUE, Math::max) + 1;
         this.array_versions = array_versions;
-        List<Integer> versions = array_versions.stream().map(ArrayVersion::get_version).collect(Collectors.toList());
-        this.diff_ver_match = versions.size() != new HashSet<>(versions).size();
+        // List<Integer> versions = array_versions.stream().map(ArrayVersion::get_version).collect(Collectors.toList());
+        // this.diff_ver_match = versions.size() != new HashSet<>(versions).size();
         this.block = block;
         this.has_been_written_to = false;
         this.versions = new HashMap<>();
@@ -63,7 +66,7 @@ public class ArrayVersionPhi implements ArrayVersion {
     ArrayVersionPhi(ArrayVersionPhi av_phi) {
         this.version = av_phi.version;
         this.array_versions = av_phi.array_versions;
-        this.diff_ver_match = av_phi.diff_ver_match;
+        // this.diff_ver_match = av_phi.diff_ver_match;
         this.block = av_phi.block;
         this.has_been_written_to = av_phi.has_been_written_to;
         this.versions = new HashMap<>(av_phi.versions);
@@ -120,14 +123,15 @@ public class ArrayVersionPhi implements ArrayVersion {
         return version;
     }
 
-    /**
-     * Overridden getter, returns diff_ver_match
-     * @return true iff the variables in the phi node have the same name (this can happen on branching)
-     */
-    @Override
-    public boolean has_diff_ver_match() {
-        return diff_ver_match;
-    }
+//    /**
+//     * TODO: this is not longer needed
+//     * Overridden getter, returns diff_ver_match
+//     * @return true iff the variables in the phi node have the same name (this can happen on branching)
+//     */
+//    @Override
+//    public boolean has_diff_ver_match() {
+//        return diff_ver_match;
+//    }
 
     /**
      * get the last block to change this AV

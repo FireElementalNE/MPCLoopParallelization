@@ -21,11 +21,12 @@ class ArrayVersionSingle implements ArrayVersion {
      * the number of the block of code being currently analyzed
      */
     private int block;
-    /**
-     * flag to tell if we happen to have the same names, for printing mostly (only for phi implementation
-     * of ArrayVersion)
-     */
-    private final boolean diff_ver_match;
+//    /**
+//     * TODO: this is not longer needed
+//     * flag to tell if we happen to have the same names, for printing mostly (only for phi implementation
+//     * of ArrayVersion)
+//     */
+//    private final boolean diff_ver_match;
     /**
      * flag to tell if this has been written to
      */
@@ -44,7 +45,7 @@ class ArrayVersionSingle implements ArrayVersion {
      */
     ArrayVersionSingle(int version, int block, Stmt stmt, int line_num) {
         this.version = version;
-        this.diff_ver_match = false;
+//        this.diff_ver_match = false;
         this.block = block;
         has_been_written_to = false;
         this.versions = new HashMap<>();
@@ -58,7 +59,7 @@ class ArrayVersionSingle implements ArrayVersion {
      */
     ArrayVersionSingle(ArrayVersionSingle avs) {
         this.version = avs.version;
-        this.diff_ver_match = avs.diff_ver_match;
+//        this.diff_ver_match = avs.diff_ver_match;
         this.block = avs.block;
         has_been_written_to = avs.has_been_written_to;
         this.versions = new HashMap<>(avs.versions);
@@ -75,15 +76,16 @@ class ArrayVersionSingle implements ArrayVersion {
     }
 
 
-    /**
-     * Overridden getter, returns diff_ver_match
-     * @return true iff the variables in the phi node have the same name (this can happen on branching)
-     *         NOTE: in this class this should _always_ be false.
-     */
-    @Override
-    public boolean has_diff_ver_match() {
-        return diff_ver_match;
-    }
+//    /**
+//     * TODO: this is not longer needed
+//     * Overridden getter, returns diff_ver_match
+//     * @return true iff the variables in the phi node have the same name (this can happen on branching)
+//     *         NOTE: in this class this should _always_ be false.
+//     */
+//    @Override
+//    public boolean has_diff_ver_match() {
+//        return diff_ver_match;
+//    }
 
     /**
      * get the last block to change this AV
