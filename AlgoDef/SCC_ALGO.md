@@ -43,10 +43,10 @@ SCC_GRAPH G # final SCC graph
 1. An Array P of Phi Variables  
 2. A Hash Table H that maps Constants to values
 3. An array A containing a list versioned of Array Variables
-```
-    for pv in P:
-        Node current_node = pv
-        add_phi_links(current_node, A, H)
+```python
+for pv in P:
+    Node current_node = pv
+    add_phi_links(current_node, A, H)
 ```
 ## Add_Phi_Links:
 ### Input
