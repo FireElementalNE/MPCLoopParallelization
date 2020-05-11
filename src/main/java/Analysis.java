@@ -511,13 +511,13 @@ public class Analysis extends BodyTransformer {
 			parse_blocks_start(body);
 			Logger.info("Node count: " + graph.get_nodes().size());
 			for (Map.Entry<String, Node> entry : graph.get_nodes().entrySet()) {
-				Logger.info(entry.getKey() + " -> " + entry.getValue().get_aug_stmt());
+				Logger.info(entry.getKey() + " -> " + entry.getValue().get_aug_stmt_str());
 			}
 			Logger.info("Edge count: " + graph.get_edges().size());
 			for (Map.Entry<Integer, Edge> entry : graph.get_edges().entrySet()) {
 				Logger.info(entry.getKey() + ": ");
-				Logger.info(" " + entry.getValue().get_def().get_aug_stmt());
-				Logger.info(" " + entry.getValue().get_use().get_aug_stmt());
+				Logger.info(" " + entry.getValue().get_def().get_aug_stmt_str());
+				Logger.info(" " + entry.getValue().get_use().get_aug_stmt_str());
 			}
 			phi_vars.make_graphs();
 			List<PhiVariable> linked_pvars = phi_vars.get_looping_index_vars();
@@ -539,6 +539,7 @@ public class Analysis extends BodyTransformer {
 			phi_vars.make_phi_links_graph(array_vars, constants);
 			array_vars.make_array_var_graph();
 			phi_vars.make_non_index_graphs();
+			graph.print_def_node_dep_chains(phi_vars, constants);
 		}
 	}
 }

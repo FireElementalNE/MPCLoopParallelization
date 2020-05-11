@@ -1,4 +1,5 @@
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import soot.jimple.Stmt;
 
 import java.util.HashMap;
 import java.util.List;
@@ -12,9 +13,13 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 class Node {
     /**
-     * the statement the node represents
+     * the assignment statement for the node
      */
-    private final String stmt;
+    private final Stmt stmt;
+    /**
+     * the statement the node represents as a string
+     */
+    private final String stmt_str;
     /**
      * type of node (definition or usage)
      */
@@ -32,9 +37,9 @@ class Node {
      */
     private final String basename;
     /**
-     * the augmented statement based on any new definitions
+     * the augmented statement based on any new definitions as a string
      */
-    private String aug_stmt;
+    private String aug_stmt_str;
     /**
      * flag showing if this node is augmented
      */
@@ -51,7 +56,7 @@ class Node {
     /**
      * Constructor for a brand NEW node. This will either have ArrayVersions of -1 (as a dummy node
      * referencing a previous iteration) or 1.
-     * @param stmt the statement that the node represents (As a string)
+     * @param stmt the statement that the node represents
      * @param basename the basename ofr hte array reference
      * @param av the NEW array version
      * @param index the index of the array reference
@@ -59,14 +64,15 @@ class Node {
      * @param base_def true iff we are dealing with a base definition or a pure rename, these do NOT need
      *                 to be included in any edges!
      */
-    Node(String stmt, String basename, ArrayVersion av, Index index,
+    Node(Stmt stmt, String basename, ArrayVersion av, Index index,
          DefOrUse type, boolean base_def) {
         this.stmt = stmt;
+        this.stmt_str = stmt.toString();
         this.type = type;
         this.av = av;
         this.phi_flag = av.is_phi();
         this.basename = basename;
-        this.aug_stmt = null;
+        this.aug_stmt_str = null;
         this.is_aug = false;
         this.index = index;
         this.base_def = base_def;
@@ -74,7 +80,7 @@ class Node {
 
     /**
      * Constructor for a node that is being copied (and possibly renamed) from an old node.
-     * @param stmt the statement that the node represents (As a string)
+     * @param stmt the statement that the node represents
      * @param basename the basename ofr hte array reference
      * @param av the array version that the old node had
      * @param index the index of the array reference
@@ -85,16 +91,17 @@ class Node {
      * @param base_def true iff we are dealing with a base definition or a pure rename, these do NOT need
      *                 to be included in any edges!
      */
-    Node(String stmt, String basename, ArrayVersion av, Index index,
+    Node(Stmt stmt, String basename, ArrayVersion av, Index index,
          DefOrUse type, ImmutablePair<String, String> replacements, boolean base_def) {
         this.stmt = stmt;
+        this.stmt_str = stmt.toString();
         this.type = type;
         this.av = av;
         this.phi_flag = av.is_phi();
         this.index = index;
         this.basename = basename;
         this.is_aug = true;
-        this.aug_stmt = stmt.replace(replacements.getLeft(), replacements.getRight());
+        this.aug_stmt_str = stmt_str.replace(replacements.getLeft(), replacements.getRight());
         this.base_def = base_def;
     }
 
@@ -105,7 +112,8 @@ class Node {
      */
     Node(String basename, ArrayVersion av) {
         // phi
-        this.stmt = Utils.create_phi_stmt(basename, av);
+        this.stmt = null;
+        this.stmt_str = Utils.create_phi_stmt(basename, av);
         this.type = DefOrUse.DEF;
         this.av = av;
         this.basename = basename;
@@ -124,10 +132,11 @@ class Node {
         this.av = n.av;
         this.basename = n.basename;
         this.is_aug = n.is_aug;
-        this.aug_stmt = n.aug_stmt;
+        this.aug_stmt_str = n.aug_stmt_str;
         this.index = n.index;
         this.phi_flag = n.phi_flag;
         this.base_def = n.base_def;
+        this.stmt_str = n.stmt_str;
     }
 
 //    String resolve_index(PhiVariableContainer pvc, Map<String, Integer> constants) {
@@ -169,24 +178,31 @@ class Node {
 //        }
 //    }
 
-
     /**
-     * get the original node stmt
-     * @return the possibly augmented node statement
+     * getter for the original assigment statement
+     * @return the original assigment stmt
      */
-    String get_stmt() {
+    Stmt get_stmt() {
         return stmt;
     }
 
     /**
-     * get the node statement (might be augmented)
-     * @return the possibly augmented node statement
+     * get the original node stmt as a string
+     * @return the possibly augmented node statement as a string
      */
-    String get_aug_stmt() {
+    String get_stmt_str() {
+        return stmt_str;
+    }
+
+    /**
+     * get the node statement (might be augmented) as a string
+     * @return the possibly augmented node statement as a string
+     */
+    String get_aug_stmt_str() {
         if(is_aug) {
-            return aug_stmt;
+            return aug_stmt_str;
         } else {
-            return stmt;
+            return stmt_str;
         }
     }
 

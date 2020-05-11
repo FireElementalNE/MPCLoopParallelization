@@ -2,6 +2,7 @@ import guru.nidi.graphviz.attribute.LinkAttr;
 import guru.nidi.graphviz.attribute.Style;
 import guru.nidi.graphviz.model.MutableGraph;
 import org.tinylog.Logger;
+import soot.jimple.AssignStmt;
 import soot.jimple.Stmt;
 
 import java.util.HashMap;
@@ -126,12 +127,12 @@ class ArrayDefUseGraph {
      * @param base_def the base def of the old node
      */
     void array_def_rename(String old_name, ArrayVersion old_av,
-                          String new_name, ArrayVersion new_av, Stmt new_stmt, boolean base_def) {
+                          String new_name, ArrayVersion new_av, AssignStmt new_stmt, boolean base_def) {
         String id = Node.make_id(old_name, old_av, DefOrUse.DEF);
         assert nodes.containsKey(id) : "the id of the old node must be a key in nodes.";
         Node n = nodes.remove(id);
         String new_id = Node.make_id(new_name, new_av, DefOrUse.DEF);
-        Node new_node = new Node(new_stmt.toString(), new_name, new_av, n.get_index(), DefOrUse.DEF, base_def);
+        Node new_node = new Node(new_stmt, new_name, new_av, n.get_index(), DefOrUse.DEF, base_def);
         nodes.put(new_id, new_node);
     }
 
@@ -159,11 +160,31 @@ class ArrayDefUseGraph {
             Edge e = entry.getValue();
             Node def = e.get_def();
             Node use = e.get_use();
-            guru.nidi.graphviz.model.Node def_node = node(def.get_aug_stmt());
-            guru.nidi.graphviz.model.Node use_node = node(use.get_aug_stmt());
+            guru.nidi.graphviz.model.Node def_node = node(def.get_aug_stmt_str());
+            guru.nidi.graphviz.model.Node use_node = node(use.get_aug_stmt_str());
             array_def_use_graph.add(def_node.link(to(use_node).with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
         }
         Utils.print_graph(array_def_use_graph, Constants.EMPTY_DEF_USE);
     }
 
+    /**
+     * print the dep chiains for the rhs of node statements
+     * @param pvc the phi variable containter to build the dep chians
+     * @param constants the constants map
+     */
+    void print_def_node_dep_chains(PhiVariableContainer pvc, Map<String, Integer> constants) {
+        for(Map.Entry<String, Node> entry : nodes.entrySet()) {
+            Node n = entry.getValue();
+            Stmt stmt = n.get_stmt();
+            if(stmt instanceof AssignStmt && n.get_type() == DefOrUse.DEF) {
+                Logger.debug("Printing deps for node: " + n.get_aug_stmt_str());
+                List<String> uses = n.get_stmt().getUseBoxes().stream().map(el -> el.getValue().toString()).collect(Collectors.toList());
+                for(String s : uses) {
+                    pvc.print_var_dep_chain(constants, s);
+                }
+            } else {
+                Logger.debug("Statment is not an assignment or is a use: " + n.get_aug_stmt_str());
+            }
+        }
+    }
 }

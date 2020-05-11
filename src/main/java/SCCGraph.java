@@ -82,7 +82,7 @@ public class SCCGraph {
                     String node_stmt = node.get_stmt();
                     for(Map.Entry<String, Node> entry : def_use_graph.get_nodes().entrySet()) {
                         if(Objects.equals(entry.getValue().get_stmt(), node_stmt)) {
-                            node_stmt = entry.getValue().get_aug_stmt();
+                            node_stmt = entry.getValue().get_aug_stmt_str();
                         }
                     }
                     guru.nidi.graphviz.model.Node use_node = node(node_stmt.replace(node.get_index().to_str(), use_eq));

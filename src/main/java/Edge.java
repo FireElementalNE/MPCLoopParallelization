@@ -43,6 +43,6 @@ class Edge {
      */
     @Override
     public int hashCode() {
-        return System.identityHashCode(new DefUseHash(def.get_aug_stmt(), use.get_aug_stmt()));
+        return System.identityHashCode(new DefUseHash(def.get_aug_stmt_str(), use.get_aug_stmt_str()));
     }
 }
