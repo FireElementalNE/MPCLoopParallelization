@@ -107,6 +107,16 @@ public class ArrayVariables {
     }
 
     /**
+     * change the read flag on an entry
+     * @param name the name of the entry
+     */
+    void toggle_read(String name) {
+        ArrayVersion av = array_vars.get(name);
+        av.toggle_read();
+        array_vars.put(name, av);
+    }
+
+    /**
      * make a graph representing all the versions of this variable
      */
     void make_array_var_graph() {

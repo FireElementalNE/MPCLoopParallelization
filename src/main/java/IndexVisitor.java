@@ -1,5 +1,6 @@
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.tinylog.Logger;
+import soot.Value;
 import soot.ValueBox;
 import soot.jimple.*;
 
@@ -7,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * visit variables after the first run through, this finds cross loop dependencies.
@@ -49,6 +51,16 @@ public class IndexVisitor extends AbstractStmtSwitch {
         return new HashSet<>(second_iter_def_vars);
     }
 
+    ReadWrite get_read_write(Stmt stmt) {
+        List<Value> defs = stmt.getDefBoxes().stream().map(el -> el.getValue()).collect(Collectors.toList());
+        ArrayRef ar = stmt.getArrayRef();
+        if(defs.contains((Value)ar)) {
+            return ReadWrite.WRITE;
+        }
+        return ReadWrite.READ;
+    }
+
+
     /**
      * checks indexes for cross loop dependencies. If any are found they are added to the graph
      * @param stmt the current statement being analyzed
@@ -81,7 +93,11 @@ public class IndexVisitor extends AbstractStmtSwitch {
                 } else {
                     Logger.debug("Dep chain for " + index_name + " is empty (is it a phi var?).");
                 }
-                SCCNode node = new SCCNode(stmt.toString(), ar.getBaseBox().getValue().toString(), new Index(index_box));
+                SCCNode node = new SCCNode(stmt.toString(),
+                        ar.getBaseBox().getValue().toString(),
+                        new Index(index_box),
+                        get_read_write(stmt),
+                        stmt.getJavaSourceStartLineNumber());
                 graph.add_node(node);
             } else {
                 Logger.error("dep chain for " + index_box.getValue().toString() + " is null.");

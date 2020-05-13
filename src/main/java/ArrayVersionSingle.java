@@ -32,6 +32,10 @@ class ArrayVersionSingle implements ArrayVersion {
      */
     private boolean has_been_written_to;
     /**
+     * flag to tell if this has been read
+     */
+    private boolean has_been_read;
+    /**
      * the line number of the version change
      */
     private final int line_num;
@@ -135,11 +139,28 @@ class ArrayVersionSingle implements ArrayVersion {
     }
 
     /**
+     * flag to tell whether an array has been read
+     * @return true iff the array has been read
+     */
+    @Override
+    public boolean has_been_read() {
+        return this.has_been_read;
+    }
+
+    /**
      * setter to set the has been written to flag
      */
     @Override
     public void toggle_written() {
         has_been_written_to = true;
+    }
+
+    /**
+     * setter to set the read flag
+     */
+    @Override
+    public void toggle_read() {
+        this.has_been_read = true;
     }
 
     /**

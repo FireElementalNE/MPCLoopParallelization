@@ -32,6 +32,10 @@ public class ArrayVersionPhi implements ArrayVersion {
      */
     private boolean has_been_written_to;
     /**
+     * flag to tell if this has been read
+     */
+    private boolean has_been_read;
+    /**
      * all the versions
      */
     private final Map<Integer, Stmt> versions;
@@ -144,10 +148,21 @@ public class ArrayVersionPhi implements ArrayVersion {
 
     /**
      * getter returning whether array has been written to
+     * always false for phi (should never use!)
      * @return true iff the array var has been written to
      */
     @Override
     public boolean has_been_written_to() {
+        return false;
+    }
+
+    /**
+     * flag to tell whether an array has been read
+     * always false for phi (should never use!)
+     * @return true iff the array has been read
+     */
+    @Override
+    public boolean has_been_read() {
         return false;
     }
 
@@ -157,6 +172,14 @@ public class ArrayVersionPhi implements ArrayVersion {
     @Override
     public void toggle_written() {
         this.has_been_written_to = true;
+    }
+
+    /**
+     * setter to set the read flag
+     */
+    @Override
+    public void toggle_read() {
+        this.has_been_read = true;
     }
 
     /**

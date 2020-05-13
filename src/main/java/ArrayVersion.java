@@ -50,10 +50,22 @@ interface ArrayVersion {
      */
     boolean has_been_written_to();
 
+
+    /**
+     * flag to tell whether an array has been read
+     * @return true iff the array has been read
+     */
+    boolean has_been_read();
+
     /**
      * setter to set the has been written to flag
      */
     void toggle_written();
+
+    /**
+     * setter to set the read flag
+     */
+    void toggle_read();
 
     /**
      * get the versions map

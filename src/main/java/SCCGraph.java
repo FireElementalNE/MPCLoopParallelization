@@ -58,6 +58,7 @@ public class SCCGraph {
      */
     void make_scc_graph(PhiVariableContainer pvc, ArrayVariables array_vars, Map<String, Integer> constants,
                         ArrayDefUseGraph def_use_graph) {
+        // TODO: filter on line number and read write (only some links matter!)
         Set<PhiVariable> phi_variables = pvc.get_phi_vars();
         for(SCCNode node : nodes) {
             String use_index = node.get_index().to_str();

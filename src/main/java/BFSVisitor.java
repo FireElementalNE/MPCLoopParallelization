@@ -97,6 +97,7 @@ class BFSVisitor extends AbstractStmtSwitch {
                 new ImmutablePair<>(basename, daf.get_name(basename)), false);
         graph.add_node(new_node, false, false);
         c_arr_ver.put(b, daf);
+        array_vars.toggle_read(basename);
     }
 
     /**
