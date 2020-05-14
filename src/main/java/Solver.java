@@ -174,6 +174,9 @@ public class Solver {
                     e.printStackTrace();
                 }
             }
+        } else {
+            Logger.debug("we have something simple!");
+            ret.put(dep_chain.getLeft().get_root_val_str(), 0);
         }
         return ret;
     }

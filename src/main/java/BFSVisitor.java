@@ -93,7 +93,7 @@ class BFSVisitor extends AbstractStmtSwitch {
         Logger.debug(" " + basename + " should be changed to " + daf.get_name(basename));
         Logger.debug(" " + "This is a use for " + daf.get_name(basename));
         ArrayVersion av = Utils.copy_av(daf.get(basename));
-        Node new_node = new Node(stmt, basename, av, new Index(index_box), DefOrUse.USE,
+        Node new_node = new Node(stmt, basename, av, new ArrayIndex(index_box), DefOrUse.USE,
                 new ImmutablePair<>(basename, daf.get_name(basename)), false);
         graph.add_node(new_node, false, false);
         c_arr_ver.put(b, daf);
@@ -123,7 +123,7 @@ class BFSVisitor extends AbstractStmtSwitch {
                 Logger.debug(" " + basename + " needs to be changed to " + daf.get_name(basename));
                 Logger.debug("This is a new def for " + daf.get_name(basename));
                 array_vars.put(basename, av);
-                graph.add_node(new Node(stmt, basename, av, new Index(stmt.getArrayRef().getIndexBox()), DefOrUse.DEF,
+                graph.add_node(new Node(stmt, basename, av, new ArrayIndex(stmt.getArrayRef().getIndexBox()), DefOrUse.DEF,
                         new ImmutablePair<>(basename, daf.get_name(basename)), false), true, false);
                 c_arr_ver.put(b, daf);
             } else {

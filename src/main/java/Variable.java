@@ -18,7 +18,7 @@ import static guru.nidi.graphviz.model.Factory.*;
  * to every other variable that gets added TODO: need to explain this better
  */
 @SuppressWarnings("unused")
-public class Variable {
+class Variable {
     /**
      * a class to hold all aliases of this variable
      */
@@ -343,6 +343,14 @@ public class Variable {
      */
     PhiExpr get_phi_expr() {
         return phi_expr;
+    }
+
+    /**
+     * getter for the String of the root val
+     * @return the root val as a string
+     */
+    String get_root_val_str() {
+        return root_val.toString();
     }
 
 }

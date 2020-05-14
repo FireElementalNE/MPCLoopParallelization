@@ -5,8 +5,7 @@ import java.util.Objects;
 /**
  * An class representing and index that is used in an array access
  */
-@SuppressWarnings("unused")
-public class Index {
+class ArrayIndex {
     /**
      * the index value
      */
@@ -20,7 +19,7 @@ public class Index {
      * constrictor for the index
      * @param index_valuebox the ValueBox of the index
      */
-    Index(ValueBox index_valuebox) {
+    ArrayIndex(ValueBox index_valuebox) {
         this.index_valuebox = index_valuebox;
         this.has_index_flag = true;
     }
@@ -29,7 +28,7 @@ public class Index {
      * constructor for an index that has no value (placeholder for
      * created phi nodes and new array statements)
      */
-    Index() {
+    ArrayIndex() {
         this.index_valuebox = null;
         this.has_index_flag = false;
     }
@@ -38,7 +37,7 @@ public class Index {
      * copy constructor for Index
      * @param i the Index being copied
      */
-    Index(Index i) {
+    ArrayIndex(ArrayIndex i) {
         this.index_valuebox = i.index_valuebox;
         this.has_index_flag = i.has_index_flag;
     }
@@ -60,6 +59,7 @@ public class Index {
      * flag to test if the index has been set
      * @return true iff the Index has been set
      */
+    @SuppressWarnings("unused")
     boolean index_set() {
         return has_index_flag;
     }
@@ -69,7 +69,7 @@ public class Index {
      * @param i the Index that is being tested for equality
      * @return true iff the passed index is equal to this one
      */
-    boolean equals(Index i) {
+    boolean equals(ArrayIndex i) {
         return Objects.equals(i.has_index_flag, has_index_flag) &&
             Objects.equals(to_str(), i.to_str());
     }

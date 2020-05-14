@@ -534,7 +534,7 @@ public class Analysis extends BodyTransformer {
 			}
 			Utils.print_graph(flow_graph, Constants.EMPTY_FLOW_GRAPH);
 			graph.make_graph();
-			scc_graph.make_scc_graph(phi_vars, array_vars, constants, graph);
+			scc_graph.make_scc_graph(phi_vars, constants, graph);
 			Logger.info("Linking non index phi vars");
 			phi_vars.make_phi_links_graph(array_vars, constants);
 			array_vars.make_array_var_graph();

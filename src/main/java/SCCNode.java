@@ -1,5 +1,8 @@
+/**
+ * Node for an SCCGraph
+ */
 @SuppressWarnings("unused")
-public class SCCNode {
+class SCCNode {
     /**
      * the statement the node represents
      */
@@ -7,7 +10,7 @@ public class SCCNode {
     /**
      * the index of the array reference
      */
-    private final Index index;
+    private final ArrayIndex index;
     /**
      * the basename of the array reference
      */
@@ -29,12 +32,25 @@ public class SCCNode {
      * @param rw enum for a read or a write
      * @param line_num the line number of the statement
      */
-    SCCNode(String stmt, String basename, Index index, ReadWrite rw, int line_num) {
+    SCCNode(String stmt, String basename, ArrayIndex index, ReadWrite rw, int line_num) {
         this.stmt = stmt;
         this.basename = basename;
         this.index = index;
         this.rw = rw;
         this.line_num = line_num;
+    }
+
+
+    /**
+     * copy constructor for SCC node
+     * @param n the other SCCNode
+     */
+    SCCNode(SCCNode n) {
+        this.stmt = n.stmt;
+        this.basename = n.basename;
+        this.index = new ArrayIndex(n.index);
+        this.rw = n.rw;
+        this.line_num = n.line_num;
     }
 
     /**
@@ -49,7 +65,7 @@ public class SCCNode {
      * getter for the index
      * @return the index
      */
-    Index get_index() {
+    ArrayIndex get_index() {
         return index;
     }
 

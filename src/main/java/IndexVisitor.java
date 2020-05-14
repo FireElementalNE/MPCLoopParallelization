@@ -51,8 +51,12 @@ public class IndexVisitor extends AbstractStmtSwitch {
         return new HashSet<>(second_iter_def_vars);
     }
 
+    /**
+     * @param stmt get the read or write enum based on the passed statement
+     * @return the ReadWrite enum
+     */
     ReadWrite get_read_write(Stmt stmt) {
-        List<Value> defs = stmt.getDefBoxes().stream().map(el -> el.getValue()).collect(Collectors.toList());
+        List<Value> defs = stmt.getDefBoxes().stream().map(ValueBox::getValue).collect(Collectors.toList());
         ArrayRef ar = stmt.getArrayRef();
         if(defs.contains((Value)ar)) {
             return ReadWrite.WRITE;
@@ -95,7 +99,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
                 }
                 SCCNode node = new SCCNode(stmt.toString(),
                         ar.getBaseBox().getValue().toString(),
-                        new Index(index_box),
+                        new ArrayIndex(index_box),
                         get_read_write(stmt),
                         stmt.getJavaSourceStartLineNumber());
                 graph.add_node(node);

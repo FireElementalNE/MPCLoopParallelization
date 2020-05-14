@@ -31,7 +31,7 @@ class Node {
     /**
      * the index of the array reference
      */
-    private final Index index;
+    private final ArrayIndex index;
     /**
      * the basename of the array reference
      */
@@ -64,7 +64,7 @@ class Node {
      * @param base_def true iff we are dealing with a base definition or a pure rename, these do NOT need
      *                 to be included in any edges!
      */
-    Node(Stmt stmt, String basename, ArrayVersion av, Index index,
+    Node(Stmt stmt, String basename, ArrayVersion av, ArrayIndex index,
          DefOrUse type, boolean base_def) {
         this.stmt = stmt;
         this.stmt_str = stmt.toString();
@@ -91,7 +91,7 @@ class Node {
      * @param base_def true iff we are dealing with a base definition or a pure rename, these do NOT need
      *                 to be included in any edges!
      */
-    Node(Stmt stmt, String basename, ArrayVersion av, Index index,
+    Node(Stmt stmt, String basename, ArrayVersion av, ArrayIndex index,
          DefOrUse type, ImmutablePair<String, String> replacements, boolean base_def) {
         this.stmt = stmt;
         this.stmt_str = stmt.toString();
@@ -118,7 +118,7 @@ class Node {
         this.av = av;
         this.basename = basename;
         this.phi_flag = av.is_phi();
-        this.index = new Index();
+        this.index = new ArrayIndex();
         this.base_def = false;
     }
 
@@ -287,7 +287,7 @@ class Node {
      * the getter for the index
      * @return the index
      */
-    Index get_index() {
+    ArrayIndex get_index() {
         return index;
     }
 
