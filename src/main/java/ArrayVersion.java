@@ -78,4 +78,11 @@ interface ArrayVersion {
      * @return the line number
      */
     int get_line_num();
+
+//    /**
+//     * non overridden equals op
+//     * @param av the other array version
+//     * @return true iff they are "equal"
+//     */
+//    boolean equals(ArrayVersion av);
 }

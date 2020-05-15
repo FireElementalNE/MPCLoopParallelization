@@ -303,7 +303,10 @@ public class Analysis extends BodyTransformer {
 				List<ArrayVersion> avs = new ArrayList<>();
 				for(Block blk : pred_blocks) {
 					DownwardExposedArrayRef daf = new DownwardExposedArrayRef(c_arr_ver.get(blk));
-					avs.add(Utils.copy_av(daf.get(entry.getKey())));
+					ArrayVersion new_av = Utils.copy_av(daf.get(entry.getKey()));
+					if(!avs.stream().map(el -> el.get_version() == new_av.get_version()).reduce(false, Boolean::logicalOr)) {
+						avs.add(new_av);
+					}
 				}
 				// make a phi node!
 				// Indexes MUST be the same!
@@ -355,14 +358,11 @@ public class Analysis extends BodyTransformer {
 			}
 			seen_blocks.add(b);
 			worklist.addAll(b.getSuccs());
-			// TODO: remove this if stmt and replace with true second iteration:
-			//       look at current index variables and how they have changed!
 		} else {
 			if (seen_blocks.contains(b)) {
 				Logger.warn("Were have seen this block: " + b.getHead().toString());
 				return;
 			}
-			// TODO: update indexes!
 			Logger.info(Utils.get_block_name(b) + ": " + b.getHead().toString());
 			if (b.getPreds().size() > 1) { // we have a merge
 				if (check_c_arr_ver(b.getPreds())) {
@@ -479,7 +479,7 @@ public class Analysis extends BodyTransformer {
 		seen_blocks.add(head);
 		loop_blocks.add(head);
 		init_BFS_vars(head);
-		// CHECKTHIS: Assuming we only have one head...
+		// Assuming we only have one head...
 		parse_iteration(head, exits, false);
 		// second iter
 		Logger.info("Entering second iteration!");

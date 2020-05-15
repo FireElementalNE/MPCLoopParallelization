@@ -10,7 +10,7 @@
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
-# Package Files #
+# Package Files #la
 *.jar
 *.war
 *.nar
@@ -31,3 +31,4 @@ target/*
 graphs/*
 z3_python/*
 doc/*
+all_tests/*

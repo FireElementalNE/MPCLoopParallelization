@@ -223,16 +223,12 @@ class Utils {
 		ArrayVersion[] versions = av_phi.get_array_versions().toArray(new ArrayVersion[0]);
 		Map<Integer, Integer> have_seen = new HashMap<>();
 		for(int i = 0; i < versions.length; i++) {
-			// String aug = Constants.EMPTY_STR;
-//			if(av_phi.has_diff_ver_match()) {
-//				if(have_seen.containsKey(versions[i].get_version())) {
-//					have_seen.put(versions[i].get_version(), have_seen.get(versions[i].get_version()) + 1);
-//				} else {
-//					have_seen.put(versions[i].get_version(), 0);
-//				}
-//				aug = String.valueOf(Constants.ALPHABET_ARRAY[have_seen.get(versions[i].get_version())]);
-//			}
-			sb.append(String.format(Constants.ARR_VER_STR, basename, versions[i].get_version()));
+			int version = versions[i].get_version();
+			if(version > 0) {
+				sb.append(String.format(Constants.ARR_VER_STR, basename, versions[i].get_version()));
+			} else {
+				sb.append(basename);
+			}
 			if(i + 1 < versions.length) {
 				sb.append(", ");
 			} else {

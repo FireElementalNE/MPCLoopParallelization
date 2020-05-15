@@ -75,6 +75,7 @@ public class ArrayVersionPhi implements ArrayVersion {
         this.has_been_written_to = av_phi.has_been_written_to;
         this.versions = new HashMap<>(av_phi.versions);
         this.line_num = av_phi.line_num;
+        this.has_been_read = av_phi.has_been_read;
     }
 
     /**
@@ -199,5 +200,4 @@ public class ArrayVersionPhi implements ArrayVersion {
     public int get_line_num() {
         return line_num;
     }
-
 }
