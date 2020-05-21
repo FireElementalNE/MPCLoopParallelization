@@ -158,8 +158,8 @@ public class Solver {
                     }
                     if (set_lhs) {
                         for (ImmutablePair<String, Integer> phi_val : phi_var_vals) {
-                            Logger.info(String.format("d value between %s and %s: %d", lhs.getLeft(), phi_val.getLeft(),
-                                    lhs.getRight() - phi_val.getRight()));
+                            Logger.info(String.format("d value between %s and %s: %d (%s)", lhs.getLeft(), phi_val.getLeft(),
+                                    lhs.getRight() - phi_val.getRight(), resolved_eq));
                             int d = lhs.getRight() - phi_val.getRight();
                             ret.put(phi_val.getLeft(), d);
                         }

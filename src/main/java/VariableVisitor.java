@@ -147,7 +147,7 @@ public class VariableVisitor extends AbstractStmtSwitch {
                         }
                     } else {
                         Logger.error("Could not add constant in stmt '" + stmt.toString());
-                        System.exit(0);
+//                        System.exit(0);
                     }
 //                    constants.add(stmt.getLeftOp().toString());
                 } else {

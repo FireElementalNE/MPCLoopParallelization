@@ -58,7 +58,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
     ReadWrite get_read_write(Stmt stmt) {
         List<Value> defs = stmt.getDefBoxes().stream().map(ValueBox::getValue).collect(Collectors.toList());
         ArrayRef ar = stmt.getArrayRef();
-        if(defs.contains((Value)ar)) {
+        if(defs.contains(ar)) {
             return ReadWrite.WRITE;
         }
         return ReadWrite.READ;
@@ -97,7 +97,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
                 } else {
                     Logger.debug("Dep chain for " + index_name + " is empty (is it a phi var?).");
                 }
-                SCCNode node = new SCCNode(stmt.toString(),
+                SCCNode node = new SCCNode(stmt,
                         ar.getBaseBox().getValue().toString(),
                         new ArrayIndex(index_box),
                         get_read_write(stmt),

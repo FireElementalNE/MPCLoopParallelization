@@ -1,3 +1,5 @@
+import soot.jimple.Stmt;
+
 /**
  * Node for an SCCGraph
  */
@@ -6,7 +8,7 @@ class SCCNode {
     /**
      * the statement the node represents
      */
-    private final String stmt;
+    private final Stmt stmt;
     /**
      * the index of the array reference
      */
@@ -32,7 +34,7 @@ class SCCNode {
      * @param rw enum for a read or a write
      * @param line_num the line number of the statement
      */
-    SCCNode(String stmt, String basename, ArrayIndex index, ReadWrite rw, int line_num) {
+    SCCNode(Stmt stmt, String basename, ArrayIndex index, ReadWrite rw, int line_num) {
         this.stmt = stmt;
         this.basename = basename;
         this.index = index;
@@ -57,7 +59,7 @@ class SCCNode {
      * getter for the statement
      * @return the statement
      */
-    String get_stmt() {
+    Stmt get_stmt() {
         return stmt;
     }
 
