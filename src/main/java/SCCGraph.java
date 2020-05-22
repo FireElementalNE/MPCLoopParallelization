@@ -72,6 +72,7 @@ public class SCCGraph {
         scc_chain.add(node);
         for(SCCNode n : nodes) {
             if(Objects.equals(n.get_basename(), node.get_basename())) {
+                // TODO: this might be incorrect???
                 if(node.get_rw() != n.get_rw()) {
                     scc_chain.add(n);
                 }
@@ -164,6 +165,10 @@ public class SCCGraph {
                             }
                         } else {
                             Logger.debug("Current line is the same as n_line");
+                            Logger.debug("This might be a cycle. 2");
+                            Logger.debug("\tc_stmt: " + cur_node.get_stmt().toString());
+                            Logger.debug("\tn_stmt: " + scc_chain.get(i).get_stmt().toString());
+                            can_be_cycle = true;
                             // TODO: need to look at the left hand side and the right hand side to tell
                             //       if there is a cycle.
                         }
@@ -186,7 +191,7 @@ public class SCCGraph {
                             SCC_graph.add(c_node.link(to(n_node).with(
                                     Style.SOLID,
                                     LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
-                                    Color.GREEN)));
+                                    Color.ORANGE)));
                         } else {
                             Map<String, Integer> cur_d_vals = cur_solver.solve();
                             Map<String, Integer> n_d_vals = n_solver.solve();

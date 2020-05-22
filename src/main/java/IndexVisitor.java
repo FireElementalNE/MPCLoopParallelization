@@ -16,12 +16,28 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings({"FieldMayBeFinal", "unused"})
 public class IndexVisitor extends AbstractStmtSwitch {
-
+    /**
+     * the phi variables
+     */
     private PhiVariableContainer pvc;
+
+    // TODO: not sure if this is needed
+    /**
+     * the list of vars that have been defined so far on the second iter run through
+     */
     private Set<String> second_iter_def_vars;
     // TODO: top_phi_var_name is not needed.
+    /**
+     *  A list of the _original_ phi variables that is queried on the second iteration
+     */
     private Set<String> top_phi_var_names;
+    /**
+     * the current graph
+     */
     private SCCGraph graph;
+    /**
+     * the constants
+     */
     private Map<String, Integer> constants;
 
     /**
