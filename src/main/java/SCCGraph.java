@@ -170,7 +170,7 @@ public class SCCGraph {
                             Logger.debug("\tn_stmt: " + scc_chain.get(i).get_stmt().toString());
                             can_be_cycle = true;
                             // TODO: need to look at the left hand side and the right hand side to tell
-                            //       if there is a cycle.
+                            //       if there is a cycle. STILL confused about this????
                         }
                         Solver cur_solver = get_solver(cur_node, pvc, constants);
                         Solver n_solver = get_solver(scc_chain.get(i), pvc, constants);
@@ -187,40 +187,38 @@ public class SCCGraph {
                                 + ": " + get_aug_node_stmt(cur_node, def_use_graph, cur_eq));
                         guru.nidi.graphviz.model.Node n_node = node(scc_chain.get(i).get_line_num()
                                 + ": " + get_aug_node_stmt(scc_chain.get(i), def_use_graph, n_eq));
-                        if(!can_be_cycle) {
-                            SCC_graph.add(c_node.link(to(n_node).with(
-                                    Style.SOLID,
-                                    LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
-                                    Color.ORANGE)));
-                        } else {
-                            Map<String, Integer> cur_d_vals = cur_solver.solve();
-                            Map<String, Integer> n_d_vals = n_solver.solve();
-                            Map<String, Integer> d_vals = new HashMap<>();
-                            for (Map.Entry<String, Integer> c_entry : cur_d_vals.entrySet()) {
-                                for (Map.Entry<String, Integer> n_entry : n_d_vals.entrySet()) {
-                                    if (Objects.equals(c_entry.getKey(), n_entry.getKey())) {
-                                        d_vals.put(c_entry.getKey(), c_entry.getValue() - n_entry.getValue());
-                                    }
+                        Map<String, Integer> cur_d_vals = cur_solver.solve();
+                        Map<String, Integer> n_d_vals = n_solver.solve();
+                        Map<String, Integer> d_vals = new HashMap<>();
+                        for (Map.Entry<String, Integer> c_entry : cur_d_vals.entrySet()) {
+                            for (Map.Entry<String, Integer> n_entry : n_d_vals.entrySet()) {
+                                if (Objects.equals(c_entry.getKey(), n_entry.getKey())) {
+                                    // TODO: write - read, it is not arbitrary!
+                                    d_vals.put(c_entry.getKey(), c_entry.getValue() - n_entry.getValue());
                                 }
                             }
+                        }
+                        if(!can_be_cycle) {
                             for (Map.Entry<String, Integer> entry : d_vals.entrySet()) {
-                                int d = entry.getValue();
-                                if(d != 0) {
-                                    SCC_graph.add(n_node.link(to(c_node).with(
-                                            Style.DASHED,
-                                            LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
-                                            Label.of("d = " + entry.getValue()),
-                                            Color.BLUE)));
-                                    SCC_graph.add(c_node.link(to(n_node).with(
-                                            Style.SOLID,
-                                            LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
-                                            Color.GREEN)));
-                                } else {
-                                    SCC_graph.add(c_node.link(to(n_node).with(
-                                            Style.SOLID,
-                                            LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
-                                            Color.RED)));
-                                }
+                                SCC_graph.add(c_node.link(to(n_node).with(
+                                        Style.DASHED,
+                                        LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
+                                        Label.of("d = " + entry.getValue()),
+                                        Color.ORANGE)));
+                            }
+                            // TODO: these can be dependency edges
+                        } else {
+
+                            for (Map.Entry<String, Integer> entry : d_vals.entrySet()) {
+                                SCC_graph.add(n_node.link(to(c_node).with(
+                                        Style.DASHED,
+                                        LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
+                                        Label.of("d = " + entry.getValue()),
+                                        Color.BLUE)));
+                                SCC_graph.add(c_node.link(to(n_node).with(
+                                        Style.SOLID,
+                                        LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
+                                        Color.GREEN)));
                             }
                         }
                         cur_node = new SCCNode(scc_chain.get(i));

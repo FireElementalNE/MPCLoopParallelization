@@ -537,7 +537,7 @@ public class Analysis extends BodyTransformer {
 			scc_graph.make_scc_graph(phi_vars, constants, graph);
 			Logger.info("Linking non index phi vars");
 			phi_vars.make_phi_links_graph(array_vars, constants);
-			array_vars.make_array_var_graph();
+			array_vars.make_array_var_graph(graph);
 			phi_vars.make_non_index_graphs();
 			graph.print_def_node_dep_chains(phi_vars, constants);
 		}

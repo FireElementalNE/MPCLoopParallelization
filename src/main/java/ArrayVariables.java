@@ -1,6 +1,7 @@
 import guru.nidi.graphviz.attribute.LinkAttr;
 import guru.nidi.graphviz.attribute.Style;
 import guru.nidi.graphviz.model.MutableGraph;
+import org.tinylog.Logger;
 import soot.jimple.Stmt;
 
 import java.util.*;
@@ -117,9 +118,30 @@ public class ArrayVariables {
     }
 
     /**
-     * make a graph representing all the versions of this variable
+     * get the augmented statement for an array assignment
+     * @param stmt the stmt
+     * @param def_use_graph The final DefUse Graph
+     * @return the augmented stmt
      */
-    void make_array_var_graph() {
+    private String get_aug_node_stmt(Stmt stmt, ArrayDefUseGraph def_use_graph) {
+        String node_stmt = stmt.toString();
+        for (Map.Entry<String, Node> entry : def_use_graph.get_nodes().entrySet()) {
+            if(!entry.getValue().is_phi()) {
+                if (Objects.equals(entry.getValue().get_stmt().toString(), node_stmt)) {
+                    node_stmt = entry.getValue().get_aug_stmt_str();
+                } else {
+                    Logger.info("NOT EQUAL: " + entry.getValue().get_stmt().toString() + " != " + node_stmt);
+                }
+            }
+        }
+        return node_stmt;
+    }
+
+    /**
+     * make a graph representing all the versions of this variable
+     * @param def_use_graph The final DefUse Graph
+     */
+    void make_array_var_graph(ArrayDefUseGraph def_use_graph) {
         // TODO: this does not contain all the info!
         for(Map.Entry<String, ArrayVersion> entry : array_vars.entrySet()) {
             MutableGraph ver_graph = mutGraph(entry.getKey() + "_versions").setDirected(true);
@@ -127,7 +149,8 @@ public class ArrayVariables {
             List<Integer> versions = new ArrayList<>(versions_map.keySet());
             Collections.sort(versions);
             int v = versions.get(0);
-            guru.nidi.graphviz.model.Node cur_node = node(v + ": " + versions_map.get(v).toString());
+            String stmt = get_aug_node_stmt(versions_map.get(v), def_use_graph);
+            guru.nidi.graphviz.model.Node cur_node = node(v + ": " + stmt);
             if(versions.size() > 1) {
                 for (int i = 1; i < versions.size(); i++) {
                     v = versions.get(i);
