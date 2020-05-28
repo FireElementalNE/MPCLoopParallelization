@@ -10,7 +10,7 @@ _EXPLAIN ARRAY SSA_
 
 A program consists of many possibly dependent statements. A dependency is
 any grouping of statements that share a common resource. 
-# Dependencies fall into two categories:  _definition_, _use_ (Def/Use dependency) and _read_, _write_ (R/W dependency). 
+<!--- Dependencies fall into two categories:  _definition_, _use_ (Def/Use dependency) and _read_, _write_ (R/W dependency). -->
 Furthermore, every dependency can either effect
 variables within the current loop iteration (Inter-Loop dependency) or
 effect variables on a _different_ loop iteration (Cross-Loop dependency). 
