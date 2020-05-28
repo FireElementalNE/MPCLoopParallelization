@@ -9,10 +9,10 @@ _EXPLAIN SSA, AND IT'S IMPLICATIONS_
 _EXPLAIN ARRAY SSA_
 
 A program consists of many possibly dependent statements. A dependency is
-any grouping of statements that share a common resource. Dependencies fall into
-two categories: _definition_, _use_ (Def/Use dependency) and _read_,
-_write_ (R/W dependency). Furthermore, every dependency can either effect
-variables withing the current loop iteration (Inter-Loop dependency) or
+any grouping of statements that share a common resource. 
+# Dependencies fall into two categories:  _definition_, _use_ (Def/Use dependency) and _read_, _write_ (R/W dependency). 
+Furthermore, every dependency can either effect
+variables within the current loop iteration (Inter-Loop dependency) or
 effect variables on a _different_ loop iteration (Cross-Loop dependency). 
 The guarantees of SSA for non-array variables ensure that cross-loop 
 dependencies _must_ involve array variables. This means that all 
@@ -29,13 +29,13 @@ of only Phi variables and constant values.
 
 _SHOW EXAMPLE_
 
-The next in SCC creation step is to define each **node** of the graph. The parser
-analyzed each statement of the loop. If the statement contains an array 
-reference (Note,that due to SSA guarantees that there can be only one array 
+The next step in SCC creation is to define each **node** of the graph. The parser
+analyzes each statement of the loop. If the statement contains an array 
+reference (Note, that due to SSA guarantees that there can be only one array 
 reference in any single statement) it is classified as a **read**, or a **write**. 
 The statement is a **write** only if the statement is an _assignment statement_, and 
 the array reference is on the left-hand side of the assignment, otherwise it is classified 
-as a **read**. This statement, along its original _source_line number and index of the 
+as a **read**. This statement, its _original source_ line number, and index of the 
 array reference are stored as a **node**.
 
 After all the nodes have been found, edge creation and labeling begins. 
