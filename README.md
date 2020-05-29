@@ -15,8 +15,7 @@ Currently working:
 
 In progress:
 
-* Designing algorithm for multiple loops
-
+* Designing the algorithm for multiple loops
 
 ## Building
 
@@ -51,11 +50,11 @@ usage: utility-name
 
 * There are two loggers, one is a file set to DEBUG the other is a console logger set to DEBUG both can be configured in [tinylog.properties](https://github.com/FireElementalNE/MPCLoopParallelization/blob/master/src/main/resources/tinylog.properties).
 
-* a folder that holds the graphs is deleted (if it exists) and recreated at runtime.
+* a folder that holds the graphs. This is deleted (if it exists) and recreated at runtime.
 
 * the default **-j** and **-r** arguments change depending on operating system.
 
-* Currently the Java depedencies are (the **mvn package** step should download and set these up):
+* Currently, the Java dependencies are (the **mvn package** step should download and set these up):
     * [tinylog-api 2.0.1](https://mvnrepository.com/artifact/org.tinylog/tinylog-api/2.0.1)
     * [tinylog-impl 2.0.1](https://mvnrepository.com/artifact/org.tinylog/tinylog-impl/2.0.1)
     * [soot 4.2.0](https://mvnrepository.com/artifact/ca.mcgill.sable/soot/4.1.0)
@@ -63,6 +62,7 @@ usage: utility-name
     * [commons-lang3 3.9](https://mvnrepository.com/artifact/org.apache.commons/commons-lang3/3.9)
     * [commons-cli 1.4](https://mvnrepository.com/artifact/commons-cli/commons-cli/1.4)
     * [exp4j 0.4.8](https://mvnrepository.com/artifact/net.objecthunter/exp4j/0.4.8)
+    * [graphviz-rough 0.16.2](https://mvnrepository.com/artifact/guru.nidi/graphviz-rough)
 
 * THe Python dependencies:
 

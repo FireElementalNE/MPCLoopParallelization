@@ -1,7 +1,4 @@
-import guru.nidi.graphviz.attribute.Color;
-import guru.nidi.graphviz.attribute.Label;
-import guru.nidi.graphviz.attribute.LinkAttr;
-import guru.nidi.graphviz.attribute.Style;
+import guru.nidi.graphviz.attribute.*;
 import guru.nidi.graphviz.model.MutableGraph;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.tinylog.Logger;
@@ -183,21 +180,47 @@ public class SCCGraph {
                         if (n_eq.contains("=")) {
                             n_eq = n_eq.split(" = ")[1];
                         }
+
+                        Map<String, Integer> cur_d_vals = cur_solver.solve();
+                        Map<String, Integer> n_d_vals = n_solver.solve();
+                        Map<String, Integer> d_vals = new HashMap<>();
+                        Map<String, List<Integer>> indexes = new HashMap<>();
+                        for (Map.Entry<String, Integer> c_entry : cur_d_vals.entrySet()) {
+                            for (Map.Entry<String, Integer> n_entry : n_d_vals.entrySet()) {
+                                if (Objects.equals(c_entry.getKey(), n_entry.getKey())) {
+                                    indexes.put(c_entry.getKey(), new ArrayList<>());
+                                    indexes.get(c_entry.getKey()).add(c_entry.getValue());
+                                    indexes.get(c_entry.getKey()).add(n_entry.getValue());
+                                    // TODO: write - read, it is not arbitrary!
+                                    // TODO: this is still weird....
+                                    d_vals.put(c_entry.getKey(), c_entry.getValue() + n_entry.getValue());
+                                }
+                            }
+                        }
+                        StringBuilder c_sb = new StringBuilder();
+                        StringBuilder n_sb = new StringBuilder();
+                        for(Map.Entry<String, List<Integer>> el : indexes.entrySet()) {
+                            c_sb.append(el.getKey()).append(": ").append(el.getValue().get(0)).append("\n");
+                            n_sb.append(el.getKey()).append(": ").append(el.getValue().get(1)).append("\n");
+                        }
+                        guru.nidi.graphviz.model.Node c_indexes = node(c_sb.toString()).with(Shape.RECTANGLE);
+                        guru.nidi.graphviz.model.Node n_indexes = node(n_sb.toString()).with(Shape.RECTANGLE);
                         guru.nidi.graphviz.model.Node c_node = node(cur_node.get_line_num()
                                 + ": " + get_aug_node_stmt(cur_node, def_use_graph, cur_eq));
                         guru.nidi.graphviz.model.Node n_node = node(scc_chain.get(i).get_line_num()
                                 + ": " + get_aug_node_stmt(scc_chain.get(i), def_use_graph, n_eq));
-                        Map<String, Integer> cur_d_vals = cur_solver.solve();
-                        Map<String, Integer> n_d_vals = n_solver.solve();
-                        Map<String, Integer> d_vals = new HashMap<>();
-                        for (Map.Entry<String, Integer> c_entry : cur_d_vals.entrySet()) {
-                            for (Map.Entry<String, Integer> n_entry : n_d_vals.entrySet()) {
-                                if (Objects.equals(c_entry.getKey(), n_entry.getKey())) {
-                                    // TODO: write - read, it is not arbitrary!
-                                    d_vals.put(c_entry.getKey(), c_entry.getValue() - n_entry.getValue());
-                                }
-                            }
-                        }
+
+                        SCC_graph.add(c_node.link(to(c_indexes).with(
+                                Style.DOTTED,
+                                LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
+                                Color.GRAY)));
+
+                        SCC_graph.add(n_node.link(to(n_indexes).with(
+                                Style.DOTTED,
+                                LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
+                                Color.GRAY)));
+
+
                         if(!can_be_cycle) {
                             for (Map.Entry<String, Integer> entry : d_vals.entrySet()) {
                                 SCC_graph.add(c_node.link(to(n_node).with(
@@ -208,7 +231,6 @@ public class SCCGraph {
                             }
                             // TODO: these can be dependency edges
                         } else {
-
                             for (Map.Entry<String, Integer> entry : d_vals.entrySet()) {
                                 SCC_graph.add(n_node.link(to(c_node).with(
                                         Style.DASHED,

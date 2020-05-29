@@ -30,7 +30,8 @@ class Constants {
     static final String DEFAULT_COMPILE_CMD = "python compile.py -c %s";
     static final String RUN_SOLVER_CMD = "python %s";
     static final String CONSTANTS_PY_STR = "%s == %s";
-    static final String ZERO_TEST_PY_STR_NEG = "%s != 0";
+    // TODO: not sure if this is correct...
+    static final String ZERO_TEST_PY_STR_NEG = "%s > 0";
     static final String SAT = "sat";
     static final String ASSERT_NULL_STR = "%s should not be null.";
     // BLANK NODE PLACEHOLDERS

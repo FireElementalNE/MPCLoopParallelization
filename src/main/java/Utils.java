@@ -1,3 +1,4 @@
+import guru.nidi.graphviz.attribute.Color;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
 import guru.nidi.graphviz.model.MutableGraph;
@@ -11,13 +12,11 @@ import soot.shimple.PhiExpr;
 import soot.toolkits.graph.Block;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.List;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
@@ -289,8 +288,10 @@ class Utils {
 	 * @param graph the graph
 	 * @param default_case the default string that to be shown on an empty map
 	 */
+
 	static void print_graph(MutableGraph graph, String default_case) {
 		String graph_name = graph.name().toString();
+		graph.graphAttrs().add(Color.WHITE.background());
 		Logger.debug(graph_name + ":");
 		Logger.debug("\tNodes: " + graph.nodes().size());
 		Logger.debug("\tEdges: " + graph.edges().size());
@@ -301,12 +302,19 @@ class Utils {
 			graph.add(default_node);
 		}*/
 		try {
-			BufferedImage bimg = Graphviz.fromGraph(graph).render(Format.PNG).toImage();
+			BufferedImage bimg = Graphviz.fromGraph(graph)
+//					.filter(new RoughFilter()
+//							.bowing(2)
+//							.curveStepCount(6)
+//							.roughness(1)
+//							.fillStyle(FillStyle.hachure().width(2).gap(5).angle(0))
+//							.font("*serif", "Comic Sans MS"))
+					.render(Format.PNG).toImage();
 			File f = new File(Utils.make_graph_name(graph.name().toString()));
 			ImageIO.write(bimg, "png", f);
 			Logger.info(graph_name + " has " + graph.nodes().size() + " nodes.");
 			Logger.info(graph_name + " has " + graph.edges().size() + " edges.");
-		} catch (IOException | AWTError | NoClassDefFoundError e) {
+		} catch (IOException | NoClassDefFoundError e) {
 			Logger.error("Caught " + e.getClass().getSimpleName() + ": " + e.getMessage());
 			if(Constants.PRINT_ST) {
 				e.printStackTrace();

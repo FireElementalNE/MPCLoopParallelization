@@ -64,5 +64,6 @@
     <orderEntry type="library" name="Maven: org.apache.commons:commons-lang3:3.9" level="project" />
     <orderEntry type="library" name="Maven: commons-cli:commons-cli:1.4" level="project" />
     <orderEntry type="library" name="Maven: net.objecthunter:exp4j:0.4.8" level="project" />
+    <orderEntry type="library" name="guru.nidi:graphviz-rough:0.16.2" level="project" />
   </component>
 </module>
