@@ -17,9 +17,9 @@ The guarantees of SSA for non-array variables ensure that cross-loop
 dependencies _must_ involve array variables. This means that all 
 inter-loop dependencies can be directly vectorized based on a basic
 Def/Use graph. However, Cross-Loop dependencies require further analysis as 
-well as the creation of a Strongly Connected Component Graph (SCC). 
+well as the creation of a Strongly Connected Component Graph (SCC graph). 
 
-To create an SCC, the original loop body is parsed to create three important
+To create an SCC graph, the original loop body is parsed to create three important
 components. First is a list of constants along with values. The second
 is a list of Phi variables (Induction Variables) coupled with their respective
 _aliases_. Lastly, is a list of Def/Use dependencies for each alias.
@@ -38,7 +38,9 @@ as a **read**. This statement, its _original source_ line number, and index of t
 array reference are stored as a **node**.
 
 After all the nodes have been found, edge creation and labeling begins. 
-For each node, _c_, in the graph the following steps are taken:
+For each node, _c_, in the graph the following steps are taken to determine the distance
+between each pair of def/use statement. This value determines the parallelization schedule 
+for each pair interaction in the context of the larger loop body:
 1. Get a list, L, of all _other_ nodes that either **read** or **write** 
     to the same object as c.
 2. For each node, n, in L
@@ -65,4 +67,39 @@ For each node, _c_, in the graph the following steps are taken:
     4. An Edge is created between c and n, with a label of d.
     5. If a cross-loop dependency exists then a back edge is created from n to c.
 
+Once the analysis creates the SCC graph along with the d values, 
+it applies known compiler optimizations on each def/use cycle to 
+create a heuristic based schedule utilizing known compiler optimizations. In MPC 
+identical operations can be infinitely amortized, avoiding the 
+hard processor limit that restricts loop scheduling in HPC applications. 
+Furthermore, operations on _secret_ values.... (MORE HERE).
+
+
+ Vectorization (WORK IN PROGRESS!)
+ ---
  
+ _EXPLAIN ASSUMPTIONS_ Normally loop scheduling is an NPC-Complete problem but MPC provides....
+ 
+After the creation of the SCC graph is complete, the *Vectorization* step takes place, scheduling independent 
+operations in the most parallel way possible. The simple base case is _inter-loop_ dependencies. Take the following 
+example which calculates the inner product of two arrays:
+```java
+int[] A = new int[N];
+int[] B = new int[N];
+int sum = 0;
+for(int i = 0; i < A.length; i++) {
+    sum += A[i] * B[i];
+}
+```
+Each calculation of A[i] * B[i] is independent, as it does not involve any other member of the array.
+This independence means that, given the proper resources, every multiplication can be done at once and then stored
+in a temporary array. The summation of this temporary array is more complex, but only requires _log2(N)_ steps 
+(again assuming adequate resources) as shown below. 
+
+_SHOW DIAGRAM_
+
+More generally,...
+
+
+
+
