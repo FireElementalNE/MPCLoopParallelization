@@ -385,7 +385,7 @@ public class Analysis extends BodyTransformer {
 				u.apply(av_visitor);
 				array_vars = av_visitor.get_vars();
 				BFSVisitor bfs_visitor = new BFSVisitor(c_arr_ver, b, graph,
-						array_vars, Utils.get_block_num(b));
+						array_vars, phi_vars, constants, Utils.get_block_num(b));
 				u.apply(bfs_visitor);
 				array_vars = bfs_visitor.get_vars();
 				c_arr_ver = bfs_visitor.get_c_arr_ver();

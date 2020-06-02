@@ -1,15 +1,23 @@
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.tinylog.Logger;
 import soot.ValueBox;
 import soot.jimple.*;
+import soot.jimple.internal.ConditionExprBox;
 import soot.toolkits.graph.Block;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * The main visitor for the BFS algorithm.
  */
 class BFSVisitor extends AbstractStmtSwitch {
+    /**
+     * the container class that holds all non array phi variables
+     */
+    private final PhiVariableContainer phi_vars;
     /**
      * Map that represents the current array versions that a block presents to a successor block
      */
@@ -34,17 +42,24 @@ class BFSVisitor extends AbstractStmtSwitch {
      * the block number for the merge
      */
     private final int block_num;
-
+    /**
+     * the constants
+     */
+    private final Map<String, Integer> constants;
     /**
      * Constructor for the BFS Visitor
      * @param c_arr_ver a Map of currently exposed array versions per block
      * @param b the current block
      * @param graph the current ArrayDefUseGraph
      * @param array_vars the array variables
+     * @param phi_vars a container containing all phi_variables that have been seen up to this point
+     *                 (along with the aliases of those PhiVariables
+     * @param constants the constants
      * @param block_num the number of the block
      */
     BFSVisitor(Map<Block, DownwardExposedArrayRef> c_arr_ver, Block b, ArrayDefUseGraph graph,
-               ArrayVariables array_vars, int block_num) {
+               ArrayVariables array_vars, PhiVariableContainer phi_vars, Map<String, Integer> constants,
+               int block_num) {
         this.c_arr_ver = c_arr_ver;
         this.b = b;
         assert c_arr_ver.containsKey(b) : "the current array versions must have an entry for the current block";
@@ -52,6 +67,8 @@ class BFSVisitor extends AbstractStmtSwitch {
         this.graph = new ArrayDefUseGraph(graph);
         this.block_num = block_num;
         this.array_vars = new ArrayVariables(array_vars);
+        this.phi_vars = phi_vars;
+        this.constants = constants;
     }
 
     /**
@@ -78,26 +95,56 @@ class BFSVisitor extends AbstractStmtSwitch {
         return new ArrayVariables(array_vars);
     }
 
+
+    /**
+     * TODO: not needed
+     * check a non-assignment statement for array reads from aliased variables
+     * @param stmt the statement
+     * @return true iff there is an array read
+     */
+    @SuppressWarnings("unused")
+    boolean check_for_array_ref(Stmt stmt) {
+        List<ValueBox> vals = stmt.getUseBoxes().stream().filter(el -> !(el instanceof ConditionExprBox)).collect(Collectors.toList());
+        for(ValueBox vb : vals) {
+            String name = vb.getValue().toString();
+            if(!NumberUtils.isCreatable(name)) {
+                ImmutablePair<Variable, List<AssignStmt>> dep_chain = phi_vars.get_var_dep_chain(constants, name);
+                for(AssignStmt as : dep_chain.getRight()) {
+                    if(as.containsArrayRef()) {
+                        return true;
+                    }
+                }
+
+            } else {
+                Logger.info("This is a number.");
+            }
+        }
+        return false;
+    }
+
     /**
      * Check and an array USE and add:
      *    1. Changed DownwardExposedArrayRef for this block
      *    2. Usage Node
      *    3. Possible add Edge
      * @param stmt the current Statement
+     * @param is_assignment true iff stmt is an instance of Assignment Statement
      */
-    private void check_array_read(Stmt stmt) {
-        String basename = stmt.getArrayRef().getBaseBox().getValue().toString();
-        ValueBox index_box = stmt.getArrayRef().getIndexBox();
-        Logger.debug("Change needed in stmt: " + stmt.toString());
-        Logger.debug(" The index is: " + index_box.getValue().toString());
-        Logger.debug(" " + basename + " should be changed to " + daf.get_name(basename));
-        Logger.debug(" " + "This is a use for " + daf.get_name(basename));
-        ArrayVersion av = Utils.copy_av(daf.get(basename));
-        Node new_node = new Node(stmt, basename, av, new ArrayIndex(index_box), DefOrUse.USE,
-                new ImmutablePair<>(basename, daf.get_name(basename)), false);
-        graph.add_node(new_node, false, false);
-        c_arr_ver.put(b, daf);
-        array_vars.toggle_read(basename);
+    private void check_array_read(Stmt stmt, boolean is_assignment) {
+        if(is_assignment) {
+            String basename = stmt.getArrayRef().getBaseBox().getValue().toString();
+            ValueBox index_box = stmt.getArrayRef().getIndexBox();
+            Logger.debug("Change needed in stmt: " + stmt.toString());
+            Logger.debug(" The index is: " + index_box.getValue().toString());
+            Logger.debug(" " + basename + " should be changed to " + daf.get_name(basename));
+            Logger.debug(" " + "This is a use for " + daf.get_name(basename));
+            ArrayVersion av = Utils.copy_av(daf.get(basename));
+            Node new_node = new Node(stmt, basename, av, new ArrayIndex(index_box), DefOrUse.USE,
+                    new ImmutablePair<>(basename, daf.get_name(basename)), false);
+            graph.add_node(new_node, false, false);
+            c_arr_ver.put(b, daf);
+            array_vars.toggle_read(basename);
+        }
     }
 
     /**
@@ -127,7 +174,7 @@ class BFSVisitor extends AbstractStmtSwitch {
                         new ImmutablePair<>(basename, daf.get_name(basename)), false), true, false);
                 c_arr_ver.put(b, daf);
             } else {
-                check_array_read(stmt);
+                check_array_read(stmt, true);
             }
         }
     }
@@ -140,7 +187,7 @@ class BFSVisitor extends AbstractStmtSwitch {
     public void caseInvokeStmt(InvokeStmt stmt) {
         if(stmt.containsArrayRef()) {
             Logger.debug("Checking " + stmt.toString());
-            check_array_read(stmt);
+            check_array_read(stmt, false);
         }
     }
 
@@ -152,7 +199,7 @@ class BFSVisitor extends AbstractStmtSwitch {
     public void caseIdentityStmt(IdentityStmt stmt) {
         if(stmt.containsArrayRef()) {
             Logger.debug("Checking " + stmt.toString());
-            check_array_read(stmt);
+            check_array_read(stmt, false);
         }
     }
 
@@ -164,7 +211,7 @@ class BFSVisitor extends AbstractStmtSwitch {
     public void caseGotoStmt(GotoStmt stmt) {
         if(stmt.containsArrayRef()) {
             Logger.debug("Checking " + stmt.toString());
-            check_array_read(stmt);
+            check_array_read(stmt, false);
         }
     }
 
@@ -176,7 +223,7 @@ class BFSVisitor extends AbstractStmtSwitch {
     public void caseIfStmt(IfStmt stmt) {
         if(stmt.containsArrayRef()) {
             Logger.debug("Checking " + stmt.toString());
-            check_array_read(stmt);
+            check_array_read(stmt, false);
         }
     }
 
@@ -188,7 +235,7 @@ class BFSVisitor extends AbstractStmtSwitch {
     public void caseLookupSwitchStmt(LookupSwitchStmt stmt) {
         if(stmt.containsArrayRef()) {
             Logger.debug("Checking " + stmt.toString());
-            check_array_read(stmt);
+            check_array_read(stmt, false);
         }
     }
 
@@ -200,7 +247,7 @@ class BFSVisitor extends AbstractStmtSwitch {
     public void caseReturnStmt(ReturnStmt stmt) {
         if(stmt.containsArrayRef()) {
             Logger.debug("Checking " + stmt.toString());
-            check_array_read(stmt);
+            check_array_read(stmt, false);
         }
     }
 
@@ -212,7 +259,7 @@ class BFSVisitor extends AbstractStmtSwitch {
     public void caseTableSwitchStmt(TableSwitchStmt stmt) {
         if(stmt.containsArrayRef()) {
             Logger.debug("Checking " + stmt.toString());
-            check_array_read(stmt);
+            check_array_read(stmt, false);
         }
     }
 
@@ -224,10 +271,9 @@ class BFSVisitor extends AbstractStmtSwitch {
     public void caseThrowStmt(ThrowStmt stmt) {
         if(stmt.containsArrayRef()) {
             Logger.debug("Checking " + stmt.toString());
-            check_array_read(stmt);
+            check_array_read(stmt, false);
         }
     }
-
     /**
      * Check BreakpointStmt statement (NOT IMPLEMENTED)
      * @param stmt the statement
