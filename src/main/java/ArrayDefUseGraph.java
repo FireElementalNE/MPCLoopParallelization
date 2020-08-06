@@ -1,13 +1,18 @@
 import guru.nidi.graphviz.attribute.LinkAttr;
 import guru.nidi.graphviz.attribute.Style;
 import guru.nidi.graphviz.model.MutableGraph;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.tinylog.Logger;
+import soot.ValueBox;
 import soot.jimple.AssignStmt;
+import soot.jimple.IfStmt;
 import soot.jimple.Stmt;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static guru.nidi.graphviz.model.Factory.*;
@@ -98,6 +103,8 @@ class ArrayDefUseGraph {
             } else {
                 Logger.info("Adding edge, indexes match.");
             }
+            def_node.set_is_used_in_edge(true);
+            use_node.set_is_used_in_edge(true);
             Edge edge = new Edge(nodes.get(use_node.get_opposite_id()), use_node);
             edges.put(edge.hashCode(), edge);
         } else {
@@ -152,10 +159,16 @@ class ArrayDefUseGraph {
         return nodes;
     }
 
+
+
     /**
      * Make a pretty array def use graph
+     * @param phi_vars a container containing all phi_variables that have been seen up to this point
+     *                 (along with the aliases of those PhiVariables
+     * @param constants the constants
+     *
      */
-    void make_graph() {
+    void make_graph(PhiVariableContainer phi_vars, Map<String, Integer> constants) {
         for (Map.Entry<Integer, Edge> entry : edges.entrySet()) {
             Edge e = entry.getValue();
             Node def = e.get_def();
@@ -163,6 +176,43 @@ class ArrayDefUseGraph {
             guru.nidi.graphviz.model.Node def_node = node(def.get_aug_stmt_str());
             guru.nidi.graphviz.model.Node use_node = node(use.get_aug_stmt_str());
             array_def_use_graph.add(def_node.link(to(use_node).with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+        }
+        List<Node> non_edge_nodes = nodes.values().stream().filter(el -> !el.get_is_used_in_edge()).collect(Collectors.toList());
+        for(Node n : non_edge_nodes) {
+            guru.nidi.graphviz.model.Node node = node(n.get_aug_stmt_str());
+            if(n.get_stmt_type() == NodeStmtType.IF_STMT) {
+                IfStmt ifStmt = (IfStmt)n.get_stmt();
+                Stmt target = ifStmt.getTarget();
+                List<Node> possible_links = nodes.values().stream()
+                        .filter(el -> !Objects.equals(el.get_stmt_type(),NodeStmtType.PHI_STMT))
+                        .collect(Collectors.toList());
+                for(Node n1 : possible_links) {
+                    if(Objects.equals(n1.get_stmt().toString(), target.toString())) {
+                        Logger.info("MAKE AN EDGE HERE!!!");
+                    } else {
+                        Logger.info(String.format("NO EDGE: '%s' != '%s'",
+                                n1.get_stmt().toString(), target.toString()));
+                    }
+                }
+                ValueBox cond_exp_box = ifStmt.getConditionBox();
+                List<ValueBox> vals = cond_exp_box.getValue().getUseBoxes();
+                for(ValueBox vb : vals) {
+                    String name = vb.getValue().toString();
+                    if(!NumberUtils.isCreatable(name)) {
+                        ImmutablePair<Variable, List<AssignStmt>> dep_chain = phi_vars.get_var_dep_chain(constants, name);
+                        Solver s = new Solver(name, dep_chain, phi_vars, constants);
+                        for(AssignStmt as : dep_chain.getRight()) {
+                            if(as.containsArrayRef()) {
+                                Logger.info("IF STMT: here is the assignment: " + as.toString());
+                                String basename = as.getArrayRef().getBaseBox().getValue().toString();
+                                ValueBox index_box = as.getArrayRef().getIndexBox();
+                            }
+                        }
+                    }
+                }
+                array_def_use_graph.add(node);
+            }
+
         }
         Utils.print_graph(array_def_use_graph, Constants.EMPTY_DEF_USE);
     }

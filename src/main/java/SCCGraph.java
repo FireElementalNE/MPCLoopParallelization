@@ -116,9 +116,10 @@ public class SCCGraph {
      * @param pvc the container class that holds all non array phi variables
      * @param constants A list of the _original_ phi variables that is queried on the second iteration
      * @param def_use_graph The final DefUse Graph
+     * @param if_stmts container for if statements (used in def/use graph)
      */
     void make_scc_graph(PhiVariableContainer pvc, Map<String, Integer> constants,
-                        ArrayDefUseGraph def_use_graph) {
+                        ArrayDefUseGraph def_use_graph, IfStatementContainer if_stmts) {
         List<List<SCCNode>> completed_chains = new ArrayList<>();
         for(SCCNode node : nodes) {
             List<SCCNode> scc_chain = get_scc_chain(node);
@@ -251,8 +252,43 @@ public class SCCGraph {
                 Logger.debug("Chain already completed.");
             }
         }
+        for(Map.Entry<String, IfStatement> el : if_stmts.get_statements().entrySet()) {
+            guru.nidi.graphviz.model.Node if_node = node(el.getKey());
+            SCCNode true_b = find_matching_node(el.getValue().get_true_branch().toString());
+            SCCNode false_b = find_matching_node(el.getValue().get_false_branch().toString());
+            guru.nidi.graphviz.model.Node false_n;
+            guru.nidi.graphviz.model.Node true_n;
+            if(Utils.not_null(true_b)) {
+                true_n = node(true_b.get_stmt().toString());
+            } else {
+                true_n = node(el.getValue().get_true_branch().toString());
+            }
+            SCC_graph.add(if_node.link(to(true_n).with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+            if(Utils.not_null(false_b)) {
+                false_n = node(false_b.get_stmt().toString());
+            } else {
+                false_n = node(el.getValue().get_false_branch().toString());
+            }
+            SCC_graph.add(if_node.link(to(false_n).with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+
+        }
         Utils.print_graph(SCC_graph, Constants.EMPTY_SCC);
     }
+
+    /**
+     * find a node that matches the stmt (non augmented!)
+     * @param stmt the stmt
+     * @return the Node or null
+     */
+    private SCCNode find_matching_node(String stmt) {
+        for(SCCNode el : nodes) {
+            if(Objects.equals(stmt, el.get_stmt().toString())) {
+                return el;
+            }
+        }
+        return null;
+    }
+
     // TODO: do not delete this until I check with Ana!
     /*void make_scc_graph(PhiVariableContainer pvc, ArrayVariables array_vars, Map<String, Integer> constants,
                         ArrayDefUseGraph def_use_graph) {

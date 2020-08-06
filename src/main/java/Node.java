@@ -1,4 +1,6 @@
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import soot.jimple.AssignStmt;
+import soot.jimple.IfStmt;
 import soot.jimple.Stmt;
 
 import java.util.HashMap;
@@ -52,7 +54,10 @@ class Node {
      * flag showing if this node is a base (first) definition
      */
     private final boolean base_def;
-
+    /**
+     * flag showing if node is used in edge
+     */
+    private boolean is_used_in_edge;
     /**
      * Constructor for a brand NEW node. This will either have ArrayVersions of -1 (as a dummy node
      * referencing a previous iteration) or 1.
@@ -103,6 +108,7 @@ class Node {
         this.is_aug = true;
         this.aug_stmt_str = stmt_str.replace(replacements.getLeft(), replacements.getRight());
         this.base_def = base_def;
+        this.is_used_in_edge = false;
     }
 
     /**
@@ -120,6 +126,7 @@ class Node {
         this.phi_flag = av.is_phi();
         this.index = new ArrayIndex();
         this.base_def = false;
+        this.is_used_in_edge = false;
     }
 
     /**
@@ -137,7 +144,26 @@ class Node {
         this.phi_flag = n.phi_flag;
         this.base_def = n.base_def;
         this.stmt_str = n.stmt_str;
+        this.is_used_in_edge = n.is_used_in_edge;
     }
+
+    /**
+     * getter to determine the type of the node
+     * @return the node type (based on NodeStmtType enum)
+     */
+    NodeStmtType get_stmt_type() {
+        if(phi_flag) {
+            return NodeStmtType.PHI_STMT;
+        }
+        else if(stmt instanceof AssignStmt) {
+            return NodeStmtType.ASSIGNMENT_STMT;
+        }
+        else if(stmt instanceof IfStmt) {
+            return NodeStmtType.IF_STMT;
+        }
+        return null;
+    }
+
 
 //    String resolve_index(PhiVariableContainer pvc, Map<String, Integer> constants) {
 //        if(!is_phi()) {
@@ -214,6 +240,22 @@ class Node {
         DefOrUse t = Objects.equals(DefOrUse.DEF, type) ? DefOrUse.USE : DefOrUse.DEF;
         return Node.make_id(basename, av, t);
 
+    }
+
+    /**
+     * setter for is used in edge flag
+     * @param b the new value
+     */
+    void set_is_used_in_edge(boolean b) {
+        is_used_in_edge = b;
+    }
+
+    /**
+     * getter for is used in edge flag
+     * @return is used in edge flag
+     */
+    boolean get_is_used_in_edge() {
+        return is_used_in_edge;
     }
 
     /**

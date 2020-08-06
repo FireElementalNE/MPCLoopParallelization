@@ -109,10 +109,19 @@ class BFSVisitor extends AbstractStmtSwitch {
             String name = vb.getValue().toString();
             if(!NumberUtils.isCreatable(name)) {
                 ImmutablePair<Variable, List<AssignStmt>> dep_chain = phi_vars.get_var_dep_chain(constants, name);
-                for(AssignStmt as : dep_chain.getRight()) {
-                    if(as.containsArrayRef()) {
-                        return true;
+                if(Utils.not_null(dep_chain)) {
+                    if(!Utils.not_null(dep_chain.getRight()) && !Utils.not_null(dep_chain.getLeft())) {
+                        // it is a constant
+                        return false;
+                    } else {
+                        for (AssignStmt as : dep_chain.getRight()) {
+                            if (as.containsArrayRef()) {
+                                return true;
+                            }
+                        }
                     }
+                } else {
+                    Logger.error("Dep chain was null for stmt: " + stmt.toString() + "(" + name + ")");
                 }
 
             } else {
@@ -128,10 +137,9 @@ class BFSVisitor extends AbstractStmtSwitch {
      *    2. Usage Node
      *    3. Possible add Edge
      * @param stmt the current Statement
-     * @param is_assignment true iff stmt is an instance of Assignment Statement
      */
-    private void check_array_read(Stmt stmt, boolean is_assignment) {
-        if(is_assignment) {
+    private void check_array_read(Stmt stmt) {
+        if(stmt instanceof AssignStmt) {
             String basename = stmt.getArrayRef().getBaseBox().getValue().toString();
             ValueBox index_box = stmt.getArrayRef().getIndexBox();
             Logger.debug("Change needed in stmt: " + stmt.toString());
@@ -144,6 +152,29 @@ class BFSVisitor extends AbstractStmtSwitch {
             graph.add_node(new_node, false, false);
             c_arr_ver.put(b, daf);
             array_vars.toggle_read(basename);
+        } else if (stmt instanceof IfStmt) {
+                IfStmt ifStmt = (IfStmt)stmt;
+                ValueBox cond_exp_box = ifStmt.getConditionBox();
+                // List<ValueBox> vals = stmt.getUseBoxes().stream().filter(el -> !(el instanceof ConditionExprBox)).collect(Collectors.toList());
+                List<ValueBox> vals = cond_exp_box.getValue().getUseBoxes();
+                for(ValueBox vb : vals) {
+                    String name = vb.getValue().toString();
+                    if(!NumberUtils.isCreatable(name)) {
+                        ImmutablePair<Variable, List<AssignStmt>> dep_chain = phi_vars.get_var_dep_chain(constants, name);
+                        for(AssignStmt as : dep_chain.getRight()) {
+                            if(as.containsArrayRef()) {
+                                Logger.info("IF STMT: here is the assignment: " + as.toString());
+                                String basename = as.getArrayRef().getBaseBox().getValue().toString();
+                                ValueBox index_box = as.getArrayRef().getIndexBox();
+                                ArrayVersion av = Utils.copy_av(daf.get(basename));
+                                Node new_node = new Node(stmt, basename, av, new ArrayIndex(index_box), DefOrUse.USE,
+                                        new ImmutablePair<>(basename, daf.get_name(basename)), false);
+                                graph.add_node(new_node, false, false);
+                                array_vars.toggle_read(basename);
+                            }
+                        }
+                    }
+                }
         }
     }
 
@@ -174,7 +205,7 @@ class BFSVisitor extends AbstractStmtSwitch {
                         new ImmutablePair<>(basename, daf.get_name(basename)), false), true, false);
                 c_arr_ver.put(b, daf);
             } else {
-                check_array_read(stmt, true);
+                check_array_read(stmt);
             }
         }
     }
@@ -187,7 +218,7 @@ class BFSVisitor extends AbstractStmtSwitch {
     public void caseInvokeStmt(InvokeStmt stmt) {
         if(stmt.containsArrayRef()) {
             Logger.debug("Checking " + stmt.toString());
-            check_array_read(stmt, false);
+            check_array_read(stmt);
         }
     }
 
@@ -199,7 +230,7 @@ class BFSVisitor extends AbstractStmtSwitch {
     public void caseIdentityStmt(IdentityStmt stmt) {
         if(stmt.containsArrayRef()) {
             Logger.debug("Checking " + stmt.toString());
-            check_array_read(stmt, false);
+            check_array_read(stmt);
         }
     }
 
@@ -211,7 +242,7 @@ class BFSVisitor extends AbstractStmtSwitch {
     public void caseGotoStmt(GotoStmt stmt) {
         if(stmt.containsArrayRef()) {
             Logger.debug("Checking " + stmt.toString());
-            check_array_read(stmt, false);
+            check_array_read(stmt);
         }
     }
 
@@ -221,9 +252,9 @@ class BFSVisitor extends AbstractStmtSwitch {
      */
     @Override
     public void caseIfStmt(IfStmt stmt) {
-        if(stmt.containsArrayRef()) {
+        if(check_for_array_ref(stmt)) {
             Logger.debug("Checking " + stmt.toString());
-            check_array_read(stmt, false);
+            check_array_read(stmt);
         }
     }
 
@@ -235,7 +266,7 @@ class BFSVisitor extends AbstractStmtSwitch {
     public void caseLookupSwitchStmt(LookupSwitchStmt stmt) {
         if(stmt.containsArrayRef()) {
             Logger.debug("Checking " + stmt.toString());
-            check_array_read(stmt, false);
+            check_array_read(stmt);
         }
     }
 
@@ -247,7 +278,7 @@ class BFSVisitor extends AbstractStmtSwitch {
     public void caseReturnStmt(ReturnStmt stmt) {
         if(stmt.containsArrayRef()) {
             Logger.debug("Checking " + stmt.toString());
-            check_array_read(stmt, false);
+            check_array_read(stmt);
         }
     }
 
@@ -259,7 +290,7 @@ class BFSVisitor extends AbstractStmtSwitch {
     public void caseTableSwitchStmt(TableSwitchStmt stmt) {
         if(stmt.containsArrayRef()) {
             Logger.debug("Checking " + stmt.toString());
-            check_array_read(stmt, false);
+            check_array_read(stmt);
         }
     }
 
@@ -271,7 +302,7 @@ class BFSVisitor extends AbstractStmtSwitch {
     public void caseThrowStmt(ThrowStmt stmt) {
         if(stmt.containsArrayRef()) {
             Logger.debug("Checking " + stmt.toString());
-            check_array_read(stmt, false);
+            check_array_read(stmt);
         }
     }
     /**

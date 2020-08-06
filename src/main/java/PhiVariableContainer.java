@@ -158,11 +158,15 @@ public class PhiVariableContainer {
      *   otherwise null.
      */
     ImmutablePair<Variable, List<AssignStmt>> get_var_dep_chain(Map<String, Integer> constants, String v) {
-        for(PhiVariable pv : phi_vars) {
-            if(pv.has_ever_been(v)) {
-                ImmutablePair<Variable, Set<AssignStmt>> ans = pv.get_var_dep_chain(constants, v);
-                // TODO: this now comes out unordered... fix this
-                return new ImmutablePair<>(ans.getLeft(), new ArrayList<>(ans.getRight()));
+        if(constants.containsKey(v)) {
+            return new ImmutablePair<>(null, null);
+        } else {
+            for (PhiVariable pv : phi_vars) {
+                if (pv.has_ever_been(v)) {
+                    ImmutablePair<Variable, Set<AssignStmt>> ans = pv.get_var_dep_chain(constants, v);
+                    // TODO: this now comes out unordered... fix this
+                    return new ImmutablePair<>(ans.getLeft(), new ArrayList<>(ans.getRight()));
+                }
             }
         }
         return null;

@@ -16,6 +16,7 @@ import soot.shimple.ShimpleBody;
 import soot.toolkits.graph.Block;
 import soot.toolkits.graph.BlockGraph;
 import soot.toolkits.graph.ExceptionalBlockGraph;
+import soot.toolkits.graph.ExceptionalUnitGraph;
 
 import java.util.*;
 
@@ -88,7 +89,10 @@ public class Analysis extends BodyTransformer {
 	 * Dot graphs (for printing)
 	 */
 	final private MutableGraph flow_graph;
-
+	/**
+	 * container for if statements (used in def/use graph)
+	 */
+	private IfStatementContainer if_stmts;
 	/**
 	 * Create an analysis object
 	 * @param class_name the class that is being analyzed
@@ -107,6 +111,7 @@ public class Analysis extends BodyTransformer {
 		top_phi_var_names = new HashSet<>();
 		second_iter_def_vars = new HashSet<>();
 		scc_graph = new SCCGraph(class_name);
+		if_stmts = new IfStatementContainer();
 	}
 
 	/**
@@ -493,6 +498,41 @@ public class Analysis extends BodyTransformer {
 		seen_blocks.addAll(loop_blocks);
 	}
 
+	private MutableGraph g1;
+	private List<Unit> seen;
+	/**
+	 * recursive helper for cfg graph creation
+	 * @param g the graph
+	 * @param c the current node
+	 */
+	void make_cfg_graph_helper(ExceptionalUnitGraph g, Unit c) {
+		guru.nidi.graphviz.model.Node c_node = node(c.toString());
+		IfStatementVisitor if_v = new IfStatementVisitor(g, if_stmts);
+		c.apply(if_v);
+		if_stmts = if_v.get_b_stmts();
+		seen.add(c);
+		for(Unit u : g.getSuccsOf(c)) {
+			guru.nidi.graphviz.model.Node u_node = node(u.toString());
+			g1.add(c_node.link(to(u_node).with(Style.ROUNDED, LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT))));
+			if(!seen.contains(u)) {
+				make_cfg_graph_helper(g, u);
+			}
+		}
+	}
+
+	/**
+	 * make a graph of the cfg
+	 * @param b the body in question
+	 */
+	void make_cfg_graph(Body b) {
+		ExceptionalUnitGraph g = new ExceptionalUnitGraph(b);
+		g1 = mutGraph("test").setDirected(true);
+		seen = new ArrayList<>();
+		for(Unit u : g.getHeads()) {
+			make_cfg_graph_helper(g, u);
+		}
+		Utils.print_graph(g1, "ff");
+	}
 
 	/**
 	 * Overridden Soot method that parsed Code Bodies
@@ -502,6 +542,7 @@ public class Analysis extends BodyTransformer {
 	 */
 	@Override
 	protected void internalTransform(Body body, String phaseName, Map<String, String> options) {
+		make_cfg_graph(body);
 		if(!Constants.JUST_COMPILE) {
 			assert body instanceof ShimpleBody : "Has to be a shimple body.";
 			for (Map.Entry<String, String> e : options.entrySet()) {
@@ -533,8 +574,8 @@ public class Analysis extends BodyTransformer {
 				}
 			}
 			Utils.print_graph(flow_graph, Constants.EMPTY_FLOW_GRAPH);
-			graph.make_graph();
-			scc_graph.make_scc_graph(phi_vars, constants, graph);
+			graph.make_graph(phi_vars, constants);
+			scc_graph.make_scc_graph(phi_vars, constants, graph, if_stmts);
 			Logger.info("Linking non index phi vars");
 			phi_vars.make_phi_links_graph(array_vars, constants);
 			array_vars.make_array_var_graph(graph);
