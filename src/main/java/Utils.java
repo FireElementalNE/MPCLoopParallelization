@@ -4,6 +4,7 @@ import guru.nidi.graphviz.engine.Graphviz;
 import guru.nidi.graphviz.model.MutableGraph;
 import guru.nidi.graphviz.model.MutableNode;
 import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.tinylog.Logger;
 import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
@@ -372,4 +373,42 @@ class Utils {
 		return graph.nodes().stream().map(MutableNode::toString).collect(Collectors.toList()).contains(node);
 	}
 
+	/**
+	 * resolver the dependency chain using the constants and dep chain
+	 * this uses the variable definitions to get an equation that contains only
+	 * phi variables and the needed index
+	 * @param var_name the variable name
+	 * @param dep_chain the dependency chain for the index
+	 * @return a string representing the final equation for the index
+	 */
+	@SuppressWarnings("ConstantConditions")
+	static String resolve_dep_chain(String var_name, ImmutablePair<Variable, List<AssignStmt>> dep_chain) {
+		LinkedList<AssignStmt> stmts = new LinkedList<>(dep_chain.getRight());
+		String base_stmt = null;
+		for(int i = 0; i < stmts.size(); i++) {
+			String left = stmts.get(i).getLeftOp().toString();
+			if(Objects.equals(left, var_name)) {
+				base_stmt = stmts.remove(i).toString();
+				break;
+			}
+		}
+		if(Utils.not_null(base_stmt)) {
+			while(!stmts.isEmpty()) {
+				AssignStmt current_stmt = stmts.remove(0);
+				String left = current_stmt.getLeftOp().toString();
+				List<String> split_lst = Arrays.asList(base_stmt.split(" "));
+				if(split_lst.contains(left)) {
+					String right = current_stmt.getRightOp().toString();
+					int index = split_lst.indexOf(left);
+					split_lst.set(index, right);
+					base_stmt = String.join(" ", split_lst);
+				} else {
+					stmts.addLast(current_stmt);
+				}
+			}
+		} else {
+			base_stmt = var_name;
+		}
+		return base_stmt;
+	}
 }

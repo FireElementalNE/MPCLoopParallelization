@@ -89,7 +89,7 @@ public class SCCGraph {
     private Solver get_solver(SCCNode node, PhiVariableContainer pvc, Map<String, Integer> constants) {
         String index = node.get_index().to_str();
         ImmutablePair<Variable, List<AssignStmt>> cur_dep_chain = pvc.get_var_dep_chain(constants, index);
-        return new Solver(index, cur_dep_chain, pvc, constants);
+        return new Solver(node.get_stmt(), index, cur_dep_chain, pvc, constants);
     }
 
     /**

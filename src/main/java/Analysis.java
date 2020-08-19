@@ -1,12 +1,10 @@
 import guru.nidi.graphviz.attribute.LinkAttr;
 import guru.nidi.graphviz.attribute.Style;
 import guru.nidi.graphviz.model.MutableGraph;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.tinylog.Logger;
-import soot.Body;
-import soot.BodyTransformer;
-import soot.Unit;
-import soot.Value;
+import soot.*;
 import soot.jimple.AssignStmt;
 import soot.jimple.IfStmt;
 import soot.jimple.Stmt;
@@ -19,6 +17,7 @@ import soot.toolkits.graph.ExceptionalBlockGraph;
 import soot.toolkits.graph.ExceptionalUnitGraph;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static guru.nidi.graphviz.model.Factory.*;
 
@@ -94,6 +93,11 @@ public class Analysis extends BodyTransformer {
 	 */
 	private IfStatementContainer if_stmts;
 	/**
+	 * condition stack
+	 */
+	private Stack<IfStmt>cond_stk;
+
+	/**
 	 * Create an analysis object
 	 * @param class_name the class that is being analyzed
 	 */
@@ -112,6 +116,7 @@ public class Analysis extends BodyTransformer {
 		second_iter_def_vars = new HashSet<>();
 		scc_graph = new SCCGraph(class_name);
 		if_stmts = new IfStatementContainer();
+		cond_stk = new Stack<>();
 	}
 
 	/**
@@ -179,6 +184,10 @@ public class Analysis extends BodyTransformer {
 	@SuppressWarnings("ForLoopReplaceableByForEach")
 	private void parse_block(Block b) {
 		Logger.debug(Utils.get_block_name(b) + " head: " + b.getHead().toString());
+		boolean is_merge = false;
+		if(b.getPreds().size() > 1) {
+			is_merge = true;
+		}
 		for(Iterator<Unit> i = b.iterator(); i.hasNext();) {
 			Unit u = i.next();
 			ArrayVariableVisitor visitor = new ArrayVariableVisitor(array_vars,
@@ -186,7 +195,7 @@ public class Analysis extends BodyTransformer {
 			u.apply(visitor);
 			boolean is_array = visitor.get_is_array();
 			VariableVisitor var_visitor =
-					new VariableVisitor(phi_vars, top_phi_var_names, constants, is_array, false);
+					new VariableVisitor(phi_vars, top_phi_var_names, constants, is_array, false, is_merge);
 			u.apply(var_visitor);
 			array_vars = visitor.get_vars();
 			graph = visitor.get_graph();
@@ -303,38 +312,67 @@ public class Analysis extends BodyTransformer {
 	 */
 	private void handle_merge(Block b, List<String> exits) {
 		List<Block> pred_blocks = b.getPreds();
-		for (Map.Entry<String, ArrayVersion> entry : array_vars.entry_set()) {
-			if (Utils.all_not_null(pred_blocks)) {
-				List<ArrayVersion> avs = new ArrayList<>();
-				for(Block blk : pred_blocks) {
-					DownwardExposedArrayRef daf = new DownwardExposedArrayRef(c_arr_ver.get(blk));
-					ArrayVersion new_av = Utils.copy_av(daf.get(entry.getKey()));
-					if(!avs.stream().map(el -> el.get_version() == new_av.get_version()).reduce(false, Boolean::logicalOr)) {
-						avs.add(new_av);
-					}
-				}
-				// make a phi node!
-				// Indexes MUST be the same!
-				// ONLY make a phi node if the versions are ACTUALLY different
-				if(!check_avs_diffs(avs)) {
-					ArrayVersionPhi av_phi = new ArrayVersionPhi(avs, Utils.get_block_num(b), -1);
-					DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
-					// TODO: branch renaming???? if we branch just call new vars a or b then for further branches aa, bb etc??
-					new_daf.put(entry.getKey(), av_phi);
-					Logger.info("We made a phi node: " + new_daf.get_name(entry.getKey()));
-					Node n = new Node(entry.getKey(), av_phi);
-					graph.add_node(n, true, true);
-					c_arr_ver.put(b, new_daf);
-				} else {
-					Logger.info("Branching changed nothing, not creating phi node.");
-					for(Block pred : pred_blocks) {
-						handle_non_merge(b, pred, exits);
-					}
-				}
+		if(array_vars.entry_set().isEmpty()) {
+			List<DownwardExposedArrayRef> dafs = new ArrayList<>();
+			for(Block pred_b : pred_blocks) {
+				dafs.add(c_arr_ver.get(pred_b));
+			}
+			boolean test = dafs.stream().map(DownwardExposedArrayRef::is_empty).collect(Collectors.toList())
+								.stream().reduce(true, Boolean::logicalAnd);
+			if(test) {
+				c_arr_ver.put(b, new DownwardExposedArrayRef(b));
 			} else {
-				Logger.info("False phi found!");
-				DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
-				c_arr_ver.put(b, new_daf);
+				Logger.error("There should be an array version in one of the pred blocks!");
+				System.exit(0);
+			}
+		} else {
+			for (Map.Entry<String, ArrayVersion> entry : array_vars.entry_set()) {
+				if (Utils.all_not_null(pred_blocks)) {
+					List<ArrayVersion> avs = new ArrayList<>();
+					for (Block blk : pred_blocks) {
+						DownwardExposedArrayRef daf = new DownwardExposedArrayRef(c_arr_ver.get(blk));
+						ArrayVersion new_av = Utils.copy_av(daf.get(entry.getKey()));
+						if (!avs.stream().map(el -> el.get_version() == new_av.get_version()).reduce(false, Boolean::logicalOr)) {
+							avs.add(new_av);
+						}
+					}
+					// make a phi node!
+					// Indexes MUST be the same!
+					// ONLY make a phi node if the versions are ACTUALLY different
+					if (!check_avs_diffs(avs)) {
+						IfStmt ifstmt = cond_stk.pop();
+						ArrayVersionPhi av_phi = new ArrayVersionPhi(avs, Utils.get_block_num(b), -1, ifstmt);
+						DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
+						// TODO: branch renaming???? if we branch just call new vars a or b then for further branches aa, bb etc??
+						new_daf.put(entry.getKey(), av_phi);
+						Logger.info("We made a phi node: " + new_daf.get_name(entry.getKey()));
+						Logger.info("The if statement is: " + ifstmt.toString());
+						String resolved_dep_chain = ifstmt.toString();
+						for(ValueBox vb : ifstmt.getCondition().getUseBoxes()) {
+							if(!NumberUtils.isCreatable(vb.getValue().toString())) {
+								ImmutablePair<Variable, List<AssignStmt>> dep_chain =
+										phi_vars.get_var_dep_chain(constants, vb.getValue().toString());
+								String eq = Utils.resolve_dep_chain(vb.getValue().toString(), dep_chain);
+								// TODO: fix the string so it only take the RHS of the eq
+								resolved_dep_chain = resolved_dep_chain.replace(vb.getValue().toString(), eq);
+							}
+						}
+						Logger.info("The resolved if statement is: " + resolved_dep_chain);
+
+						Node n = new Node(entry.getKey(), av_phi);
+						graph.add_node(n, true, true);
+						c_arr_ver.put(b, new_daf);
+					} else {
+						Logger.info("Branching changed nothing, not creating phi node.");
+						for (Block pred : pred_blocks) {
+							handle_non_merge(b, pred, exits);
+						}
+					}
+				} else {
+					Logger.info("False phi found!");
+					DownwardExposedArrayRef new_daf = new DownwardExposedArrayRef(b);
+					c_arr_ver.put(b, new_daf);
+				}
 			}
 		}
 	}
@@ -364,6 +402,7 @@ public class Analysis extends BodyTransformer {
 			seen_blocks.add(b);
 			worklist.addAll(b.getSuccs());
 		} else {
+			boolean is_merge = false;
 			if (seen_blocks.contains(b)) {
 				Logger.warn("Were have seen this block: " + b.getHead().toString());
 				return;
@@ -371,6 +410,7 @@ public class Analysis extends BodyTransformer {
 			Logger.info(Utils.get_block_name(b) + ": " + b.getHead().toString());
 			if (b.getPreds().size() > 1) { // we have a merge
 				if (check_c_arr_ver(b.getPreds())) {
+					is_merge = true;
 					handle_merge(b, exits);
 				} else {
 					Logger.info("Both preds should already be in c_arr_ver!");
@@ -390,14 +430,15 @@ public class Analysis extends BodyTransformer {
 				u.apply(av_visitor);
 				array_vars = av_visitor.get_vars();
 				BFSVisitor bfs_visitor = new BFSVisitor(c_arr_ver, b, graph,
-						array_vars, phi_vars, constants, Utils.get_block_num(b));
+						array_vars, phi_vars, constants, Utils.get_block_num(b), cond_stk);
 				u.apply(bfs_visitor);
 				array_vars = bfs_visitor.get_vars();
 				c_arr_ver = bfs_visitor.get_c_arr_ver();
 				graph = bfs_visitor.get_graph();
+				cond_stk = bfs_visitor.get_cond_stk();
 				boolean is_array = av_visitor.get_is_array();
 				VariableVisitor var_visitor =
-						new VariableVisitor(phi_vars, top_phi_var_names, constants, is_array, true);
+						new VariableVisitor(phi_vars, top_phi_var_names, constants, is_array, true, is_merge);
 				u.apply(var_visitor);
 				phi_vars = var_visitor.get_phi_vars();
 				top_phi_var_names = var_visitor.get_top_phi_var_names();

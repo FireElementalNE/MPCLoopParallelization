@@ -1,3 +1,4 @@
+import soot.jimple.IfStmt;
 import soot.jimple.Stmt;
 
 import java.util.ArrayList;
@@ -43,14 +44,19 @@ public class ArrayVersionPhi implements ArrayVersion {
      * the line number of the version change
      */
     private final int line_num;
+    /**
+     * conditional statement
+     */
+    private final IfStmt ifstmt;
 
     /**
      * create a new ArrayVersionPhi
      * @param array_versions the individual array versions that compose this phi variable
      * @param block the block that created this AV
      * @param line_num the line number of the version change
+     * @param ifstmt the if statement that contains the condition for the equivalent MUX node
      */
-    ArrayVersionPhi(List<ArrayVersion> array_versions, int block, int line_num) {
+    ArrayVersionPhi(List<ArrayVersion> array_versions, int block, int line_num, IfStmt ifstmt) {
         this.version = array_versions.stream()
                 .map(ArrayVersion::get_version)
                 .reduce(Integer.MIN_VALUE, Math::max) + 1;
@@ -61,6 +67,7 @@ public class ArrayVersionPhi implements ArrayVersion {
         this.has_been_written_to = false;
         this.versions = new HashMap<>();
         this.line_num = line_num;
+        this.ifstmt = ifstmt;
     }
 
     /**
@@ -76,6 +83,7 @@ public class ArrayVersionPhi implements ArrayVersion {
         this.versions = new HashMap<>(av_phi.versions);
         this.line_num = av_phi.line_num;
         this.has_been_read = av_phi.has_been_read;
+        this.ifstmt = av_phi.ifstmt;
     }
 
     /**

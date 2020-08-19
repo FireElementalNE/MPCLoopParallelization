@@ -91,7 +91,7 @@ public class PhiVariableContainer {
                 Logger.debug("Found that stmt '" + stmt.toString() + "' uses phi vars:");
                 Logger.debug("\toriginal phi: " + pv.toString());
                 for(ImmutablePair<Value, Value> v_pair : values) {
-                    Logger.debug("\t  " + v_pair.getLeft().toString() + " is effected by " + v_pair.getRight().toString());
+                    Logger.debug("\t  " + v_pair.getLeft().toString() + " is affected by " + v_pair.getRight().toString());
                 }
                 pv.add_alias(left, stmt, values);
             }

@@ -108,7 +108,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
                         AssignStmt a = dep_chain.getRight().get(i);
                         Logger.debug("\t" + a.toString());
                     }
-                    Solver solver = new Solver(index_name, dep_chain, pvc, constants);
+                    Solver solver = new Solver(stmt, index_name, dep_chain, pvc, constants);
                     Logger.info("Resolved dep chain: " + solver.get_resolved_eq());
                 } else {
                     Logger.debug("Dep chain for " + index_name + " is empty (is it a phi var?).");

@@ -108,4 +108,12 @@ class DownwardExposedArrayRef {
             return null;
         }
     }
+
+    /**
+     * return whether this block has no array vars
+     * @return true iff there are no array variables in array_vars
+     */
+    boolean is_empty() {
+        return array_vars.is_empty();
+    }
 }

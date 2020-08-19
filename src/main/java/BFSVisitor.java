@@ -1,13 +1,16 @@
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.tinylog.Logger;
+import soot.Value;
 import soot.ValueBox;
 import soot.jimple.*;
 import soot.jimple.internal.ConditionExprBox;
+import soot.shimple.PhiExpr;
 import soot.toolkits.graph.Block;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 import java.util.stream.Collectors;
 
 /**
@@ -47,6 +50,10 @@ class BFSVisitor extends AbstractStmtSwitch {
      */
     private final Map<String, Integer> constants;
     /**
+     * condition stack
+     */
+    private Stack<IfStmt> cond_stk;
+    /**
      * Constructor for the BFS Visitor
      * @param c_arr_ver a Map of currently exposed array versions per block
      * @param b the current block
@@ -56,10 +63,11 @@ class BFSVisitor extends AbstractStmtSwitch {
      *                 (along with the aliases of those PhiVariables
      * @param constants the constants
      * @param block_num the number of the block
+     * @param cond_stk the stack of conditions (used for mux nodes)
      */
     BFSVisitor(Map<Block, DownwardExposedArrayRef> c_arr_ver, Block b, ArrayDefUseGraph graph,
                ArrayVariables array_vars, PhiVariableContainer phi_vars, Map<String, Integer> constants,
-               int block_num) {
+               int block_num, Stack<IfStmt> cond_stk) {
         this.c_arr_ver = c_arr_ver;
         this.b = b;
         assert c_arr_ver.containsKey(b) : "the current array versions must have an entry for the current block";
@@ -69,6 +77,7 @@ class BFSVisitor extends AbstractStmtSwitch {
         this.array_vars = new ArrayVariables(array_vars);
         this.phi_vars = phi_vars;
         this.constants = constants;
+        this.cond_stk = cond_stk;
     }
 
     /**
@@ -95,6 +104,13 @@ class BFSVisitor extends AbstractStmtSwitch {
         return new ArrayVariables(array_vars);
     }
 
+    /**
+     * getter for condition stack
+     * @return the possibly modified condition stack
+     */
+    Stack<IfStmt> get_cond_stk() {
+        return cond_stk;
+    }
 
     /**
      * TODO: not needed
@@ -207,6 +223,15 @@ class BFSVisitor extends AbstractStmtSwitch {
             } else {
                 check_array_read(stmt);
             }
+        } else {
+            if(stmt.getRightOp() instanceof PhiExpr) {
+                IfStmt ifstmt = cond_stk.pop();
+                Logger.info("We found a phi node that was created by shimple (non array): " + stmt.toString());
+                Logger.debug("\tThe variable: " + stmt.getLeftOp().toString());
+                Value right = ifstmt.getCondition();
+                // TODO: might have to eventually resolve eq
+                Logger.debug("\tThe condition: " + right.toString());
+            }
         }
     }
 
@@ -256,6 +281,7 @@ class BFSVisitor extends AbstractStmtSwitch {
             Logger.debug("Checking " + stmt.toString());
             check_array_read(stmt);
         }
+        cond_stk.push(stmt);
     }
 
     /**

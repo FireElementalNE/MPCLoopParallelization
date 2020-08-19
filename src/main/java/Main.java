@@ -135,6 +135,8 @@ public class Main {
 
 		long endTime   = System.currentTimeMillis();
 		Logger.info(String.format("Total running time: %.2f sec", ((float)(endTime - startTime) / 1000)));
+		Runtime run = Runtime.getRuntime();
+		Logger.info(String.format("Available processors: %d", run.availableProcessors()));
 		try {
 			List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
 			double heap_mem_used = 0.0d;

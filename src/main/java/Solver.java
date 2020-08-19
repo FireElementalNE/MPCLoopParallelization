@@ -2,6 +2,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.tinylog.Logger;
 import soot.jimple.AssignStmt;
+import soot.jimple.Stmt;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -36,59 +37,30 @@ public class Solver {
      * a map of constants and their values
      */
     private final Map<String, Integer> constants;
+    /**
+     * original stmt
+     */
+    private final Stmt stmt;
 
     /**
      * constructor for the solver class
+     * @param stmt the original statement
      * @param index_name the name of the index being solved
      * @param dep_chain the dependency chain for the index
      * @param phi_vars the phi variables
      * @param constants the constants
      */
-    Solver(String index_name, ImmutablePair<Variable, List<AssignStmt>> dep_chain,
+    Solver(Stmt stmt, String index_name, ImmutablePair<Variable, List<AssignStmt>> dep_chain,
            PhiVariableContainer phi_vars, Map<String, Integer> constants) {
         this.index_name = index_name;
         this.dep_chain = dep_chain;
         this.phi_vars = phi_vars;
-        this.resolved_eq = resolve_dep_chain();
+        this.resolved_eq = Utils.resolve_dep_chain(index_name, dep_chain);
         this.constants = constants;
+        this.stmt = stmt;
     }
 
-    /**
-     * resolver the dependency chain using the constants and dep chain
-     * this uses the variable definitions to get an equation that contains only
-     * phi variables and the needed index
-     * @return a string representing the final equation for the index
-     */
-    @SuppressWarnings("ConstantConditions")
-    String resolve_dep_chain() {
-        LinkedList<AssignStmt> stmts = new LinkedList<>(dep_chain.getRight());
-        String base_stmt = null;
-        for(int i = 0; i < stmts.size(); i++) {
-            String left = stmts.get(i).getLeftOp().toString();
-            if(Objects.equals(left, index_name)) {
-                base_stmt = stmts.remove(i).toString();
-                break;
-            }
-        }
-        if(Utils.not_null(base_stmt)) {
-            while(!stmts.isEmpty()) {
-                AssignStmt current_stmt = stmts.remove(0);
-                String left = current_stmt.getLeftOp().toString();
-                List<String> split_lst = Arrays.asList(base_stmt.split(" "));
-                if(split_lst.contains(left)) {
-                    String right = current_stmt.getRightOp().toString();
-                    int index = split_lst.indexOf(left);
-                    split_lst.set(index, right);
-                    base_stmt = String.join(" ", split_lst);
-                } else {
-                    stmts.addLast(current_stmt);
-                }
-            }
-        } else {
-            base_stmt = index_name;
-        }
-        return base_stmt;
-    }
+
 
     /**
      * solve the dep chain equation using z3
@@ -99,7 +71,7 @@ public class Solver {
     Map<String, Integer> solve() {
         Map<String, Integer> ret = new HashMap<>();
         if(dep_chain.getRight().size() > 0) { // if we don't have something simple
-            String resolved_eq = resolve_dep_chain();
+            String resolved_eq = Utils.resolve_dep_chain(index_name, dep_chain);
             String filename = Constants.Z3_DIR + File.separator + "solver_z3_test_" + index_name + ".py";
             Path path = Paths.get(filename);
             try (BufferedWriter writer = Files.newBufferedWriter(path)) {
@@ -108,6 +80,11 @@ public class Solver {
                 res_eq_flat = res_eq_flat.replace("$", "");
                 writer.write("from z3 import *\n");
                 writer.write("# " + resolved_eq + "\n");
+                writer.write("# " + stmt.toString() + "\n");
+                writer.write("# " + dep_chain.getLeft().get_root_val_str() + "\n");
+                for (AssignStmt as : dep_chain.getRight()) {
+                    writer.write("#\t" + as.toString() + "\n");
+                }
                 String left = res_eq_flat.split("=")[0];
                 String rem = res_eq_flat.split("=")[1];
                 // TODO: more split options

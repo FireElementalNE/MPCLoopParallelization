@@ -164,4 +164,12 @@ public class ArrayVariables {
             Utils.print_graph(ver_graph, String.format(Constants.EMPTY_VAR_GRAPH, entry.getKey()));
         }
     }
+
+    /**
+     * return true if map is empty
+     * @return true iff map is empty
+     */
+    boolean is_empty() {
+        return array_vars.isEmpty();
+    }
 }

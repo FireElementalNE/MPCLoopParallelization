@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A visitor class that looks at possible index values
+ * A visitor class that looks at possible index values and handles non array phi node MUX transformations
  */
 public class VariableVisitor extends AbstractStmtSwitch {
     /**
@@ -36,6 +36,10 @@ public class VariableVisitor extends AbstractStmtSwitch {
      * A list of the _original_ phi variables that is queried on the second iteration
      */
     private final Set<String> top_phi_var_names;
+    /**
+     * flag to indicate a merge node
+     */
+    private final boolean is_merge;
 
     /**
      * create new VariableVisitor
@@ -50,14 +54,16 @@ public class VariableVisitor extends AbstractStmtSwitch {
      * @param constants a set of constants seen in non-loop blocks
      * @param is_array used to find constants when we are _outside_ of a loop body
      * @param in_loop true iff this is called when processing inside of a loop
+     * @param is_merge flag to indicate if node is part of a merge block
      */
     VariableVisitor(PhiVariableContainer phi_vars, Set<String> top_phi_var_names, Map<String, Integer> constants,
-                    boolean is_array, boolean in_loop) {
+                    boolean is_array, boolean in_loop, boolean is_merge) {
         this.phi_vars = new PhiVariableContainer(phi_vars);
         this.top_phi_var_names = new HashSet<>(top_phi_var_names);
         this.is_array = is_array;
         this.in_loop = in_loop;
         this.constants = new HashMap<>(constants);
+        this.is_merge = is_merge;
     }
 
     /**
@@ -128,6 +134,9 @@ public class VariableVisitor extends AbstractStmtSwitch {
             Logger.debug("We found a phi node: " + stmt.toString());
             phi_vars.add(new PhiVariable(stmt));
             top_phi_var_names.add(stmt.getLeftOp().toString());
+            if(is_merge) {
+                PhiExpr pexpr = (PhiExpr) stmt.getRightOp();
+            }
         } else {
             Logger.debug("Not a phi node, looking for links: " + stmt.toString());
             Logger.debug("Checking phi_vars");

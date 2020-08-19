@@ -200,7 +200,7 @@ class ArrayDefUseGraph {
                     String name = vb.getValue().toString();
                     if(!NumberUtils.isCreatable(name)) {
                         ImmutablePair<Variable, List<AssignStmt>> dep_chain = phi_vars.get_var_dep_chain(constants, name);
-                        Solver s = new Solver(name, dep_chain, phi_vars, constants);
+                        Solver s = new Solver(target, name, dep_chain, phi_vars, constants);
                         for(AssignStmt as : dep_chain.getRight()) {
                             if(as.containsArrayRef()) {
                                 Logger.info("IF STMT: here is the assignment: " + as.toString());
