@@ -135,6 +135,7 @@ public class VariableVisitor extends AbstractStmtSwitch {
             phi_vars.add(new PhiVariable(stmt));
             top_phi_var_names.add(stmt.getLeftOp().toString());
             if(is_merge) {
+                //TODO: continue mux here
                 PhiExpr pexpr = (PhiExpr) stmt.getRightOp();
             }
         } else {

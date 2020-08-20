@@ -25,11 +25,6 @@ class IfStatementVisitor extends AbstractStmtSwitch {
     private final Stack<IfStmt> cond_stk;
 
     /**
-     * flag that is true iff we are analyzing the head node
-     */
-    boolean is_head;
-
-    /**
      * Constructor
      * @param g the CFG
      * @param if_stmts the previously parsed Branch Statements
@@ -40,7 +35,6 @@ class IfStatementVisitor extends AbstractStmtSwitch {
         this.g = g;
         this.if_stmts = new IfStatementContainer(if_stmts);
         this.cond_stk = cond_stk;
-        this.is_head = is_head;
     }
 
     /**

@@ -55,6 +55,7 @@ class IfStatement {
      * getter for the condition
      * @return the condition as a Value
      */
+    @SuppressWarnings("unused")
     Value get_cond() {
         return stmt.getCondition();
     }

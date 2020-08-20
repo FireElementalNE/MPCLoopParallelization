@@ -1,9 +1,7 @@
 import org.tinylog.Logger;
-import soot.ValueBox;
 import soot.jimple.*;
 import soot.jimple.internal.JNewArrayExpr;
 
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -121,7 +119,7 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
     public void caseAssignStmt(AssignStmt stmt) {
         String left_op = stmt.getLeftOp().toString();
         String right_op = stmt.getRightOp().toString();
-        List<ValueBox> uses = stmt.getUseBoxes();
+//        List<ValueBox> uses = stmt.getUseBoxes();
         if(stmt.containsArrayRef()) {
             check_array_ref(stmt);
         }

@@ -52,7 +52,7 @@ class BFSVisitor extends AbstractStmtSwitch {
     /**
      * condition stack
      */
-    private Stack<IfStmt> cond_stk;
+    private final Stack<IfStmt> cond_stk;
     /**
      * Constructor for the BFS Visitor
      * @param c_arr_ver a Map of currently exposed array versions per block
