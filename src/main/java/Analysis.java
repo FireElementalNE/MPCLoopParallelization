@@ -180,9 +180,10 @@ public class Analysis extends BodyTransformer {
 	 * Recursive block traversal function. This is the main parser for the _entire_ program.
 	 * At this point we are _NOT_ in a loop
 	 * @param b the block we are currently parsing
+	 * @param body the whole program body
 	 */
 	@SuppressWarnings("ForLoopReplaceableByForEach")
-	private void parse_block(Block b) {
+	private void parse_block(Block b, Body body) {
 		Logger.debug(Utils.get_block_name(b) + " head: " + b.getHead().toString());
 		boolean is_merge = false;
 		if(b.getPreds().size() > 1) {
@@ -206,14 +207,14 @@ public class Analysis extends BodyTransformer {
 		if(is_loop_head(b.getHead())) {
 			if(!seen_blocks.contains(b)) {
 				Logger.info("We found a loop head, starting BFS: " + b.getHead());
-				BFS(b, get_exits(b.getHead()));
+				BFS(b, get_exits(b.getHead()), body);
 			}
 		}
 		for(Block sb : b.getSuccs()) {
 			if(!seen_blocks.contains(sb)) {
 				add_flow_edge(b, sb, false, false);
 				seen_blocks.add(b);
-				parse_block(sb);
+				parse_block(sb, body);
 			}
 		}
 	}
@@ -226,7 +227,7 @@ public class Analysis extends BodyTransformer {
 		BlockGraph bg = new ExceptionalBlockGraph(body);
 		List<Block> blocks = bg.getHeads();
 		for(Block b : blocks) {
-			parse_block(b);
+			parse_block(b, body);
 		}
 	}
 
@@ -352,7 +353,7 @@ public class Analysis extends BodyTransformer {
 							if(!NumberUtils.isCreatable(vb.getValue().toString())) {
 								ImmutablePair<Variable, List<AssignStmt>> dep_chain =
 										phi_vars.get_var_dep_chain(constants, vb.getValue().toString());
-								String eq = Utils.resolve_dep_chain(vb.getValue().toString(), dep_chain);
+								String eq = Utils.resolve_dep_chain(vb.getValue().toString(), dep_chain, constants);
 								// TODO: fix the string so it only take the RHS of the eq
 								resolved_dep_chain = resolved_dep_chain.replace(vb.getValue().toString(), eq);
 							}
@@ -432,10 +433,10 @@ public class Analysis extends BodyTransformer {
 				BFSVisitor bfs_visitor = new BFSVisitor(c_arr_ver, b, graph,
 						array_vars, phi_vars, constants, Utils.get_block_num(b), cond_stk);
 				u.apply(bfs_visitor);
+				cond_stk = bfs_visitor.get_cond_stk();
 				array_vars = bfs_visitor.get_vars();
 				c_arr_ver = bfs_visitor.get_c_arr_ver();
 				graph = bfs_visitor.get_graph();
-				cond_stk = bfs_visitor.get_cond_stk();
 				boolean is_array = av_visitor.get_is_array();
 				VariableVisitor var_visitor =
 						new VariableVisitor(phi_vars, top_phi_var_names, constants, is_array, true, is_merge);
@@ -496,6 +497,23 @@ public class Analysis extends BodyTransformer {
 				worklist.addFirst(b);
 			}
 		}
+
+	}
+
+	/**
+	 * parse the head for if statements to put on the condition stack
+	 * @param head the head block
+	 * @param b the whole program body
+	 */
+	void parse_head(Block head, Body b) {
+		for(Unit u : head) {
+			ExceptionalUnitGraph g = new ExceptionalUnitGraph(b);
+			IfStatementVisitor if_v = new IfStatementVisitor(g, if_stmts, cond_stk);
+			u.apply(if_v);
+			cond_stk = if_v.get_cond_stk();
+		}
+		seen_blocks.add(head);
+		loop_blocks.add(head);
 	}
 
 	/**
@@ -519,11 +537,11 @@ public class Analysis extends BodyTransformer {
 	 *  Perform the BFS algorithm on a loop
 	 * @param head the Head of the loop
 	 * @param exits all exits the current loops
+	 * @param b the body of the program
 	 */
-	private void BFS(Block head, List<String> exits) {
+	private void BFS(Block head, List<String> exits, Body b) {
 		Logger.info("seen_blocks size 0: " + seen_blocks.size());
-		seen_blocks.add(head);
-		loop_blocks.add(head);
+		parse_head(head, b);
 		init_BFS_vars(head);
 		// Assuming we only have one head...
 		parse_iteration(head, exits, false);
@@ -538,7 +556,7 @@ public class Analysis extends BodyTransformer {
 		parse_iteration(head, exits, true);
 		seen_blocks.addAll(loop_blocks);
 	}
-
+	// TODO: add javadoc to these class vars
 	private MutableGraph g1;
 	private List<Unit> seen;
 	/**
@@ -548,9 +566,9 @@ public class Analysis extends BodyTransformer {
 	 */
 	void make_cfg_graph_helper(ExceptionalUnitGraph g, Unit c) {
 		guru.nidi.graphviz.model.Node c_node = node(c.toString());
-		IfStatementVisitor if_v = new IfStatementVisitor(g, if_stmts);
+		IfStatementVisitor if_v = new IfStatementVisitor(g, if_stmts, cond_stk);
 		c.apply(if_v);
-		if_stmts = if_v.get_b_stmts();
+		if_stmts = if_v.get_if_stmts();
 		seen.add(c);
 		for(Unit u : g.getSuccsOf(c)) {
 			guru.nidi.graphviz.model.Node u_node = node(u.toString());

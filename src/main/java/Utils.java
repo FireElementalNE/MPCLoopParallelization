@@ -379,10 +379,20 @@ class Utils {
 	 * phi variables and the needed index
 	 * @param var_name the variable name
 	 * @param dep_chain the dependency chain for the index
+	 * @param constants the constants map
 	 * @return a string representing the final equation for the index
 	 */
 	@SuppressWarnings("ConstantConditions")
-	static String resolve_dep_chain(String var_name, ImmutablePair<Variable, List<AssignStmt>> dep_chain) {
+	static String resolve_dep_chain(String var_name, ImmutablePair<Variable, List<AssignStmt>> dep_chain,
+									Map<String, Integer> constants) {
+		if(!Utils.not_null(dep_chain.getRight()) && !Utils.not_null(dep_chain.getLeft())) {
+			if(constants.containsKey(var_name)) {
+				return String.format("%s = %d", var_name, constants.get(var_name));
+			} else {
+				Logger.error("Got a null dep chain that was not in constants.");
+				System.exit(0);
+			}
+		}
 		LinkedList<AssignStmt> stmts = new LinkedList<>(dep_chain.getRight());
 		String base_stmt = null;
 		for(int i = 0; i < stmts.size(); i++) {

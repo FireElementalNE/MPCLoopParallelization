@@ -47,7 +47,7 @@ public class ArrayVersionPhi implements ArrayVersion {
     /**
      * conditional statement
      */
-    private final IfStmt ifstmt;
+    private final MUXNode mux_node;
 
     /**
      * create a new ArrayVersionPhi
@@ -67,7 +67,7 @@ public class ArrayVersionPhi implements ArrayVersion {
         this.has_been_written_to = false;
         this.versions = new HashMap<>();
         this.line_num = line_num;
-        this.ifstmt = ifstmt;
+        this.mux_node = new MUXNode(ifstmt);
     }
 
     /**
@@ -83,7 +83,7 @@ public class ArrayVersionPhi implements ArrayVersion {
         this.versions = new HashMap<>(av_phi.versions);
         this.line_num = av_phi.line_num;
         this.has_been_read = av_phi.has_been_read;
-        this.ifstmt = av_phi.ifstmt;
+        this.mux_node = av_phi.mux_node;
     }
 
     /**

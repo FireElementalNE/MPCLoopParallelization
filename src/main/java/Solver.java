@@ -55,7 +55,7 @@ public class Solver {
         this.index_name = index_name;
         this.dep_chain = dep_chain;
         this.phi_vars = phi_vars;
-        this.resolved_eq = Utils.resolve_dep_chain(index_name, dep_chain);
+        this.resolved_eq = Utils.resolve_dep_chain(index_name, dep_chain, constants);
         this.constants = constants;
         this.stmt = stmt;
     }
@@ -71,7 +71,7 @@ public class Solver {
     Map<String, Integer> solve() {
         Map<String, Integer> ret = new HashMap<>();
         if(dep_chain.getRight().size() > 0) { // if we don't have something simple
-            String resolved_eq = Utils.resolve_dep_chain(index_name, dep_chain);
+            String resolved_eq = Utils.resolve_dep_chain(index_name, dep_chain, constants);
             String filename = Constants.Z3_DIR + File.separator + "solver_z3_test_" + index_name + ".py";
             Path path = Paths.get(filename);
             try (BufferedWriter writer = Files.newBufferedWriter(path)) {
