@@ -1,3 +1,4 @@
+import soot.Value;
 import soot.jimple.IfStmt;
 
 /**
@@ -24,4 +25,13 @@ class MUXNode {
     IfStmt get_if_stmt() {
         return ifStmt;
     }
+
+    /**
+     * getter for conditional
+     * @return the conditional
+     */
+    Value get_conditional() {
+        return ifStmt.getCondition();
+    }
+
 }

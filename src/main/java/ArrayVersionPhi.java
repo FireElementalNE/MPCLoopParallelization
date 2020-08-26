@@ -208,4 +208,22 @@ public class ArrayVersionPhi implements ArrayVersion {
     public int get_line_num() {
         return line_num;
     }
+
+    /**
+     * to string that gets the latest version
+     * @return the latest version string
+     */
+    @Override
+    public String latest_version_string() {
+        return version + ": " + versions.get(version).toString();
+    }
+
+    /**
+     * getter for mux node (only for ArrayVersionPhi)
+     * @return the mux node
+     */
+    public MUXNode get_mux_node() {
+        return mux_node;
+    }
 }
+

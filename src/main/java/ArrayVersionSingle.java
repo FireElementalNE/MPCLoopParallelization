@@ -181,4 +181,12 @@ class ArrayVersionSingle implements ArrayVersion {
         return line_num;
     }
 
+    /**
+     * to string that gets the latest version
+     * @return the latest version string
+     */
+    @Override
+    public String latest_version_string() {
+        return version + ": " + versions.get(version).toString();
+    }
 }

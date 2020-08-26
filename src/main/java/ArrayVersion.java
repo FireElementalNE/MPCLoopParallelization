@@ -79,6 +79,12 @@ interface ArrayVersion {
      */
     int get_line_num();
 
+    /**
+     * to string that gets the latest version
+     * @return the latest version string
+     */
+    String latest_version_string();
+
 //    /**
 //     * non overridden equals op
 //     * @param av the other array version

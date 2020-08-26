@@ -101,12 +101,18 @@ public class SCCGraph {
      */
     private String get_aug_node_stmt(SCCNode node, ArrayDefUseGraph def_use_graph, String eq) {
         String node_stmt = node.get_stmt().toString();
+        int count = 0;
         for (Map.Entry<String, Node> entry : def_use_graph.get_nodes().entrySet()) {
             if(!entry.getValue().is_phi()) {
                 if (Objects.equals(entry.getValue().get_stmt().toString(), node_stmt)) {
                     node_stmt = entry.getValue().get_aug_stmt_str();
+                    count += 1;
                 }
             }
+        }
+        if(count > 1) {
+            Logger.error("Count cannot be over 1!");
+            System.exit(0);
         }
         return node_stmt.replace(node.get_index().to_str(), eq);
     }
@@ -210,6 +216,35 @@ public class SCCGraph {
                                 + ": " + get_aug_node_stmt(cur_node, def_use_graph, cur_eq));
                         guru.nidi.graphviz.model.Node n_node = node(scc_chain.get(i).get_line_num()
                                 + ": " + get_aug_node_stmt(scc_chain.get(i), def_use_graph, n_eq));
+
+                        // TODO: need to get ALL phi nodes that were declared in that block they ALL reference themselves
+                        //       and all outer phi nodes
+                        for (Map.Entry<String, Node> entry : def_use_graph.get_nodes().entrySet()) {
+                            if(entry.getValue().is_phi()) {
+                                String base_name = entry.getValue().get_basename();
+                                ArrayVersionPhi avp = (ArrayVersionPhi)entry.getValue().get_av();
+                                MUXNode mux_node = avp.get_mux_node();
+                                guru.nidi.graphviz.model.Node cond_node = node(mux_node.get_conditional().toString()).with(Shape.RECTANGLE);
+                                String phi_node_str = Utils.create_phi_stmt(base_name, avp);
+                                guru.nidi.graphviz.model.Node phi_node = node(phi_node_str).with(Shape.RECTANGLE);
+                                SCC_graph.add(phi_node.link(to(cond_node).with(
+                                        Style.BOLD,
+                                        LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
+                                        Color.BLACK)));
+                                List<ArrayVersion> a_versions = avp.get_array_versions();
+                                for(ArrayVersion av : a_versions) {
+                                    String av_str =  base_name + "_" + av.get_version();
+                                    String aug_node_str = get_aug_node_stmt(cur_node, def_use_graph, cur_eq);
+                                    if(aug_node_str.contains(av_str)) {
+                                        SCC_graph.add(c_node.link(to(phi_node).with(
+                                            Style.BOLD,
+                                            LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
+                                            Color.BLACK)));
+                                    }
+                                }
+                            }
+                        }
+
 
                         SCC_graph.add(c_node.link(to(c_indexes).with(
                                 Style.DOTTED,

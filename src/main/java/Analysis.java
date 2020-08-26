@@ -98,6 +98,11 @@ public class Analysis extends BodyTransformer {
 	private Stack<IfStmt>cond_stk;
 
 	/**
+	 * a list of all constructed array phis
+	 */
+	private List<ImmutablePair<String, ArrayVersionPhi>> array_phis;
+
+	/**
 	 * Create an analysis object
 	 * @param class_name the class that is being analyzed
 	 */
@@ -117,6 +122,7 @@ public class Analysis extends BodyTransformer {
 		scc_graph = new SCCGraph(class_name);
 		if_stmts = new IfStatementContainer();
 		cond_stk = new Stack<>();
+		array_phis = new ArrayList<>();
 	}
 
 	/**
@@ -348,6 +354,7 @@ public class Analysis extends BodyTransformer {
 						new_daf.put(entry.getKey(), av_phi);
 						Logger.info("We made a phi node: " + new_daf.get_name(entry.getKey()));
 						Logger.info("The if statement is: " + ifstmt.toString());
+						array_phis.add(new ImmutablePair<>(entry.getKey(), av_phi));
 						String resolved_dep_chain = ifstmt.toString();
 						for(ValueBox vb : ifstmt.getCondition().getUseBoxes()) {
 							if(!NumberUtils.isCreatable(vb.getValue().toString())) {
@@ -594,6 +601,17 @@ public class Analysis extends BodyTransformer {
 	}
 
 	/**
+	 * create a graph that shows the if statements transformed into MUX nodes
+	 */
+	void make_mux_graph() {
+		for(ImmutablePair<String, ArrayVersionPhi> entry : array_phis) {
+			Logger.debug(entry.getLeft() + " -> " + Utils.create_phi_stmt(entry.getLeft(), entry.getRight()));
+			// TODO: finish this
+		}
+	}
+
+
+	/**
 	 * Overridden Soot method that parsed Code Bodies
 	 * @param body the Current Code body
 	 * @param phaseName the name of the Current Phase
@@ -640,6 +658,7 @@ public class Analysis extends BodyTransformer {
 			array_vars.make_array_var_graph(graph);
 			phi_vars.make_non_index_graphs();
 			graph.print_def_node_dep_chains(phi_vars, constants);
+			make_mux_graph();
 		}
 	}
 }

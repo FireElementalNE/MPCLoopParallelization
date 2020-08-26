@@ -88,6 +88,7 @@ public class Solver {
                 String left = res_eq_flat.split("=")[0];
                 String rem = res_eq_flat.split("=")[1];
                 // TODO: more split options
+                // TODO: BUG shimple has things like A + B + -1, this breaks the split don't use ++ and --!
                 Set<String> vars = new HashSet<>(Arrays.asList(rem.split("\\+|-|/|\\*|\\^|\\||%|&|~|>>|<<|>>>")));
                 List<String> zero_neg_list = new ArrayList<>();
                 writer.write(String.format("%s = Int('%s')\n", left, left));
