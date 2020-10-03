@@ -27,3 +27,9 @@ class CryptoNets1 {
     }
 }
 
+// c1 = CMP(vals[y*cols + x + 1] > max)
+// max = MUX(c1, max, vals[y*cols + x + 1])
+// c2 = CMP(vals[(y + 1) *cols + x] > max)
+// max = MUX(c1, max, vals[(y + 1) * cols + x])
+// c3 = CMP(vals[(y + 1) *cols + x + 1] > max)
+// max = vals[(y + 1) * cols + x + 1]

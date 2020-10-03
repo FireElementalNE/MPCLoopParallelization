@@ -4,6 +4,7 @@ import guru.nidi.graphviz.engine.Graphviz;
 import guru.nidi.graphviz.model.MutableGraph;
 import guru.nidi.graphviz.model.MutableNode;
 import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.tinylog.Logger;
 import soot.jimple.ArrayRef;
@@ -291,6 +292,7 @@ class Utils {
 	 */
 
 	static void print_graph(MutableGraph graph, String default_case) {
+		Map<String, List<MutableNode>> duplicates = clean_graph(graph);
 		String graph_name = graph.name().toString();
 		graph.graphAttrs().add(Color.WHITE.background());
 		Logger.debug(graph_name + ":");
@@ -385,6 +387,10 @@ class Utils {
 	@SuppressWarnings("ConstantConditions")
 	static String resolve_dep_chain(String var_name, ImmutablePair<Variable, List<AssignStmt>> dep_chain,
 									Map<String, Integer> constants) {
+		if(NumberUtils.isCreatable(var_name)) {
+			Logger.debug("Cannot make dep chain string, this is a constant");
+			return var_name;
+		}
 		if(!Utils.not_null(dep_chain.getRight()) && !Utils.not_null(dep_chain.getLeft())) {
 			if(constants.containsKey(var_name)) {
 				return String.format("%s = %d", var_name, constants.get(var_name));
@@ -420,5 +426,53 @@ class Utils {
 			base_stmt = var_name;
 		}
 		return base_stmt;
+	}
+
+	/**
+	 * get duplicate nodes from graph (attempt to clean up graph)
+	 * @param graph the graph
+	 * @return map of duplicates
+	 */
+	static Map<String, List<MutableNode>> clean_graph(MutableGraph graph) {
+		Collection<MutableNode> nodes = graph.nodes();
+		Map<String, List<MutableNode>> duplicates = new HashMap<>();
+		for(MutableNode mn : nodes) {
+			String node_str = mn.name().value();
+			if(!duplicates.containsKey(node_str)) {
+				duplicates.put(node_str, new ArrayList<>());
+			}
+			duplicates.get(node_str).add(mn);
+		}
+		// TODO: actually CLEAN the graph
+		Map<String, List<MutableNode>> cleaned_duplicates = duplicates.entrySet().stream()
+				.filter(el -> el.getValue().size() > 1)
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+		Logger.debug(graph.name().value() + " has " + duplicates.keySet().size() + " ");
+		return duplicates;
+	}
+
+	/**
+	 * get the augmented equations for an SCCNode
+	 * @param node the SCCNode
+	 * @param def_use_graph The final DefUse Graph
+	 * @param eq the index equation
+	 * @return the final SCCNode statement that incorporates the augmented statement and index equation
+	 */
+	static String get_aug_node_stmt(SCCNode node, ArrayDefUseGraph def_use_graph, String eq) {
+		String node_stmt = node.get_stmt().toString();
+		int count = 0;
+		for (Map.Entry<String, Node> entry : def_use_graph.get_nodes().entrySet()) {
+			if(!entry.getValue().is_phi() || Utils.not_null(entry.getValue().get_stmt())) {
+				if (Objects.equals(entry.getValue().get_stmt().toString(), node_stmt)) {
+					node_stmt = entry.getValue().get_aug_stmt_str();
+					count += 1;
+				}
+			}
+		}
+		if(count > 1) {
+			Logger.error("Count cannot be over 1!");
+			System.exit(0);
+		}
+		return node_stmt.replace(node.get_index().to_str(), eq);
 	}
 }

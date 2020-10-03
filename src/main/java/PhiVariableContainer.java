@@ -169,6 +169,7 @@ public class PhiVariableContainer {
                 }
             }
         }
+        Logger.error("returning null! " + v);
         return null;
     }
 

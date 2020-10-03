@@ -76,12 +76,27 @@ public class Solver {
             Path path = Paths.get(filename);
             try (BufferedWriter writer = Files.newBufferedWriter(path)) {
                 // TODO: this $ is a problem.
-                String res_eq_flat = resolved_eq.replace(" ", "");
-                res_eq_flat = res_eq_flat.replace("$", "");
+
                 writer.write("from z3 import *\n");
                 writer.write("# " + resolved_eq + "\n");
                 writer.write("# " + stmt.toString() + "\n");
                 writer.write("# " + dep_chain.getLeft().get_root_val_str() + "\n");
+                // TODO: this is temporary to deal with the stupid if statements
+                String[] split = resolved_eq.split(" ");
+                int count = 0;
+                for(int i = 0; i < split.length; i++) {
+                    if(split[i].contains("[") && split[i].contains("]")) {
+                        String new_name = "ARR_" + count;
+                        writer.write("# ARRAY RENAME: " + split[i] + " --> " + new_name + "\n");
+                        split[i] = new_name;
+                        count++;
+                    }
+                }
+                resolved_eq = String.join(" ", split);
+                writer.write("# NEW: " + resolved_eq + "\n");
+                String res_eq_flat = resolved_eq.replace(" ", "");
+                res_eq_flat = res_eq_flat.replace("$", "");
+                // TODO: END OF TMP
                 for (AssignStmt as : dep_chain.getRight()) {
                     writer.write("#\t" + as.toString() + "\n");
                 }
@@ -92,14 +107,14 @@ public class Solver {
                 Set<String> vars = new HashSet<>(Arrays.asList(rem.split("\\+|-|/|\\*|\\^|\\||%|&|~|>>|<<|>>>")));
                 List<String> zero_neg_list = new ArrayList<>();
                 writer.write(String.format("%s = Int('%s')\n", left, left));
-                zero_neg_list.add(String.format(Constants.ZERO_TEST_PY_STR_NEG, left));
+                zero_neg_list.add(String.format(Constants.NEQ_ZERO_PY, left));
                 for (String v : vars) {
                     if (!NumberUtils.isCreatable(v)) {
                         writer.write(String.format("%s = Int('%s')\n", v, v));
                         if (constants.containsKey(v)) {
                             zero_neg_list.add(String.format(Constants.CONSTANTS_PY_STR, v, constants.get(v)));
                         } else {
-                            zero_neg_list.add(String.format(Constants.ZERO_TEST_PY_STR_NEG, v));
+                            zero_neg_list.add(String.format(Constants.NEQ_ZERO_PY, v));
                         }
                     }
                 }

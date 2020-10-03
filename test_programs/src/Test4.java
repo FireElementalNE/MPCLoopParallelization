@@ -4,7 +4,7 @@ class Test4 {
         int[] a = new int[5];
         int z = 10;
         int p = 20;
-        for(int i = 0; i < a.length; i++) {
+        for(int i = 0; i < 5; i++) {
             z = z + i;
             a[i] = i;
             a[i] = i + a[i];

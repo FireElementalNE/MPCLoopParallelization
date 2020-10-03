@@ -73,6 +73,13 @@ public class Main {
 				.build();
 		options.addOption(c);
 
+		Option st_test = Option.builder("S")
+				.longOpt("StatementTest")
+				.desc("flag to tell if we want to be in statement test mode")
+				.required(false)
+				.build();
+		options.addOption(c);
+
 		CommandLineParser parser = new DefaultParser();
 		HelpFormatter formatter = new HelpFormatter();
 		CommandLine cmd = null;

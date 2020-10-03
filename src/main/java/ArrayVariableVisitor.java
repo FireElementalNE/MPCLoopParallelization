@@ -2,7 +2,9 @@ import org.tinylog.Logger;
 import soot.jimple.*;
 import soot.jimple.internal.JNewArrayExpr;
 
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Visitor for keeping track of array Variables
@@ -25,6 +27,10 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
      * it is not a constant we are interested in.
      */
     private boolean is_array;
+    /**
+     * set of new array statements
+     */
+    private final Set<Stmt> new_array_stmts;
 
     /**
      * Create a new array variable visitor
@@ -34,12 +40,15 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
      *             this is wrapped in the ArrayVariables class
      * @param graph the current array def/use graph when this visitor is called
      * @param block_num the block number that is calling this visitor
+     * @param new_array_stmts set of new array stmts
      */
-    ArrayVariableVisitor(ArrayVariables vars, ArrayDefUseGraph graph, int block_num) {
+    ArrayVariableVisitor(ArrayVariables vars, ArrayDefUseGraph graph, int block_num,
+                         Set<Stmt> new_array_stmts) {
         this.vars = new ArrayVariables(vars);
         this.graph = new ArrayDefUseGraph(graph);
         this.block_num = block_num;
         this.is_array = false;
+        this.new_array_stmts = new HashSet<>(new_array_stmts);
     }
 
     /**
@@ -56,6 +65,14 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
      */
     ArrayDefUseGraph get_graph() {
         return graph;
+    }
+
+    /**
+     * getter for new array stmts
+     * @return new array stmts set
+     */
+    Set<Stmt> get_new_array_stmts() {
+        return new HashSet<>(new_array_stmts);
     }
 
     /**
@@ -131,6 +148,7 @@ public class ArrayVariableVisitor extends AbstractStmtSwitch {
             graph.add_node(new Node(stmt, left_op, av, new ArrayIndex(), DefOrUse.DEF, true),
                     true, false);
             vars.put(left_op, av);
+            new_array_stmts.add(stmt);
             is_array = true;
         }
         else if(vars.contains_key(right_op)) {

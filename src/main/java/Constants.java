@@ -31,7 +31,10 @@ class Constants {
     static final String RUN_SOLVER_CMD = "python %s";
     static final String CONSTANTS_PY_STR = "%s == %s";
     // TODO: not sure if this is correct...
-    static final String ZERO_TEST_PY_STR_NEG = "%s > 0";
+    static final String GR_ZERO_PY = "%s > 0";
+    static final String LR_ZERO_PY = "%s < 0";
+    static final String EQ_ZERO_PY = "%s == 0";
+    static final String NEQ_ZERO_PY = "%s != 0";
     static final String SAT = "sat";
     static final String ASSERT_NULL_STR = "%s should not be null.";
     // BLANK NODE PLACEHOLDERS
@@ -44,6 +47,7 @@ class Constants {
     static final String EMPTY_VAR = "EMPTY_VAR: %s";
     static final String EMPTY_VAR_DEP = "EMPTY_VAR_DEP: %s && %s";
 }
+
 
 
 

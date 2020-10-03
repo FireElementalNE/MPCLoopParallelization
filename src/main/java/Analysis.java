@@ -96,11 +96,22 @@ public class Analysis extends BodyTransformer {
 	 * condition stack
 	 */
 	private Stack<IfStmt>cond_stk;
-
 	/**
 	 * a list of all constructed array phis
 	 */
 	private List<ImmutablePair<String, ArrayVersionPhi>> array_phis;
+	/**
+	 * set of new array statements
+	 */
+	private Set<Stmt> new_array_stmts;
+	/**
+	 * map to handle array USES being used in IFSTMTS (and therefore MUX stmts)
+	 */
+	private Map<String, ValueBox> array_reads_for_if_stmts;
+	/**
+	 * list of loops
+	 */
+	private Set<Loop> loops;
 
 	/**
 	 * Create an analysis object
@@ -123,6 +134,9 @@ public class Analysis extends BodyTransformer {
 		if_stmts = new IfStatementContainer();
 		cond_stk = new Stack<>();
 		array_phis = new ArrayList<>();
+		new_array_stmts = new HashSet<>();
+		array_reads_for_if_stmts = new HashMap<>();
+		loops = new HashSet<>();
 	}
 
 	/**
@@ -198,12 +212,16 @@ public class Analysis extends BodyTransformer {
 		for(Iterator<Unit> i = b.iterator(); i.hasNext();) {
 			Unit u = i.next();
 			ArrayVariableVisitor visitor = new ArrayVariableVisitor(array_vars,
-					graph, Utils.get_block_num(b));
+					graph, Utils.get_block_num(b), new_array_stmts);
 			u.apply(visitor);
+			new_array_stmts = visitor.get_new_array_stmts();
 			boolean is_array = visitor.get_is_array();
 			VariableVisitor var_visitor =
-					new VariableVisitor(phi_vars, top_phi_var_names, constants, is_array, false, is_merge);
+					new VariableVisitor(phi_vars, top_phi_var_names, constants, is_array, false,
+							is_merge, new_array_stmts, array_reads_for_if_stmts);
 			u.apply(var_visitor);
+			array_reads_for_if_stmts = var_visitor.get_array_reads_for_if_stmts();
+			new_array_stmts = var_visitor.get_new_array_stmts();
 			array_vars = visitor.get_vars();
 			graph = visitor.get_graph();
 			phi_vars = var_visitor.get_phi_vars();
@@ -238,12 +256,9 @@ public class Analysis extends BodyTransformer {
 	}
 
 	/**
-	 * find all loop heads/exits in a given body
-	 * @param body the body being parsed
+	 * find all loop heads/exits current body
 	 */
-	private void find_loop_heads(Body body) {
-		LoopFinder lf = new LoopFinder();
-		Set<Loop> loops = lf.getLoops(body);
+	private void find_loop_heads() {
 		for(Loop l : loops) {
 			String head_str = l.getHead().toString();
 			Collection<Stmt> exits = l.getLoopExits();
@@ -252,6 +267,20 @@ public class Analysis extends BodyTransformer {
 				String exit_str = real_exit.getTarget().toString();
 				Logger.debug("Head/Exit found => " + head_str + " ----> " + exit_str);
 				loop_head_exits.add(new ImmutablePair<>(head_str, exit_str));
+			}
+		}
+	}
+
+	/**
+	 * find loop base if stmt
+	 * @param b block that contains the head stmt of the loop
+	 */
+	private void find_loop_if_stmt(Block b) {
+		// TODO: need to find the ACTUAL loop head (the if stmt for the loop)
+		for(Loop l : loops) {
+			String head_str = l.getHead().toString();
+			if(Objects.equals(head_str, b.getHead().toString())) {
+				Logger.debug("Loop starting with '" + head_str + "': ");
 			}
 		}
 	}
@@ -434,9 +463,10 @@ public class Analysis extends BodyTransformer {
 			// process stmts
 			for (Unit u : b) {
 				ArrayVariableVisitor av_visitor = new ArrayVariableVisitor(array_vars,
-						graph, Utils.get_block_num(b));
+						graph, Utils.get_block_num(b), new_array_stmts);
 				u.apply(av_visitor);
 				array_vars = av_visitor.get_vars();
+				new_array_stmts = av_visitor.get_new_array_stmts();
 				BFSVisitor bfs_visitor = new BFSVisitor(c_arr_ver, b, graph,
 						array_vars, phi_vars, constants, Utils.get_block_num(b), cond_stk);
 				u.apply(bfs_visitor);
@@ -446,8 +476,11 @@ public class Analysis extends BodyTransformer {
 				graph = bfs_visitor.get_graph();
 				boolean is_array = av_visitor.get_is_array();
 				VariableVisitor var_visitor =
-						new VariableVisitor(phi_vars, top_phi_var_names, constants, is_array, true, is_merge);
+						new VariableVisitor(phi_vars, top_phi_var_names, constants, is_array, true,
+								is_merge, new_array_stmts, array_reads_for_if_stmts);
 				u.apply(var_visitor);
+				array_reads_for_if_stmts = var_visitor.get_array_reads_for_if_stmts();
+				new_array_stmts = var_visitor.get_new_array_stmts();
 				phi_vars = var_visitor.get_phi_vars();
 				top_phi_var_names = var_visitor.get_top_phi_var_names();
 				constants = var_visitor.get_constants();
@@ -562,6 +595,27 @@ public class Analysis extends BodyTransformer {
 		Logger.info("seen_blocks size 2: " + seen_blocks.size());
 		parse_iteration(head, exits, true);
 		seen_blocks.addAll(loop_blocks);
+//		for(ImmutablePair<String, ArrayVersionPhi> entry : array_phis) {
+//			Logger.debug("Need to make a new phi node!");
+//			List<ArrayVersion> versions = new ArrayList<>();
+//			int block = 0;
+//			int line_num = 0;
+//			IfStmt if_stmt = null;
+//			if(array_vars.contains_key(entry.getLeft())) {
+//				versions.add(array_vars.get(entry.getLeft()));
+//				block = array_vars.get(entry.getLeft()).get_block();
+//				line_num = array_vars.get(entry.getLeft()).get_line_num();
+//				find_loop_if_stmt(head);
+//				// if_stmt = array_vars.get(entry.getLeft()).get
+//
+//			} else {
+//				Logger.error("this is wrong!");
+//			}
+//			// TODO: have to handle renaming!
+//			versions.add(entry.getRight());
+//			ArrayVersionPhi av_phi = new ArrayVersionPhi(versions, block, line_num, null);
+//			Logger.debug("New phi: " + Utils.create_phi_stmt(entry.getLeft(), av_phi));
+//		}
 	}
 	// TODO: add javadoc to these class vars
 	private MutableGraph g1;
@@ -620,12 +674,14 @@ public class Analysis extends BodyTransformer {
 	@Override
 	protected void internalTransform(Body body, String phaseName, Map<String, String> options) {
 		make_cfg_graph(body);
+		LoopFinder lf = new LoopFinder();
+		loops = lf.getLoops(body);
 		if(!Constants.JUST_COMPILE) {
 			assert body instanceof ShimpleBody : "Has to be a shimple body.";
 			for (Map.Entry<String, String> e : options.entrySet()) {
 				Logger.debug(e.getKey() + " ----> " + e.getValue());
 			}
-			find_loop_heads(body);
+			find_loop_heads();
 			parse_blocks_start(body);
 			Logger.info("Node count: " + graph.get_nodes().size());
 			for (Map.Entry<String, Node> entry : graph.get_nodes().entrySet()) {
@@ -652,13 +708,22 @@ public class Analysis extends BodyTransformer {
 			}
 			Utils.print_graph(flow_graph, Constants.EMPTY_FLOW_GRAPH);
 			graph.make_graph(phi_vars, constants);
-			scc_graph.make_scc_graph(phi_vars, constants, graph, if_stmts);
+			scc_graph.make_scc_graph(phi_vars, constants, graph, if_stmts, array_vars);
+
+			Set<SCCEdge> edges = scc_graph.get_edges();
+			Logger.debug("Edge count: " + edges.size());
+			for(SCCEdge e : edges) {
+				Logger.debug("\tEDGE: " + e.get_src().get_stmt() + " -- " + e.get_d() + " --> " + e.get_dest().get_stmt());
+			}
+
 			Logger.info("Linking non index phi vars");
 			phi_vars.make_phi_links_graph(array_vars, constants);
 			array_vars.make_array_var_graph(graph);
 			phi_vars.make_non_index_graphs();
 			graph.print_def_node_dep_chains(phi_vars, constants);
 			make_mux_graph();
+
+
 		}
 	}
 }

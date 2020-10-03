@@ -32,6 +32,10 @@ public class SCCGraph {
      * a list of SCC nodes
      */
     Set<SCCNode> nodes;
+    /**
+     * a list of SCC edges
+     */
+    Set<SCCEdge> edges;
 
     /**
      * the base constructor for the SCC graph
@@ -40,6 +44,7 @@ public class SCCGraph {
     SCCGraph(String class_name) {
         this.SCC_graph = mutGraph(class_name + "_scc_final").setDirected(true);
         this.nodes = new HashSet<>();
+        this.edges = new HashSet<>();
     }
 
     /**
@@ -49,6 +54,16 @@ public class SCCGraph {
     SCCGraph(SCCGraph sccg) {
         this.SCC_graph = sccg.SCC_graph;
         this.nodes = new HashSet<>(sccg.nodes);
+        this.edges = new HashSet<>(sccg.edges);
+    }
+
+    /**
+     * get SCC edges (should be run after make graph)
+     * @return SCC edges
+     */
+    Set<SCCEdge> get_edges() {
+        // TODO: check if we actually make graph
+        return edges;
     }
 
     /**
@@ -93,39 +108,27 @@ public class SCCGraph {
     }
 
     /**
-     * get the augmented equations for an SCCNode
-     * @param node the SCCNode
-     * @param def_use_graph The final DefUse Graph
-     * @param eq the index equation
-     * @return the final SCCNode statement that incorporates the augmented statement and index equation
-     */
-    private String get_aug_node_stmt(SCCNode node, ArrayDefUseGraph def_use_graph, String eq) {
-        String node_stmt = node.get_stmt().toString();
-        int count = 0;
-        for (Map.Entry<String, Node> entry : def_use_graph.get_nodes().entrySet()) {
-            if(!entry.getValue().is_phi()) {
-                if (Objects.equals(entry.getValue().get_stmt().toString(), node_stmt)) {
-                    node_stmt = entry.getValue().get_aug_stmt_str();
-                    count += 1;
-                }
-            }
-        }
-        if(count > 1) {
-            Logger.error("Count cannot be over 1!");
-            System.exit(0);
-        }
-        return node_stmt.replace(node.get_index().to_str(), eq);
-    }
-
-    /**
      * make an SCC graph png
      * @param pvc the container class that holds all non array phi variables
      * @param constants A list of the _original_ phi variables that is queried on the second iteration
      * @param def_use_graph The final DefUse Graph
      * @param if_stmts container for if statements (used in def/use graph)
+     * @param array_vars the map of array variables and versions
      */
     void make_scc_graph(PhiVariableContainer pvc, Map<String, Integer> constants,
-                        ArrayDefUseGraph def_use_graph, IfStatementContainer if_stmts) {
+                        ArrayDefUseGraph def_use_graph, IfStatementContainer if_stmts,
+                        ArrayVariables array_vars) {
+
+        List<ImmutablePair<String, String>> seen_deps = new ArrayList<>();
+
+        for(SCCNode node : nodes) {
+            Logger.info("we are at node '" + node.get_stmt().toString() + "' which is a " + node.get_rw().toString());
+            List<SCCNode> ns = get_scc_chain(node);
+            for(SCCNode n : ns) {
+                Logger.info("     LINK: " + n.get_stmt().toString());
+            }
+        }
+
         List<List<SCCNode>> completed_chains = new ArrayList<>();
         for(SCCNode node : nodes) {
             List<SCCNode> scc_chain = get_scc_chain(node);
@@ -138,7 +141,7 @@ public class SCCGraph {
                         ReadWrite n_rw = scc_chain.get(i).get_rw();
                         int c_line = cur_node.get_line_num();
                         int n_line = scc_chain.get(i).get_line_num();
-                        boolean can_be_cycle = false;
+                        int can_be_cycle = 0;
                         if(c_line > n_line) {
                             Logger.debug("Current line is after n_line");
                             if(c_rw == ReadWrite.READ && n_rw == ReadWrite.WRITE) {
@@ -149,7 +152,7 @@ public class SCCGraph {
                                 Logger.debug("This might be a cycle. 1");
                                 Logger.debug("\tc_stmt: " + cur_node.get_stmt().toString());
                                 Logger.debug("\tn_stmt: " + scc_chain.get(i).get_stmt().toString());
-                                can_be_cycle = true;
+                                can_be_cycle = 1;
                             } else {
                                 Logger.warn("We should not get here! 1");
                             }
@@ -159,7 +162,7 @@ public class SCCGraph {
                                 Logger.debug("This might be a cycle. 2");
                                 Logger.debug("\tc_stmt: " + cur_node.get_stmt().toString());
                                 Logger.debug("\tn_stmt: " + scc_chain.get(i).get_stmt().toString());
-                                can_be_cycle = true;
+                                can_be_cycle = 2;
                             } else if(c_rw == ReadWrite.WRITE && n_rw == ReadWrite.READ) {
                                 Logger.debug("This Cannot be a cycle. 2");
                                 Logger.debug("\tc_stmt: " + cur_node.get_stmt().toString());
@@ -172,7 +175,7 @@ public class SCCGraph {
                             Logger.debug("This might be a cycle. 2");
                             Logger.debug("\tc_stmt: " + cur_node.get_stmt().toString());
                             Logger.debug("\tn_stmt: " + scc_chain.get(i).get_stmt().toString());
-                            can_be_cycle = true;
+                            can_be_cycle = 3;
                             // TODO: need to look at the left hand side and the right hand side to tell
                             //       if there is a cycle. STILL confused about this????
                         }
@@ -210,12 +213,45 @@ public class SCCGraph {
                             c_sb.append(el.getKey()).append(": ").append(el.getValue().get(0)).append("\n");
                             n_sb.append(el.getKey()).append(": ").append(el.getValue().get(1)).append("\n");
                         }
+
+                        // TODO: ask ana about this: testing the constant rate assumption and the eq assumption.
+                        //       if we have a bunch of statements do we need to FLATTEN the whole thing and THEN
+                        //       pass it into a solver? if so this could be hard to do automatically!!!!
+//
+//                        Map<String, String> rep_strings = new HashMap<>();
+//                        if(cur_node.get_stmt() instanceof AssignStmt) {
+//                            AssignStmt as = (AssignStmt)cur_node.get_stmt();
+//                            Logger.debug("LOOKING AT: " + as.toString());
+//                            List<ValueBox> defs_uses = as.getUseAndDefBoxes();
+//                            for(ValueBox vb : defs_uses) {
+//                                Value v = vb.getValue();
+//                                if(!(vb.getValue() instanceof ArrayRef) && !array_vars.contains_key(v.toString())) {
+//                                    String v_name = v.toString();
+//                                    ImmutablePair<Variable, List<AssignStmt>> dep_chain = pvc.get_var_dep_chain(constants, v_name);
+//                                    String resolved_chain = Utils.resolve_dep_chain(v_name, dep_chain, constants);
+//                                    Logger.debug("\tRESOLVED DEP CHAIN: " + resolved_chain);
+//                                    String[] tmp_rep = resolved_chain.split(" = ");
+//                                    if(tmp_rep.length == 1) {
+//                                        rep_strings.put(v_name, tmp_rep[0]);
+//                                    } else if(tmp_rep.length == 2) {
+//                                        rep_strings.put(tmp_rep[0], tmp_rep[1]);
+//                                    } else {
+//                                        Logger.error("There is more than one equal sign in the equation, something is VERY wrong.");
+//                                        System.exit(0);
+//                                    }
+//                                }
+//                            }
+//                        }
+                        String s1 = Utils.get_aug_node_stmt(cur_node, def_use_graph, cur_eq);
+                        String s2 = Utils.get_aug_node_stmt(scc_chain.get(i), def_use_graph, n_eq);
+
+
                         guru.nidi.graphviz.model.Node c_indexes = node(c_sb.toString()).with(Shape.RECTANGLE);
                         guru.nidi.graphviz.model.Node n_indexes = node(n_sb.toString()).with(Shape.RECTANGLE);
                         guru.nidi.graphviz.model.Node c_node = node(cur_node.get_line_num()
-                                + ": " + get_aug_node_stmt(cur_node, def_use_graph, cur_eq));
+                                + ": " + Utils.get_aug_node_stmt(cur_node, def_use_graph, cur_eq));
                         guru.nidi.graphviz.model.Node n_node = node(scc_chain.get(i).get_line_num()
-                                + ": " + get_aug_node_stmt(scc_chain.get(i), def_use_graph, n_eq));
+                                + ": " + Utils.get_aug_node_stmt(scc_chain.get(i), def_use_graph, n_eq));
 
                         // TODO: need to get ALL phi nodes that were declared in that block they ALL reference themselves
                         //       and all outer phi nodes
@@ -234,7 +270,7 @@ public class SCCGraph {
                                 List<ArrayVersion> a_versions = avp.get_array_versions();
                                 for(ArrayVersion av : a_versions) {
                                     String av_str =  base_name + "_" + av.get_version();
-                                    String aug_node_str = get_aug_node_stmt(cur_node, def_use_graph, cur_eq);
+                                    String aug_node_str = Utils.get_aug_node_stmt(cur_node, def_use_graph, cur_eq);
                                     if(aug_node_str.contains(av_str)) {
                                         SCC_graph.add(c_node.link(to(phi_node).with(
                                             Style.BOLD,
@@ -244,7 +280,13 @@ public class SCCGraph {
                                 }
                             }
                         }
-
+//                        Logger.info("Started new stuff");
+//                        String cur_eq_cp =  Utils.get_aug_node_stmt(cur_node, def_use_graph, cur_eq);
+//
+//                        for(Map.Entry<String, String> entry : rep_strings.entrySet()) {
+//                            cur_eq_cp = cur_eq_cp.replace(entry.getKey(), entry.getValue());
+//                        }
+//                        Logger.debug("CUR_EQ_FIXED: " + cur_eq_cp + "(" + cur_solver.get_resolved_eq() + ")");
 
                         SCC_graph.add(c_node.link(to(c_indexes).with(
                                 Style.DOTTED,
@@ -257,8 +299,10 @@ public class SCCGraph {
                                 Color.GRAY)));
 
 
-                        if(!can_be_cycle) {
+                        if(can_be_cycle == 0) {
                             for (Map.Entry<String, Integer> entry : d_vals.entrySet()) {
+                                edges.add(new SCCEdge(cur_node, scc_chain.get(i), entry.getValue()));
+
                                 SCC_graph.add(c_node.link(to(n_node).with(
                                         Style.DASHED,
                                         LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
@@ -267,16 +311,68 @@ public class SCCGraph {
                             }
                             // TODO: these can be dependency edges
                         } else {
-                            for (Map.Entry<String, Integer> entry : d_vals.entrySet()) {
-                                SCC_graph.add(n_node.link(to(c_node).with(
-                                        Style.DASHED,
-                                        LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
-                                        Label.of("d = " + entry.getValue()),
-                                        Color.BLUE)));
-                                SCC_graph.add(c_node.link(to(n_node).with(
-                                        Style.SOLID,
-                                        LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
-                                        Color.GREEN)));
+//                            for(SCCEdge e : edges) {
+//                                ImmutablePair<String, String> im = e.get_id_pair();
+//                                if(Objects.equals(im.getRight(), t.getRight()) &&
+//                                        Objects.equals(im.getLeft(), t.getLeft())) {
+//                                    Logger.error("we are adding again????");
+////                                        System.exit(0);
+//                                }
+//
+//                            }
+                            ImmutablePair<String, String> t = new ImmutablePair(cur_node.get_stmt().toString(),
+                                    scc_chain.get(i).get_stmt().toString());
+                            if(!seen_deps.contains(t)) {
+                                for (Map.Entry<String, Integer> entry : d_vals.entrySet()) {
+                                    SCCEdge new_edge = new SCCEdge(scc_chain.get(i), cur_node, entry.getValue());
+                                    edges.add(new_edge);
+                                    seen_deps.add(new_edge.get_id_pair());
+
+                                    if(can_be_cycle == 1) {
+                                        SCC_graph.add(n_node.link(to(c_node).with(
+                                                Style.DASHED,
+                                                LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
+                                                Label.of("d = " + entry.getValue()),
+                                                Color.BLUE)));
+                                        SCC_graph.add(c_node.link(to(n_node).with(
+                                                Style.SOLID,
+                                                LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
+                                                Color.GREEN)));
+
+                                    } else if(can_be_cycle == 2) {
+                                        SCC_graph.add(c_node.link(to(n_node).with(
+                                                Style.DASHED,
+                                                LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
+                                                Label.of("d = " + entry.getValue()),
+                                                Color.BLUE)));
+                                        SCC_graph.add(n_node.link(to(c_node).with(
+                                                Style.SOLID,
+                                                LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
+                                                Color.GREEN)));
+                                    } else {
+                                        // TODO: ASSUMING READ TO WRITE PROBS WRONG!
+                                        SCC_graph.add(n_node.link(to(c_node).with(
+                                                Style.DASHED,
+                                                LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
+                                                Label.of("d = " + entry.getValue()),
+                                                Color.BLUE)));
+                                        SCC_graph.add(c_node.link(to(n_node).with(
+                                                Style.SOLID,
+                                                LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
+                                                Color.GREEN)));
+                                    }
+//                                    SCC_graph.add(n_node.link(to(c_node).with(
+//                                            Style.DASHED,
+//                                            LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
+//                                            Label.of("d = " + entry.getValue()),
+//                                            Color.BLUE)));
+//                                    SCC_graph.add(c_node.link(to(n_node).with(
+//                                            Style.SOLID,
+//                                            LinkAttr.weight(Constants.GRAPHVIZ_EDGE_WEIGHT),
+//                                            Color.GREEN)));
+                                }
+                            } else {
+                                Logger.info("We have done this already");
                             }
                         }
                         cur_node = new SCCNode(scc_chain.get(i));

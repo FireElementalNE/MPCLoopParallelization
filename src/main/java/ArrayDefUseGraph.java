@@ -64,6 +64,12 @@ class ArrayDefUseGraph {
      * @param is_phi true iff it is a phi node
      */
     void add_node(Node node, boolean is_def, boolean is_phi) {
+        if(nodes.containsKey(node.get_id())) {
+            Logger.error("We have an ID conflict: " + node.get_id());
+            Logger.error(node.get_stmt().toString());
+            Logger.error(nodes.get(node.get_id()).get_stmt().toString());
+            System.exit(0);
+        }
         if (!is_def) {
             nodes.put(node.get_id(), node);
             add_edge(node);

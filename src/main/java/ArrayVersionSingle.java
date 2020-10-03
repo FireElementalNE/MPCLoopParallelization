@@ -68,6 +68,7 @@ class ArrayVersionSingle implements ArrayVersion {
         has_been_written_to = avs.has_been_written_to;
         this.versions = new HashMap<>(avs.versions);
         this.line_num = avs.line_num;
+        this.has_been_read = avs.has_been_read;
     }
 
     /**

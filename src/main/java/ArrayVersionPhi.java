@@ -222,7 +222,7 @@ public class ArrayVersionPhi implements ArrayVersion {
      * getter for mux node (only for ArrayVersionPhi)
      * @return the mux node
      */
-    public MUXNode get_mux_node() {
+    MUXNode get_mux_node() {
         return mux_node;
     }
 }

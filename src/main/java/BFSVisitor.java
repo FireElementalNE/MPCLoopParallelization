@@ -10,6 +10,7 @@ import soot.toolkits.graph.Block;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
@@ -125,6 +126,7 @@ class BFSVisitor extends AbstractStmtSwitch {
             String name = vb.getValue().toString();
             if(!NumberUtils.isCreatable(name)) {
                 ImmutablePair<Variable, List<AssignStmt>> dep_chain = phi_vars.get_var_dep_chain(constants, name);
+                // TODO: HPL_logsort 1 errors here
                 if(Utils.not_null(dep_chain)) {
                     if(!Utils.not_null(dep_chain.getRight()) && !Utils.not_null(dep_chain.getLeft())) {
                         // it is a constant
@@ -177,17 +179,24 @@ class BFSVisitor extends AbstractStmtSwitch {
                     String name = vb.getValue().toString();
                     if(!NumberUtils.isCreatable(name)) {
                         ImmutablePair<Variable, List<AssignStmt>> dep_chain = phi_vars.get_var_dep_chain(constants, name);
-                        for(AssignStmt as : dep_chain.getRight()) {
-                            if(as.containsArrayRef()) {
-                                Logger.info("IF STMT: here is the assignment: " + as.toString());
-                                String basename = as.getArrayRef().getBaseBox().getValue().toString();
-                                ValueBox index_box = as.getArrayRef().getIndexBox();
-                                ArrayVersion av = Utils.copy_av(daf.get(basename));
-                                Node new_node = new Node(stmt, basename, av, new ArrayIndex(index_box), DefOrUse.USE,
-                                        new ImmutablePair<>(basename, daf.get_name(basename)), false);
-                                graph.add_node(new_node, false, false);
-                                array_vars.toggle_read(basename);
+                        // TODO: dep_chain is null for i13 in if stmt in HPLlogosort 1. Array reads are not handled properly in
+                        //        VariableVisitor
+                        if(!Objects.isNull(dep_chain)) {
+                            for (AssignStmt as : dep_chain.getRight()) {
+                                if (as.containsArrayRef()) {
+                                    Logger.info("IF STMT: here is the assignment: " + as.toString());
+                                    String basename = as.getArrayRef().getBaseBox().getValue().toString();
+                                    ValueBox index_box = as.getArrayRef().getIndexBox();
+                                    ArrayVersion av = Utils.copy_av(daf.get(basename));
+                                    // TODO: need to find a way to add if nodes without taking the DAF, it squashes other nodes!
+                                    Node new_node = new Node(stmt, basename, av, new ArrayIndex(index_box), DefOrUse.USE,
+                                            new ImmutablePair<>(basename, daf.get_name(basename)), false);
+                                    graph.add_node(new_node, false, false);
+                                    array_vars.toggle_read(basename);
+                                }
                             }
+                        } else {
+                            int i = 0;
                         }
                     }
                 }
@@ -210,7 +219,7 @@ class BFSVisitor extends AbstractStmtSwitch {
                 daf.new_ver(basename, block_num, stmt);
                 ArrayVersion av = Utils.copy_av(daf.get(basename));
                 if(graph.get_nodes().containsKey(Node.make_id(basename, av, DefOrUse.DEF))) {
-                    Logger.warn("Id conflict, forcing version increase before adding node");
+                    Logger.info("Id conflict, forcing version increase before adding node: " + stmt.toString());
                     daf.force_incr(basename);
                     av.force_incr_version();
                 }
