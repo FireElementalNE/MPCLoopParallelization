@@ -80,7 +80,8 @@ class ArrayDefUseGraph {
                     ArrayVersionPhi avp = (ArrayVersionPhi)av;
                     List<ArrayVersion> av_lst = avp.get_array_versions();
                     for(ArrayVersion tmp_av : av_lst) {
-                        String id = Node.make_id(node.get_basename(), tmp_av, DefOrUse.DEF);
+                        String id = Node.make_id(node.get_basename(), tmp_av, DefOrUse.DEF,
+                                node.is_if(), node.get_line_num());
                         Node use_node = nodes.get(id);
                         Edge edge = new Edge(use_node, node);
                         edges.put(edge.hashCode(), edge);
@@ -101,31 +102,36 @@ class ArrayDefUseGraph {
      * @param use_node the node being added
      */
     private void add_edge(Node use_node) {
-        Node def_node = new Node(nodes.get(use_node.get_opposite_id()));
-        if (use_node.get_index().equals(def_node.get_index()) || def_node.is_phi()) {
-            // TODO: this index check is wrong.... indexes could be the same!
-            if (def_node.is_phi()) {
-                Logger.info("Adding edge def node is a phi node");
+        Node n = nodes.get(use_node.get_opposite_id());
+        if(Utils.not_null(n)) {
+            Node def_node = new Node(n);
+            if (use_node.get_index().equals(def_node.get_index()) || def_node.is_phi()) {
+                // TODO: this index check is wrong.... indexes could be the same!
+                if (def_node.is_phi()) {
+                    Logger.info("Adding edge def node is a phi node");
+                } else {
+                    Logger.info("Adding edge, indexes match.");
+                }
+                def_node.set_is_used_in_edge(true);
+                use_node.set_is_used_in_edge(true);
+                Edge edge = new Edge(nodes.get(use_node.get_opposite_id()), use_node);
+                edges.put(edge.hashCode(), edge);
             } else {
-                Logger.info("Adding edge, indexes match.");
+                // TODO: fix if the indexes _are_ the same but just renamed....
+                //      Test12 shimple:
+                //        i19 = i16_1
+                //        ...
+                //        r0[i19] = $i2
+                //        ...
+                //        $i4 = r0[i16_1]
+                //  That should be an edge.
+                Logger.info("Not adding edge, indexes mismatch and def node is not a phi node. ");
+                Logger.debug("\tdef_index: " + def_node.get_index().to_str());
+                Logger.debug("\tuse_index: " + use_node.get_index().to_str());
+                Logger.debug("\tis phi?: " + def_node.is_phi());
             }
-            def_node.set_is_used_in_edge(true);
-            use_node.set_is_used_in_edge(true);
-            Edge edge = new Edge(nodes.get(use_node.get_opposite_id()), use_node);
-            edges.put(edge.hashCode(), edge);
         } else {
-            // TODO: fix if the indexes _are_ the same but just renamed....
-            //      Test12 shimple:
-            //        i19 = i16_1
-            //        ...
-            //        r0[i19] = $i2
-            //        ...
-            //        $i4 = r0[i16_1]
-            //  That should be an edge.
-            Logger.info("Not adding edge, indexes mismatch and def node is not a phi node. ");
-            Logger.debug("\tdef_index: " + def_node.get_index().to_str());
-            Logger.debug("\tuse_index: " + use_node.get_index().to_str());
-            Logger.debug("\tis phi?: " + def_node.is_phi());
+            Logger.info("Use Node node found in nodes, is an if (probs): " + use_node.is_if());
         }
     }
 
@@ -138,14 +144,16 @@ class ArrayDefUseGraph {
      * @param new_av the new Array Version
      * @param new_stmt the new definition Statement
      * @param base_def the base def of the old node
+     * @param was_if_stmt true iff old node was an if statment
+     * @param blf construct for finding shimple line numbers
      */
     void array_def_rename(String old_name, ArrayVersion old_av,
-                          String new_name, ArrayVersion new_av, AssignStmt new_stmt, boolean base_def) {
-        String id = Node.make_id(old_name, old_av, DefOrUse.DEF);
+                          String new_name, ArrayVersion new_av, AssignStmt new_stmt, boolean base_def, boolean was_if_stmt, BodyLineFinder blf) {
+        String id = Node.make_id(old_name, old_av, DefOrUse.DEF, was_if_stmt, new_av.get_line_num());
         assert nodes.containsKey(id) : "the id of the old node must be a key in nodes.";
         Node n = nodes.remove(id);
-        String new_id = Node.make_id(new_name, new_av, DefOrUse.DEF);
-        Node new_node = new Node(new_stmt, new_name, new_av, n.get_index(), DefOrUse.DEF, base_def);
+        String new_id = Node.make_id(new_name, new_av, DefOrUse.DEF, new_stmt instanceof IfStmt, blf.get_line(new_stmt));
+        Node new_node = new Node(new_stmt, new_name, new_av, n.get_index(), DefOrUse.DEF, base_def, blf.get_line(new_stmt));
         nodes.put(new_id, new_node);
     }
 

@@ -39,6 +39,10 @@ public class IndexVisitor extends AbstractStmtSwitch {
      * the constants
      */
     private Map<String, Integer> constants;
+    /**
+     * construct to get shimple lines
+     */
+    private BodyLineFinder blf;
 
     /**
      * constructor for the Index visitor
@@ -47,14 +51,17 @@ public class IndexVisitor extends AbstractStmtSwitch {
      * @param top_phi_var_names A list of the _original_ phi variables that is queried on the second iteration
      * @param constants the constants
      * @param graph the current graph
+     * @param blf construct to get line numbers correctly
      */
     IndexVisitor(PhiVariableContainer pvc, Set<String> second_iter_def_vars,
-                 Set<String> top_phi_var_names, Map<String, Integer> constants, SCCGraph graph) {
+                 Set<String> top_phi_var_names, Map<String, Integer> constants, SCCGraph graph,
+                 BodyLineFinder blf) {
         this.pvc = new PhiVariableContainer(pvc);
         this.second_iter_def_vars = new HashSet<>(second_iter_def_vars);
         this.top_phi_var_names = new HashSet<>(top_phi_var_names);
         this.graph = new SCCGraph(graph);
         this.constants = constants;
+        this.blf = blf;
     }
 
     /**
@@ -117,7 +124,7 @@ public class IndexVisitor extends AbstractStmtSwitch {
                         ar.getBaseBox().getValue().toString(),
                         new ArrayIndex(index_box),
                         get_read_write(stmt),
-                        stmt.getJavaSourceStartLineNumber());
+                        blf.get_line(stmt));
                 graph.add_node(node);
             } else {
                 Logger.error("dep chain for " + index_box.getValue().toString() + " is null.");

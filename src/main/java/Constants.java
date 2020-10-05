@@ -14,6 +14,7 @@ class Constants {
     static final String ARR_PHI_STR_START = "phi(";
     static final Pattern BLOCK_RE = Pattern.compile("^(Block\\s\\d+)");
     static final Pattern BLOCK_NUM_RE = Pattern.compile("^Block\\s(\\d+)");
+    static final Pattern LINE_PATTERN = Pattern.compile("[\\(\\)\\d\\s]+(.*);");
     static final String DEFAULT_CP = "test_programs/out";
     static final String DEFAULT_RT_PATH = Utils.rt_path();
     static final String DEFAULT_JCE_PATH = Utils.jce_path();

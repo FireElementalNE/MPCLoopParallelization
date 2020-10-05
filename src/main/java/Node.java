@@ -59,6 +59,11 @@ class Node {
      */
     private boolean is_used_in_edge;
     /**
+     * line number in shimple
+     */
+    private int line_num_shimple;
+
+    /**
      * Constructor for a brand NEW node. This will either have ArrayVersions of -1 (as a dummy node
      * referencing a previous iteration) or 1.
      * @param stmt the statement that the node represents
@@ -68,9 +73,10 @@ class Node {
      * @param type the type of node (definition of usage)
      * @param base_def true iff we are dealing with a base definition or a pure rename, these do NOT need
      *                 to be included in any edges!
+     * @param line_num_shimple the line num in shimple
      */
     Node(Stmt stmt, String basename, ArrayVersion av, ArrayIndex index,
-         DefOrUse type, boolean base_def) {
+         DefOrUse type, boolean base_def, int line_num_shimple) {
         this.stmt = stmt;
         this.stmt_str = stmt.toString();
         this.type = type;
@@ -81,6 +87,7 @@ class Node {
         this.is_aug = false;
         this.index = index;
         this.base_def = base_def;
+        this.line_num_shimple = line_num_shimple;
     }
 
     /**
@@ -93,11 +100,13 @@ class Node {
      * @param replacements a pair of strings that represents the old augmented name of the node (based off of the array
      *                     OLD array version) and the new augmented name of the node. This is used to change the
      *                     aug_stmt
+     * @param line_num_shimple the line number in shimple
      * @param base_def true iff we are dealing with a base definition or a pure rename, these do NOT need
      *                 to be included in any edges!
      */
     Node(Stmt stmt, String basename, ArrayVersion av, ArrayIndex index,
-         DefOrUse type, ImmutablePair<String, String> replacements, boolean base_def) {
+         DefOrUse type, ImmutablePair<String, String> replacements, boolean base_def,
+         int line_num_shimple) {
         this.stmt = stmt;
         this.stmt_str = stmt.toString();
         this.type = type;
@@ -109,14 +118,16 @@ class Node {
         this.aug_stmt_str = stmt_str.replace(replacements.getLeft(), replacements.getRight());
         this.base_def = base_def;
         this.is_used_in_edge = false;
+        this.line_num_shimple = line_num_shimple;
     }
 
     /**
      * Constructor for a node if it is a Phi node (for arrays!!)
      * @param basename the basename of the array
+     * @param line_num_shimple the line number in shimple
      * @param av the array version
      */
-    Node(String basename, ArrayVersion av) {
+    Node(String basename, ArrayVersion av, int line_num_shimple) {
         // phi
         this.stmt = null;
         this.stmt_str = Utils.create_phi_stmt(basename, av);
@@ -127,6 +138,7 @@ class Node {
         this.index = new ArrayIndex();
         this.base_def = false;
         this.is_used_in_edge = false;
+        this.line_num_shimple = line_num_shimple;
     }
 
     /**
@@ -238,7 +250,7 @@ class Node {
      */
     String get_opposite_id() {
         DefOrUse t = Objects.equals(DefOrUse.DEF, type) ? DefOrUse.USE : DefOrUse.DEF;
-        return Node.make_id(basename, av, t);
+        return Node.make_id(basename, av, t, is_if(), line_num_shimple);
 
     }
 
@@ -263,12 +275,13 @@ class Node {
      * @param id the id of the node
      * @param av the array version of the node
      * @param t the type of the node
+     * @param is_if true iff the id being made is for a node that is an if stmt
      * @return a node id as a string
      */
-    static String make_id(String id, ArrayVersion av, DefOrUse t) {
+    static String make_id(String id, ArrayVersion av, DefOrUse t, boolean is_if, int line_num_shimple) {
         StringBuilder sb = new StringBuilder(id);
         sb.append(Constants.UNDERSCORE);
-        int line_num = av.get_line_num();
+        int line_num = line_num_shimple;// av.get_line_num();
         if(av.is_phi()) {
             ArrayVersionPhi av_phi = (ArrayVersionPhi)av;
             Map<Integer, Integer> have_seen = new HashMap<>();
@@ -277,15 +290,6 @@ class Node {
                     .collect(Collectors.toList());
             for(int s : versions) {
                 sb.append(s);
-//                // TODO: this is not longer needed
-//                if(av_phi.has_diff_ver_match()) {
-//                    if(have_seen.containsKey(s)) {
-//                        have_seen.put(s, have_seen.get(s) + 1);
-//                    } else {
-//                        have_seen.put(s, 0);
-//                    }
-//                    sb.append(Constants.ALPHABET_ARRAY[have_seen.get(s)]);
-//                }
                 sb.append(Constants.UNDERSCORE);
             }
         } else {
@@ -294,6 +298,10 @@ class Node {
             sb.append(Constants.UNDERSCORE);
         }
         sb.append(t);
+        if(is_if) {
+            sb.append(Constants.UNDERSCORE);
+            sb.append("IF");
+        }
         if(t == DefOrUse.USE) {
             sb.append(":");
             sb.append(line_num);
@@ -338,14 +346,22 @@ class Node {
      * @return  the ID of this node
      */
     String get_id() {
-        return Node.make_id(basename, av, type);
+        return Node.make_id(basename, av, type, is_if(), line_num_shimple);
     }
 
     /**
-     * getter for the line number of this statement
-     * @return the line number for this statement
+     * getter for the line number of this statement in shimple
+     * @return the line number for this statement in shimple
      */
     int get_line_num() {
+        return line_num_shimple;
+    }
+
+    /**
+     * getter for av the line number
+     * @return the line number for av
+     */
+    int get_av_line_num() {
         return av.get_line_num();
     }
 
@@ -379,6 +395,14 @@ class Node {
      */
     void force_av_incr() {
         av.force_incr_version();
+    }
+
+    /**
+     * function to determine if this is an if statement node
+     * @return true iff stmt is an if statement
+     */
+    boolean is_if() {
+        return stmt instanceof IfStmt;
     }
 
 }

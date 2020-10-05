@@ -99,7 +99,7 @@ public class Analysis extends BodyTransformer {
 	/**
 	 * a list of all constructed array phis
 	 */
-	private List<ImmutablePair<String, ArrayVersionPhi>> array_phis;
+	private final List<ImmutablePair<String, ArrayVersionPhi>> array_phis;
 	/**
 	 * set of new array statements
 	 */
@@ -112,6 +112,10 @@ public class Analysis extends BodyTransformer {
 	 * list of loops
 	 */
 	private Set<Loop> loops;
+	/**
+	 * Construct to find shimple lines
+	 */
+	BodyLineFinder blf;
 
 	/**
 	 * Create an analysis object
@@ -212,7 +216,7 @@ public class Analysis extends BodyTransformer {
 		for(Iterator<Unit> i = b.iterator(); i.hasNext();) {
 			Unit u = i.next();
 			ArrayVariableVisitor visitor = new ArrayVariableVisitor(array_vars,
-					graph, Utils.get_block_num(b), new_array_stmts);
+					graph, Utils.get_block_num(b), new_array_stmts, blf);
 			u.apply(visitor);
 			new_array_stmts = visitor.get_new_array_stmts();
 			boolean is_array = visitor.get_is_array();
@@ -267,20 +271,6 @@ public class Analysis extends BodyTransformer {
 				String exit_str = real_exit.getTarget().toString();
 				Logger.debug("Head/Exit found => " + head_str + " ----> " + exit_str);
 				loop_head_exits.add(new ImmutablePair<>(head_str, exit_str));
-			}
-		}
-	}
-
-	/**
-	 * find loop base if stmt
-	 * @param b block that contains the head stmt of the loop
-	 */
-	private void find_loop_if_stmt(Block b) {
-		// TODO: need to find the ACTUAL loop head (the if stmt for the loop)
-		for(Loop l : loops) {
-			String head_str = l.getHead().toString();
-			if(Objects.equals(head_str, b.getHead().toString())) {
-				Logger.debug("Loop starting with '" + head_str + "': ");
 			}
 		}
 	}
@@ -396,7 +386,7 @@ public class Analysis extends BodyTransformer {
 						}
 						Logger.info("The resolved if statement is: " + resolved_dep_chain);
 
-						Node n = new Node(entry.getKey(), av_phi);
+						Node n = new Node(entry.getKey(), av_phi, -1);
 						graph.add_node(n, true, true);
 						c_arr_ver.put(b, new_daf);
 					} else {
@@ -431,7 +421,7 @@ public class Analysis extends BodyTransformer {
 			}
 			for (Unit u : b) {
 				IndexVisitor iv = new IndexVisitor(phi_vars, second_iter_def_vars,
-						top_phi_var_names, constants, scc_graph);
+						top_phi_var_names, constants, scc_graph, blf);
 				u.apply(iv);
 				second_iter_def_vars = iv.get_second_iter_def_vars();
 				scc_graph = iv.get_graph();
@@ -463,12 +453,12 @@ public class Analysis extends BodyTransformer {
 			// process stmts
 			for (Unit u : b) {
 				ArrayVariableVisitor av_visitor = new ArrayVariableVisitor(array_vars,
-						graph, Utils.get_block_num(b), new_array_stmts);
+						graph, Utils.get_block_num(b), new_array_stmts, blf);
 				u.apply(av_visitor);
 				array_vars = av_visitor.get_vars();
 				new_array_stmts = av_visitor.get_new_array_stmts();
 				BFSVisitor bfs_visitor = new BFSVisitor(c_arr_ver, b, graph,
-						array_vars, phi_vars, constants, Utils.get_block_num(b), cond_stk);
+						array_vars, phi_vars, constants, Utils.get_block_num(b), cond_stk, blf);
 				u.apply(bfs_visitor);
 				cond_stk = bfs_visitor.get_cond_stk();
 				array_vars = bfs_visitor.get_vars();
@@ -488,7 +478,6 @@ public class Analysis extends BodyTransformer {
 			List<Block> succ_blocks = b.getSuccs();
 			Logger.debug("We found " + succ_blocks.size() + " successor blocks.");
 			if (loop_head_exits.contains(new ImmutablePair<>(head.toString(), b.toString()))) {
-				// TODO: this does nothing.
 				Logger.info("We found an exit, stopping.");
 			} else {
 				for (Block s1 : succ_blocks) {
@@ -655,17 +644,6 @@ public class Analysis extends BodyTransformer {
 	}
 
 	/**
-	 * create a graph that shows the if statements transformed into MUX nodes
-	 */
-	void make_mux_graph() {
-		for(ImmutablePair<String, ArrayVersionPhi> entry : array_phis) {
-			Logger.debug(entry.getLeft() + " -> " + Utils.create_phi_stmt(entry.getLeft(), entry.getRight()));
-			// TODO: finish this
-		}
-	}
-
-
-	/**
 	 * Overridden Soot method that parsed Code Bodies
 	 * @param body the Current Code body
 	 * @param phaseName the name of the Current Phase
@@ -673,6 +651,7 @@ public class Analysis extends BodyTransformer {
 	 */
 	@Override
 	protected void internalTransform(Body body, String phaseName, Map<String, String> options) {
+		blf = new BodyLineFinder(body);
 		make_cfg_graph(body);
 		LoopFinder lf = new LoopFinder();
 		loops = lf.getLoops(body);
@@ -721,8 +700,6 @@ public class Analysis extends BodyTransformer {
 			array_vars.make_array_var_graph(graph);
 			phi_vars.make_non_index_graphs();
 			graph.print_def_node_dep_chains(phi_vars, constants);
-			make_mux_graph();
-
 
 		}
 	}

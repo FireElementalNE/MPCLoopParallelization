@@ -55,6 +55,11 @@ class BFSVisitor extends AbstractStmtSwitch {
      */
     private final Stack<IfStmt> cond_stk;
     /**
+     * construct to get shimple lines
+     */
+    private BodyLineFinder blf;
+
+    /**
      * Constructor for the BFS Visitor
      * @param c_arr_ver a Map of currently exposed array versions per block
      * @param b the current block
@@ -65,10 +70,11 @@ class BFSVisitor extends AbstractStmtSwitch {
      * @param constants the constants
      * @param block_num the number of the block
      * @param cond_stk the stack of conditions (used for mux nodes)
+     * @param blf construct to get line numbers correctly
      */
     BFSVisitor(Map<Block, DownwardExposedArrayRef> c_arr_ver, Block b, ArrayDefUseGraph graph,
                ArrayVariables array_vars, PhiVariableContainer phi_vars, Map<String, Integer> constants,
-               int block_num, Stack<IfStmt> cond_stk) {
+               int block_num, Stack<IfStmt> cond_stk, BodyLineFinder blf) {
         this.c_arr_ver = c_arr_ver;
         this.b = b;
         assert c_arr_ver.containsKey(b) : "the current array versions must have an entry for the current block";
@@ -79,6 +85,7 @@ class BFSVisitor extends AbstractStmtSwitch {
         this.phi_vars = phi_vars;
         this.constants = constants;
         this.cond_stk = cond_stk;
+        this.blf = blf;
     }
 
     /**
@@ -119,7 +126,7 @@ class BFSVisitor extends AbstractStmtSwitch {
      * @param stmt the statement
      * @return true iff there is an array read
      */
-    @SuppressWarnings("unused")
+
     boolean check_for_array_ref(Stmt stmt) {
         List<ValueBox> vals = stmt.getUseBoxes().stream().filter(el -> !(el instanceof ConditionExprBox)).collect(Collectors.toList());
         for(ValueBox vb : vals) {
@@ -166,7 +173,8 @@ class BFSVisitor extends AbstractStmtSwitch {
             Logger.debug(" " + "This is a use for " + daf.get_name(basename));
             ArrayVersion av = Utils.copy_av(daf.get(basename));
             Node new_node = new Node(stmt, basename, av, new ArrayIndex(index_box), DefOrUse.USE,
-                    new ImmutablePair<>(basename, daf.get_name(basename)), false);
+                    new ImmutablePair<String, String>(basename, daf.get_name(basename)), false,
+                    blf.get_line(stmt));
             graph.add_node(new_node, false, false);
             c_arr_ver.put(b, daf);
             array_vars.toggle_read(basename);
@@ -190,7 +198,7 @@ class BFSVisitor extends AbstractStmtSwitch {
                                     ArrayVersion av = Utils.copy_av(daf.get(basename));
                                     // TODO: need to find a way to add if nodes without taking the DAF, it squashes other nodes!
                                     Node new_node = new Node(stmt, basename, av, new ArrayIndex(index_box), DefOrUse.USE,
-                                            new ImmutablePair<>(basename, daf.get_name(basename)), false);
+                                            new ImmutablePair<>(basename, daf.get_name(basename)), false, blf.get_line(stmt));
                                     graph.add_node(new_node, false, false);
                                     array_vars.toggle_read(basename);
                                 }
@@ -218,7 +226,8 @@ class BFSVisitor extends AbstractStmtSwitch {
                 Logger.debug("Array write found (change needed): " + stmt.toString());
                 daf.new_ver(basename, block_num, stmt);
                 ArrayVersion av = Utils.copy_av(daf.get(basename));
-                if(graph.get_nodes().containsKey(Node.make_id(basename, av, DefOrUse.DEF))) {
+                while(graph.get_nodes().containsKey(Node.make_id(basename, av, DefOrUse.DEF,
+                        stmt instanceof IfStmt, blf.get_line(stmt)))) {
                     Logger.info("Id conflict, forcing version increase before adding node: " + stmt.toString());
                     daf.force_incr(basename);
                     av.force_incr_version();
@@ -227,7 +236,7 @@ class BFSVisitor extends AbstractStmtSwitch {
                 Logger.debug("This is a new def for " + daf.get_name(basename));
                 array_vars.put(basename, av);
                 graph.add_node(new Node(stmt, basename, av, new ArrayIndex(stmt.getArrayRef().getIndexBox()), DefOrUse.DEF,
-                        new ImmutablePair<>(basename, daf.get_name(basename)), false), true, false);
+                        new ImmutablePair<>(basename, daf.get_name(basename)), false, blf.get_line(stmt)), true, false);
                 c_arr_ver.put(b, daf);
             } else {
                 check_array_read(stmt);
